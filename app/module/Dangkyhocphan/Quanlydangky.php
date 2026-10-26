@@ -751,6 +751,8 @@ class Quanlydangky
 
         foreach ($classes as $c) {
             Academic::ensureBuoiHocForLop($this->db, (int)$c['id']);
+            // RULE-DL-07: số thứ tự buổi lấy cùng nguồn với màn hình điểm danh
+            $stt = Academic::soThuTuBuoi($this->db, (int)$c['id']);
             $buoiStmt->execute([':id' => $c['id'], ':den' => $we]);
 
             foreach ($buoiStmt->fetchAll(PDO::FETCH_ASSOC) as $b) {
@@ -773,6 +775,8 @@ class Quanlydangky
                     'ten_giang_vien' => $c['ten_giang_vien'],
                     'ngay_hoc' => $b['ngay_hoc'],
                     'buoi_hoc_id' => (int)$b['id'],
+                    'so_thu_tu' => $stt[(int)$b['id']] ?? null,
+                    'tong_so_buoi' => count($stt),
                     'thu' => $iso === 7 ? 8 : $iso + 1,
                     'tiet_bat_dau' => (int)$b['tiet_bat_dau'],
                     'tiet_ket_thuc' => (int)$b['tiet_ket_thuc'],

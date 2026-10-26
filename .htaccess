@@ -1,5 +1,10 @@
-# Dùng khi chạy bằng Apache (Laragon): http://my-api.test/
+# Dùng khi chạy bằng Apache (Laragon): https://my-api.test/ (HTTP tự chuyển sang HTTPS khi đã bật SSL -
+# cấu hình tại C:/laragon/etc/apache2/sites-enabled/my-api.test.conf)
+# LƯU Ý: đích chuyển hướng phải bắt đầu bằng "/" (đường dẫn tuyệt đối theo tên miền).
+# Viết "app/index.html" (không có "/") thì Apache ghép thêm đường dẫn thư mục
+# => https://my-api.test/C:/laragon/www/my-api/app/index.html (lỗi 404).
 RewriteEngine On
+RewriteBase /
 
 # Giữ header Authorization cho JWT
 RewriteCond %{HTTP:Authorization} .

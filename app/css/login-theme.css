@@ -1,0 +1,161 @@
+/* ================================================================
+   LOGIN-THEME.CSS - Giao diện trang đăng nhập theo mẫu
+   Hai thẻ tách rời, gradient xanh → tím, nền có đốm màu mờ và lưới.
+   Chỉ đổi phần trình bày; nội dung và chức năng giữ nguyên.
+   ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap&subset=vietnamese');
+
+*, *::before, *::after {
+    font-family: 'Nunito', Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+}
+.fa, .fas, .far, .fa-solid, .fa-regular,
+.fa::before, .fas::before, .far::before, .fa-solid::before, .fa-regular::before {
+    font-family: "Font Awesome 6 Free" !important;
+}
+
+body {
+    position: relative;
+    overflow-x: hidden;
+    background:
+        radial-gradient(420px 320px at 6% 8%, rgba(96, 140, 255, 0.35), transparent 70%),
+        radial-gradient(460px 360px at 96% 92%, rgba(139, 120, 255, 0.30), transparent 70%),
+        radial-gradient(420px 300px at 92% 6%, rgba(125, 211, 252, 0.28), transparent 70%),
+        linear-gradient(180deg, #eef3fd 0%, #f4f7fd 100%);
+    padding: 40px 24px;
+}
+/* lưới mờ phía sau */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.10) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.10) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ---- Hai thẻ tách rời ---- */
+.login-container {
+    position: relative;
+    z-index: 1;
+    max-width: 1180px;
+    gap: 28px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+    align-items: stretch;
+}
+
+.login-left {
+    flex: 1.5;
+    border-radius: 30px;
+    background: linear-gradient(135deg, #2f6bea 0%, #4d63ea 50%, #5b4fe0 100%);
+    padding: 44px 44px;
+    overflow: hidden;
+    box-shadow: 0 24px 50px rgba(53, 99, 233, 0.28);
+    justify-content: flex-start;
+}
+/* hai hình tròn trang trí */
+.login-left::before,
+.login-left::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    pointer-events: none;
+}
+.login-left::before { width: 180px; height: 180px; top: -30px; right: -30px; }
+.login-left::after { width: 140px; height: 140px; bottom: -40px; left: -40px; }
+.login-left > * { position: relative; z-index: 1; }
+
+.badge-label {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    padding: 7px 16px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    margin-bottom: 22px;
+}
+.login-left h1 { font-size: 2.85rem; font-weight: 900; line-height: 1.18; margin-bottom: 18px; letter-spacing: -0.3px; }
+.login-left .desc { font-size: 1.02rem; line-height: 1.6; margin-bottom: 30px; color: rgba(255, 255, 255, 0.92); }
+.features-grid { gap: 16px; }
+.feature-card {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 18px;
+    padding: 18px 18px 20px;
+}
+.feature-card h4 { font-size: 1.05rem; font-weight: 800; margin-bottom: 8px; }
+.feature-card p { font-size: 0.88rem; line-height: 1.55; color: rgba(255, 255, 255, 0.88); }
+
+.login-right {
+    flex: 1;
+    border-radius: 30px;
+    padding: 36px 30px;
+    box-shadow: 0 24px 50px rgba(30, 64, 175, 0.10);
+    justify-content: flex-start;
+}
+.login-header { align-items: flex-start; margin-bottom: 4px; }
+.login-header h2 { font-size: 1.75rem; font-weight: 800; color: #1f2937; }
+.sms-icon {
+    width: 58px; height: 58px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #2f6bea 0%, #5b4fe0 100%);
+    font-size: 0.95rem; font-weight: 900;
+    box-shadow: 0 10px 22px rgba(53, 99, 233, 0.35);
+}
+.login-subtitle { font-size: 1rem; line-height: 1.5; margin-bottom: 26px; max-width: 320px; }
+
+#loginForm > label, .form-group label { font-size: 0.92rem; font-weight: 800; color: #1f2937; margin-bottom: 8px; }
+.form-control {
+    height: 50px;
+    border-radius: 14px;
+    border: 1px solid #dbe2ee;
+    padding: 0 16px;
+    font-size: 1rem;
+}
+.form-control:focus { border-color: #3563e9; box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.14); }
+#loginForm > .form-control { margin-bottom: 18px; }
+.form-group { margin-bottom: 18px; }
+
+.btn-login {
+    height: 50px;
+    border-radius: 14px;
+    font-size: 1.02rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #2f6bea 0%, #5b4fe0 100%);
+    box-shadow: 0 10px 22px rgba(53, 99, 233, 0.30);
+    margin-top: 6px;
+}
+.btn-login:hover { background: linear-gradient(90deg, #2a5fd6 0%, #5045cf 100%); }
+
+.test-accounts {
+    border: 1.5px dashed #c9d6ef;
+    background: #f8fbff;
+    border-radius: 18px;
+    padding: 16px 16px 10px;
+    margin-top: 22px;
+}
+.test-accounts h5 { font-size: 1rem; font-weight: 800; color: #1f2937; margin-bottom: 12px; }
+.test-account-item {
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.92rem;
+    margin-bottom: 10px;
+    border-color: #e3e9f3;
+}
+.test-account-item:hover { border-color: #3563e9; background: #f3f6ff; }
+
+.modal-fp-card { border-radius: 22px; padding: 28px 28px; }
+.btn { border-radius: 12px; }
+
+@media (max-width: 900px) {
+    .login-container { flex-direction: column; max-width: 560px; }
+    .login-left h1 { font-size: 2rem; }
+}

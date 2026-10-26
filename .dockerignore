@@ -1,0 +1,4 @@
+.git
+_to_delete
+database/*.bak-*
+*.md

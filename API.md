@@ -43,7 +43,7 @@ Api.post('/api/ketquahoctap/diem-thanh-phan', { dang_ky_id: 3, diem_giua_ky: 8 }
 | Method | Endpoint | Quyền | Body / Query |
 |---|---|---|---|
 | GET | /api/lophocphan | admin, GV (lớp mình) | `hoc_ky`, `nam_hoc`, `trang_thai`, `search`, `mon_hoc_id` |
-| GET | /api/lophocphan/chi-tiet | admin, GV | `id` (kèm lịch học, số buổi, danh sách SV) |
+| GET | /api/lophocphan/chi-tiet | admin, GV | `id` (kèm lịch học, `buoi_hoc[]` có `so_thu_tu`, danh sách SV) |
 | GET | /api/lophocphan/nam-hoc | đã đăng nhập | — (năm học, học kỳ từ bảng `hoc_ky` với `da_khai_bao` = 1; học kỳ cũ chưa khai báo lấy theo lịch học, `da_khai_bao` = 0; học kỳ hiện hành) |
 | GET | /api/lophocphan/form-data | admin, GV | — (môn học, giảng viên đang hoạt động; GV chỉ nhận chính mình) |
 | POST | /api/lophocphan/xem-truoc-lich | admin, GV | như POST /api/lophocphan (+ `id` khi sửa, mã lớp có thể bỏ trống); trả `buoi[]`, `bo_qua[]` (ngày xung đột), `tong_tiet_mon`, `da_xep`, `con_thieu`, `hop_le`, `nguyen_nhan[]`, `hoc_ky` - không ghi DB |
@@ -72,9 +72,12 @@ Api.post('/api/ketquahoctap/diem-thanh-phan', { dang_ky_id: 3, diem_giua_ky: 8 }
 | POST | /api/ketquahoctap/diem-thanh-phan | GV, admin | Thêm: `dang_ky_id`, `diem_giua_ky` và/hoặc `diem_cuoi_ky` |
 | PUT | /api/ketquahoctap/diem-thanh-phan | GV, admin | Sửa: như trên |
 | DELETE | /api/ketquahoctap/diem-thanh-phan | GV, admin | `dang_ky_id`, `loai`: `giua_ky` \| `cuoi_ky` \| `tat_ca` |
-| GET | /api/ketquahoctap/ket-qua | SV | `hoc_ky` (1/2/3/all), `nam_hoc` (YYYY-YYYY/all) |
+| GET | /api/ketquahoctap/ket-qua | SV (của mình); admin, GV (`sinh_vien_id`) | `hoc_ky` (1/2/3/all), `nam_hoc` (YYYY-YYYY/all). Mỗi môn kèm `tiet_nghi`, `tong_tiet_mon`, `ty_le_nghi`, `cam_thi`; `hoc_ky` / `tich_luy` kèm `tong_d4_x_tc`, `so_tin_chi_tinh_gpa`, `so_tin_chi_dat`, `mon[]`; `quy_tac` (hệ số, thang điểm) |
+| GET | /api/ketquahoctap/lop-sinh-vien | admin, GV | — (lớp sinh viên kèm danh sách sinh viên để tra cứu bảng điểm) |
 
 Buổi học được xếp theo tổng số tiết môn (RULE-XL): bỏ qua ngày trùng giảng viên/phòng, dừng khi đủ tiết, buổi cuối có thể ít tiết hơn; chỉ lưu khi đủ tiết (RULE-HL-01). Phản hồi có `xep_lich` (`so_buoi`, `da_xep`, `con_thieu`, `so_ngay_bo_qua`, `nguyen_nhan`).
+
+Sinh viên nghỉ từ 20% số tiết (R ≥ 20%) bị cấm thi: thêm / sửa điểm trả 409, điểm tổng kết = 0 (RULE-15.13). `bang-diem` trả thêm `cam_thi`, `ty_le_nghi`, `quy_tac`; `buoi-hoc` trả `so_thu_tu` (cùng số với thời khóa biểu).
 
 Điểm chuyên cần không nhập tay: hệ thống tính từ điểm danh (RULE-15), tổng tiết môn = tổng tiết các buổi theo lịch học của lớp.
 
@@ -107,7 +110,9 @@ Buổi học được xếp theo tổng số tiết môn (RULE-XL): bỏ qua ng�
 | DELETE | /api/cocaudaotao/nhom-tu-chon?id= | admin | chặn nếu nhóm còn môn |
 | POST | /api/cocaudaotao/nhom-tu-chon/mon | admin | `nhom_tu_chon_id`, `mon_hoc_id` |
 | DELETE | /api/cocaudaotao/nhom-tu-chon/mon?id= | admin | gỡ môn khỏi nhóm |
-| POST / PUT | /api/cocaudaotao/hoc-ky | admin | `nam_hoc`, `hoc_ky` (1-3), `ngay_bat_dau`, `ngay_ket_thuc` (> ngày bắt đầu). Không sửa học kỳ đã có lớp học phần |
+| GET | /api/cocaudaotao/hoc-ky | admin | — (kèm `so_tuan`, `so_lop_hoc_phan`, `canh_bao[]`) |
+| GET | /api/cocaudaotao/hoc-ky/chi-tiet | admin | `id` (thông tin học kỳ + danh sách lớp học phần) |
+| POST / PUT | /api/cocaudaotao/hoc-ky | admin | `nam_hoc`, `hoc_ky` (1-3), `ngay_bat_dau`, `ngay_ket_thuc` (> ngày bắt đầu). Không chồng học kỳ khác cùng năm học; phải bao trùm mọi buổi học của lớp thuộc học kỳ; học kỳ có lớp không đổi năm học / số học kỳ |
 | DELETE | /api/cocaudaotao/hoc-ky?id= | admin | chặn nếu học kỳ có lớp học phần |
 | POST / PUT | /api/cocaudaotao/lop-sinh-vien | admin | `ma_lop`, `ten_lop`, `khoa_hoc` (VD 2026-2030), `chuong_trinh_id` |
 | DELETE | /api/cocaudaotao/lop-sinh-vien?id= | admin | chặn nếu lớp còn sinh viên |

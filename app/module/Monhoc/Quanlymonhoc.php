@@ -61,6 +61,9 @@ class Quanlymonhoc
                 'tiet_moi_tc_ly_thuyet' => Academic::TIET_MOI_TC_LY_THUYET,
                 'tiet_moi_tc_thuc_hanh' => Academic::TIET_MOI_TC_THUC_HANH,
                 'phut_moi_tiet' => Academic::PHUT_MOI_TIET,
+                'gio_moi_tc_ly_thuyet' => Academic::GIO_MOI_TC_LY_THUYET,
+                'gio_moi_tc_thuc_hanh' => Academic::GIO_MOI_TC_THUC_HANH,
+                'phut_moi_gio' => Academic::PHUT_MOI_GIO,
             ],
         ]);
     }

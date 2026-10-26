@@ -86,12 +86,8 @@ class Quanlycocau
             ORDER BY l.ma_lop
         ")->fetchAll();
 
-        // RULE-HK-01: danh sách học kỳ đã khai báo, kèm số lớp học phần đang dùng (RULE-HK-06)
-        $hocKy = $this->db->query('
-            SELECT h.*,
-                   (SELECT COUNT(*) FROM lop_hoc_phan l WHERE l.hoc_ky = h.hoc_ky AND l.nam_hoc = h.nam_hoc) AS so_lop_hoc_phan
-            FROM hoc_ky h ORDER BY h.ngay_bat_dau DESC
-        ')->fetchAll();
+        // RULE-HK-01: danh sách học kỳ đã khai báo (kèm số tuần, cảnh báo dữ liệu)
+        $hocKy = $this->hocKyRows();
 
         Response::json([
             'success' => true,
@@ -704,15 +700,35 @@ class Quanlycocau
             $this->fail('Học kỳ ' . $hk . ' năm học ' . $namHoc . ' đã được khai báo.', 409);
         }
 
+        // RULE-HK-08: các học kỳ trong cùng năm học không được chồng ngày nhau
+        $ov = $this->db->prepare('
+            SELECT hoc_ky, ngay_bat_dau, ngay_ket_thuc FROM hoc_ky
+            WHERE nam_hoc = :nh AND id != :id AND ngay_bat_dau <= :kt AND :bd <= ngay_ket_thuc
+        ');
+        $ov->execute([':nh' => $namHoc, ':id' => $id, ':bd' => $bd, ':kt' => $kt]);
+        if ($o = $ov->fetch()) {
+            $this->fail('Khoảng ngày ' . $this->ngay($bd) . ' → ' . $this->ngay($kt) . ' bị chồng với học kỳ ' . $o['hoc_ky'] . ' năm học ' . $namHoc
+                . ' (' . $this->ngay($o['ngay_bat_dau']) . ' → ' . $this->ngay($o['ngay_ket_thuc']) . '). Các học kỳ trong cùng năm học không được trùng thời gian. Hãy sửa (hoặc xóa nếu chưa có lớp) học kỳ bị chồng trước.', 409);
+        }
+
         $params = [':nh' => $namHoc, ':hk' => $hk, ':bd' => $bd, ':kt' => $kt];
 
         if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             $old = $this->findHocKy($id);
-            // RULE-HK-06: học kỳ đã có lớp học phần thì không đổi năm học / học kỳ / ngày
-            $dirty = $old['nam_hoc'] !== $namHoc || (int) $old['hoc_ky'] !== $hk || $old['ngay_bat_dau'] !== $bd || $old['ngay_ket_thuc'] !== $kt;
-            if ($dirty && $this->soLopCuaHocKy((int) $old['hoc_ky'], $old['nam_hoc']) > 0) {
-                $this->fail('Học kỳ đã có lớp học phần nên không thể đổi thông tin (tránh buổi học nằm ngoài học kỳ).', 409);
+            // RULE-HK-06: học kỳ đã có lớp học phần thì không đổi năm học / số học kỳ
+            if (($old['nam_hoc'] !== $namHoc || (int) $old['hoc_ky'] !== $hk) && $this->soLopCuaHocKy((int) $old['hoc_ky'], $old['nam_hoc']) > 0) {
+                $this->fail('Học kỳ đã có lớp học phần nên không thể đổi năm học / học kỳ.', 409);
             }
+        }
+
+        // RULE-HK-03: mọi buổi học của các lớp thuộc học kỳ phải nằm trong khoảng ngày khai báo
+        $r = $this->buoiCuaHocKy($hk, $namHoc, $bd, $kt);
+        if ((int) $r['ngoai'] > 0) {
+            $this->fail('Có ' . $r['ngoai'] . ' buổi học của lớp học phần thuộc học kỳ này nằm ngoài khoảng ' . $this->ngay($bd) . ' → ' . $this->ngay($kt)
+                . ' (các buổi đang diễn ra từ ' . $this->ngay($r['tu']) . ' đến ' . $this->ngay($r['den']) . '). Hãy chọn khoảng ngày bao trùm các buổi này.', 409);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             $params[':id'] = $id;
             $this->db->prepare('UPDATE hoc_ky SET nam_hoc = :nh, hoc_ky = :hk, ngay_bat_dau = :bd, ngay_ket_thuc = :kt WHERE id = :id')
                 ->execute($params);
@@ -752,6 +768,93 @@ class Quanlycocau
         }
 
         return $row;
+    }
+
+    /** Khoảng ngày thực tế và số buổi nằm ngoài [bd, kt] của các lớp thuộc học kỳ */
+    private function buoiCuaHocKy(int $hk, string $namHoc, string $bd, string $kt): array
+    {
+        $s = $this->db->prepare('
+            SELECT MIN(b.ngay_hoc) AS tu, MAX(b.ngay_hoc) AS den, COUNT(b.id) AS tong,
+                   COALESCE(SUM(CASE WHEN b.ngay_hoc < :bd OR b.ngay_hoc > :kt THEN 1 ELSE 0 END), 0) AS ngoai
+            FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id
+            INNER JOIN lop_hoc_phan l ON l.id = lh.lop_hoc_phan_id
+            WHERE l.hoc_ky = :hk AND l.nam_hoc = :nh
+        ');
+        $s->execute([':bd' => $bd, ':kt' => $kt, ':hk' => $hk, ':nh' => $namHoc]);
+
+        return $s->fetch();
+    }
+
+    private function ngay(?string $d): string
+    {
+        return $d ? date('d/m/Y', strtotime($d)) : '—';
+    }
+
+    /** Học kỳ kèm số tuần (RULE-HK-07) và cảnh báo dữ liệu (chồng lấn RULE-HK-08, buổi ngoài học kỳ RULE-HK-03) */
+    private function hocKyRows(): array
+    {
+        $rows = $this->db->query('
+            SELECT h.*,
+                   (SELECT COUNT(*) FROM lop_hoc_phan l WHERE l.hoc_ky = h.hoc_ky AND l.nam_hoc = h.nam_hoc) AS so_lop_hoc_phan
+            FROM hoc_ky h ORDER BY h.nam_hoc DESC, h.hoc_ky
+        ')->fetchAll();
+
+        foreach ($rows as &$h) {
+            $h['so_tuan'] = Academic::soTuan($h['ngay_bat_dau'], $h['ngay_ket_thuc']);
+            $b = $this->buoiCuaHocKy((int) $h['hoc_ky'], $h['nam_hoc'], $h['ngay_bat_dau'], $h['ngay_ket_thuc']);
+            $h['buoi_tu'] = $b['tu'];
+            $h['buoi_den'] = $b['den'];
+            $h['so_buoi'] = (int) $b['tong'];
+            $h['so_buoi_ngoai_hoc_ky'] = (int) $b['ngoai'];
+            $h['canh_bao'] = [];
+            if ($h['so_buoi_ngoai_hoc_ky'] > 0) {
+                $h['canh_bao'][] = $h['so_buoi_ngoai_hoc_ky'] . ' buổi học nằm ngoài học kỳ (buổi thực tế ' . $this->ngay($b['tu']) . ' → ' . $this->ngay($b['den']) . ')';
+            }
+            foreach ($rows as $o) {
+                if ($o['id'] !== $h['id'] && $o['nam_hoc'] === $h['nam_hoc']
+                    && $o['ngay_bat_dau'] <= $h['ngay_ket_thuc'] && $h['ngay_bat_dau'] <= $o['ngay_ket_thuc']) {
+                    $h['canh_bao'][] = 'Chồng thời gian với học kỳ ' . $o['hoc_ky'] . ' (' . $this->ngay($o['ngay_bat_dau']) . ' → ' . $this->ngay($o['ngay_ket_thuc']) . ')';
+                }
+            }
+        }
+        unset($h);
+
+        return $rows;
+    }
+
+    /** GET /api/cocaudaotao/hoc-ky — danh sách học kỳ (quản trị viên) */
+    public function dsHocKy(): void
+    {
+        AuthService::requireUser($this->db, ['admin']);
+        Response::json(['success' => true, 'data' => $this->hocKyRows()]);
+    }
+
+    /** GET /api/cocaudaotao/hoc-ky/chi-tiet?id= — thông tin học kỳ + danh sách lớp học phần thuộc học kỳ */
+    public function chiTietHocKy(): void
+    {
+        AuthService::requireUser($this->db, ['admin']);
+        $id = Request::int(Request::query('id'));
+        $this->findHocKy($id);
+        $hk = array_values(array_filter($this->hocKyRows(), fn($h) => (int) $h['id'] === $id))[0];
+
+        $s = $this->db->prepare("
+            SELECT l.id, l.ma_lop_hoc_phan, l.phong_hoc, l.trang_thai, l.si_so_toi_da,
+                   mh.ma_mon_hoc, mh.ten_mon_hoc, mh.so_tin_chi, mh.so_tiet, gv.ho_ten AS ten_giang_vien,
+                   (SELECT COUNT(*) FROM dang_ky_hoc_phan dk WHERE dk.lop_hoc_phan_id = l.id AND " . Academic::activeDkSql('dk.trang_thai') . ") AS si_so_hien_tai,
+                   (SELECT COUNT(*) FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id WHERE lh.lop_hoc_phan_id = l.id) AS so_buoi,
+                   (SELECT COALESCE(SUM(b.tiet_ket_thuc - b.tiet_bat_dau + 1), 0) FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id WHERE lh.lop_hoc_phan_id = l.id) AS tong_tiet_da_xep,
+                   (SELECT MIN(b.ngay_hoc) FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id WHERE lh.lop_hoc_phan_id = l.id) AS buoi_dau,
+                   (SELECT MAX(b.ngay_hoc) FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id WHERE lh.lop_hoc_phan_id = l.id) AS buoi_cuoi
+            FROM lop_hoc_phan l
+            INNER JOIN mon_hoc mh ON mh.id = l.mon_hoc_id
+            LEFT JOIN users gv ON gv.id = l.giang_vien_user_id
+            WHERE l.hoc_ky = :hk AND l.nam_hoc = :nh
+            ORDER BY l.ma_lop_hoc_phan
+        ");
+        $s->execute([':hk' => $hk['hoc_ky'], ':nh' => $hk['nam_hoc']]);
+        $hk['lop_hoc_phan'] = $s->fetchAll();
+
+        Response::json(['success' => true, 'data' => $hk]);
     }
 
     private function soLopCuaHocKy(int $hk, string $namHoc): int

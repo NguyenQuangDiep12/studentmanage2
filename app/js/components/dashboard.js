@@ -40,7 +40,7 @@ var DashboardComponent = (function ($) {
             card('Lớp học phần', d.tong_lop_hoc_phan || 0, 'Lớp học phần trong hệ thống', role !== 'sinh_vien' ? 'lop-hoc-phan' : '') +
             card('Lượt đăng ký', d.tong_dang_ky || 0, 'Tổng lượt đăng ký học phần', role === 'sinh_vien' ? 'dang-ky' : '') +
             card('Ý kiến sinh viên', d.tong_kien_nghi || 0, 'Tổng phản hồi gửi cho admin', 'kien-nghi') +
-            card('Tin tức', d.tong_tin_tuc || 0, 'Số thông báo đã công bố', 'tin-tuc') +
+            card('Tin tức', d.tong_tin_tuc || 0, 'Số thông báo đã công bố', isAdmin ? 'tin-tuc-admin' : 'tin-tuc') +
             card('Điểm TB hệ thống', d.diem_trung_binh != null ? Number(d.diem_trung_binh).toFixed(1) : '—', 'Trung bình điểm tổng kết', '', 'var(--primary)') +
             '</div>' +
 

@@ -54,12 +54,9 @@
                 '        <button class="btn btn-primary" id="btnReloadDiem" style="width:100%;">Tải bảng điểm</button>' +
                 '      </div>' +
                 '    </div>' +
-                '    <div style="background:#f8fafc; border-left:3px solid var(--primary); padding:10px 14px; border-radius:4px; font-size:0.84rem; color:#334155; margin-top:6px;">' +
-                '      <strong>Quy chế tính điểm tổng kết:</strong> ' +
-                '      Điểm tổng kết = <strong>Cuối kỳ × 0.6 + Giữa kỳ × 0.3 + Chuyên cần × 0.1</strong><br>' +
-                '      Điểm chuyên cần được hệ thống tự động tính từ kết quả điểm danh (mỗi 2% tỷ lệ nghỉ trừ 1 điểm, nghỉ từ 20% bằng 0)<br>' +
-                '      Để trống ô điểm = chưa có điểm thành phần; nhấn biểu tượng thùng rác để xóa điểm thành phần của sinh viên' +
-                '    </div>' +
+                // Quy chế + công thức đầy đủ hiển thị ngay trên trang (RULE-14, 15, 17, 18)
+                '    <div id="diemQuyChe" class="mt-2"></div>' +
+                '    <p class="text-muted mt-2 mb-0" style="font-size:0.82rem;">Nhập điểm trực tiếp vào bảng rồi bấm "Lưu bảng điểm", hoặc dùng "Sửa" / "Xóa" ở từng sinh viên. Bấm "Cách tính" để xem từng bước tính điểm của sinh viên đó.</p>' +
                 '  </div>' +
                 '</div>' +
 
@@ -153,7 +150,16 @@
             });
 
             $(document).off('click', '.btn-del-diem').on('click', '.btn-del-diem', function () {
-                self.deleteGrade(parseInt($(this).data('dk-id'), 10), $(this).data('name'));
+                self.deleteGrade(parseInt($(this).data('dk-id'), 10));
+            });
+
+            $(document).off('click', '.btn-edit-diem').on('click', '.btn-edit-diem', function () {
+                self.editGrade(parseInt($(this).data('dk-id'), 10));
+            });
+
+            // Giải thích từng bước ngay dưới dòng sinh viên
+            $(document).off('click', '.btn-cach-tinh').on('click', '.btn-cach-tinh', function () {
+                $('#cachTinh-' + $(this).data('dk-id')).toggle();
             });
         },
 
@@ -172,8 +178,13 @@
         },
 
         renderGrades: function (res) {
+            var self = this;
             var lhp = res.lop_hoc_phan;
             var rows = res.data || [];
+            var q = res.quy_tac;
+            this.rows = rows;
+            this.quyTac = q;
+            if (q && !$('#diemQuyChe').children().length) $('#diemQuyChe').html(GiaiThichDiem.quyChe(q));
             var st = res.thong_ke || {};
 
             $('#infoMh').text(lhp.ten_mon_hoc + ' (' + lhp.ma_mon_hoc + ' - ' + lhp.so_tin_chi + ' TC)');
@@ -208,34 +219,38 @@
                 var lastUpdate = d.updated_at ? App.formatDateTime(d.updated_at) : '<span class="text-muted">Chưa lưu</span>';
                 var ccTitle = 'Nghỉ ' + d.tiet_nghi + '/' + d.tong_tiet_mon + ' tiết (' + d.ty_le_nghi + '%)';
                 var hasScore = d.diem_giua_ky != null || d.diem_cuoi_ky != null;
+                // RULE-15.13: cấm thi -> khóa ô nhập điểm, D = 0
+                var lock = d.cam_thi ? ' disabled title="Bị cấm thi - không được nhập điểm"' : '';
 
                 var row =
-                    '<tr data-dk-id="' + d.dang_ky_id + '">' +
+                    '<tr data-dk-id="' + d.dang_ky_id + '"' + (d.cam_thi ? ' data-cam-thi="1"' : '') + '>' +
                     '  <td class="text-center font-bold">' + (index + 1) + '</td>' +
                     '  <td><strong>' + App.escapeHtml(d.ma_dinh_danh) + '</strong></td>' +
-                    '  <td>' + App.escapeHtml(d.ho_ten) + '</td>' +
+                    '  <td>' + App.escapeHtml(d.ho_ten) + (d.cam_thi ? '<br><span class="badge badge-danger">Cấm thi</span>' : '') + '</td>' +
                     '  <td>' + (d.ma_lop ? App.escapeHtml(d.ma_lop) : '—') + '</td>' +
                     '  <td class="text-center">' +
                     '    <input type="number" class="form-control form-control-sm text-center input-cc" value="' + Number(d.diem_chuyen_can).toFixed(1) + '" readonly title="' + ccTitle + '">' +
                     '    <small class="text-muted d-block">' + ccTitle + '</small>' +
                     '  </td>' +
                     '  <td class="text-center">' +
-                    '    <input type="number" step="0.1" class="form-control form-control-sm text-center input-diem input-gk" value="' + gk + '" placeholder="—">' +
+                    '    <input type="number" step="0.1" class="form-control form-control-sm text-center input-diem input-gk" value="' + gk + '" placeholder="—"' + lock + '>' +
                     '  </td>' +
                     '  <td class="text-center">' +
-                    '    <input type="number" step="0.1" class="form-control form-control-sm text-center input-diem input-ck" value="' + ck + '" placeholder="—">' +
+                    '    <input type="number" step="0.1" class="form-control form-control-sm text-center input-diem input-ck" value="' + ck + '" placeholder="—"' + lock + '>' +
                     '  </td>' +
                     '  <td class="text-center font-bold col-tk" style="font-size:0.95rem; color:var(--primary);">' + tk + '</td>' +
                     '  <td class="text-center col-he4">' + he4 + '</td>' +
                     '  <td class="text-center col-chu">' + (d.diem_chu ? App.diemChuBadge(d.diem_chu) : '—') + '</td>' +
                     '  <td class="text-center col-kq">' + (d.ket_qua ? App.ketQuaBadge(d.ket_qua) : '—') + '</td>' +
                     '  <td class="text-center"><small>' + lastUpdate + '</small></td>' +
-                    '  <td class="text-center">' +
-                    (hasScore
-                        ? '<button class="btn btn-sm btn-outline text-danger btn-del-diem" data-dk-id="' + d.dang_ky_id + '" data-name="' + App.escapeHtml(d.ho_ten) + '" title="Xóa điểm thành phần">Xóa</button>'
-                        : '<span class="text-muted">—</span>') +
-                    '  </td>' +
-                    '</tr>';
+                    '  <td class="text-center"><div class="table-actions table-actions-stack justify-center">' +
+                    '    <button class="btn btn-sm btn-outline-primary btn-cach-tinh" data-dk-id="' + d.dang_ky_id + '">Cách tính</button>' +
+                    (d.cam_thi ? '' : '    <button class="btn btn-sm btn-outline btn-edit-diem" data-dk-id="' + d.dang_ky_id + '">Sửa</button>') +
+                    (hasScore ? '    <button class="btn btn-sm btn-outline text-danger btn-del-diem" data-dk-id="' + d.dang_ky_id + '">Xóa</button>' : '') +
+                    '  </div></td>' +
+                    '</tr>' +
+                    '<tr id="cachTinh-' + d.dang_ky_id + '" style="display:none; background:#f8fafc;"><td colspan="13">' +
+                    (self.quyTac ? GiaiThichDiem.hocPhan(d, self.quyTac) : '') + '</td></tr>';
                 tbody.append(row);
             });
 
@@ -265,14 +280,69 @@
                 .fail(Api.toastError);
         },
 
-        deleteGrade: function (dkId, name) {
+        findRow: function (dkId) {
+            return (this.rows || []).find(function (r) { return parseInt(r.dang_ky_id, 10) === dkId; });
+        },
+
+        /** Sửa điểm một sinh viên: thêm điểm còn thiếu (POST), sửa điểm đã có (PUT) - backend kiểm tra 0-10, cấm thi */
+        editGrade: function (dkId) {
             var self = this;
-            App.confirm('Xóa toàn bộ điểm thành phần (giữa kỳ, cuối kỳ) của sinh viên <strong>' + App.escapeHtml(name) + '</strong>?', function () {
-                Api.del('/api/ketquahoctap/diem-thanh-phan', { dang_ky_id: dkId, loai: 'tat_ca' })
-                    .done(function (res) {
-                        App.showToast(res.message, 'success');
-                        self.loadClassGrades();
-                    })
+            var d = this.findRow(dkId);
+            if (!d) return;
+            var v = function (x) { return x != null ? x : ''; };
+            App.showModal(
+                '<div class="modal-header"><h3>Sửa điểm: ' + App.escapeHtml(d.ma_dinh_danh + ' - ' + d.ho_ten) + '</h3>' +
+                '<button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
+                '<div class="modal-body">' +
+                '  <p class="text-muted" style="font-size:0.82rem;">Chuyên cần C = ' + Number(d.diem_chuyen_can).toFixed(1) + ' (tự tính từ điểm danh, nghỉ ' + d.tiet_nghi + '/' + d.tong_tiet_mon + ' tiết = ' + d.ty_le_nghi + '%). Để trống ô = chưa có điểm.</p>' +
+                '  <div class="form-row">' +
+                '    <div class="form-group"><label>Điểm giữa kỳ B (0-10)</label><input type="number" step="0.1" class="form-control" id="edGk" value="' + v(d.diem_giua_ky) + '"></div>' +
+                '    <div class="form-group"><label>Điểm cuối kỳ A (0-10)</label><input type="number" step="0.1" class="form-control" id="edCk" value="' + v(d.diem_cuoi_ky) + '"></div>' +
+                '  </div>' +
+                '</div>' +
+                '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
+                '<button class="btn btn-primary" id="btnLuuSuaDiem">Lưu điểm</button></div>', 'sm');
+
+            $('#btnLuuSuaDiem').on('click', function () {
+                var gk = $('#edGk').val(), ck = $('#edCk').val();
+                var them = {}, sua = {}, xoa = [];
+                [['diem_giua_ky', gk, 'giua_ky'], ['diem_cuoi_ky', ck, 'cuoi_ky']].forEach(function (x) {
+                    var cu = d[x[0]];
+                    if (x[1] === '') { if (cu != null) xoa.push(x[2]); return; }
+                    if (cu == null) them[x[0]] = x[1]; else if (String(Number(cu)) !== String(Number(x[1]))) sua[x[0]] = x[1];
+                });
+                var calls = [];
+                if (Object.keys(sua).length) calls.push(function () { return Api.put('/api/ketquahoctap/diem-thanh-phan', $.extend({ dang_ky_id: dkId }, sua)); });
+                if (Object.keys(them).length) calls.push(function () { return Api.post('/api/ketquahoctap/diem-thanh-phan', $.extend({ dang_ky_id: dkId }, them)); });
+                xoa.forEach(function (loai) { calls.push(function () { return Api.del('/api/ketquahoctap/diem-thanh-phan', { dang_ky_id: dkId, loai: loai }); }); });
+                if (!calls.length) { App.closeModal(); return; }
+                var run = function (i) {
+                    if (i >= calls.length) { App.showToast('Đã cập nhật điểm sinh viên ' + d.ma_dinh_danh + '.', 'success'); App.closeModal(); self.loadClassGrades(); return; }
+                    calls[i]().done(function () { run(i + 1); }).fail(function (xhr) { Api.toastError(xhr); self.loadClassGrades(); });
+                };
+                run(0);
+            });
+        },
+
+        /** Xóa điểm: chọn xóa giữa kỳ, cuối kỳ hoặc toàn bộ (DELETE /api/ketquahoctap/diem-thanh-phan) */
+        deleteGrade: function (dkId) {
+            var self = this;
+            var d = this.findRow(dkId);
+            if (!d) return;
+            var opt = function (loai, ten, co) { return co ? '<option value="' + loai + '">' + ten + '</option>' : ''; };
+            App.showModal(
+                '<div class="modal-header"><h3>Xóa điểm: ' + App.escapeHtml(d.ma_dinh_danh + ' - ' + d.ho_ten) + '</h3>' +
+                '<button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
+                '<div class="modal-body"><div class="form-group"><label>Chọn điểm cần xóa</label><select class="form-control" id="xoaLoai">' +
+                opt('giua_ky', 'Điểm giữa kỳ (' + d.diem_giua_ky + ')', d.diem_giua_ky != null) +
+                opt('cuoi_ky', 'Điểm cuối kỳ (' + d.diem_cuoi_ky + ')', d.diem_cuoi_ky != null) +
+                '<option value="tat_ca">Toàn bộ điểm thành phần</option></select></div>' +
+                '<p class="text-muted" style="font-size:0.82rem;">Sau khi xóa, điểm tổng kết được tính lại (thiếu điểm thì chưa có điểm tổng kết).</p></div>' +
+                '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
+                '<button class="btn btn-danger" id="btnXacNhanXoaDiem">Xóa điểm</button></div>', 'sm');
+            $('#btnXacNhanXoaDiem').on('click', function () {
+                Api.del('/api/ketquahoctap/diem-thanh-phan', { dang_ky_id: dkId, loai: $('#xoaLoai').val() })
+                    .done(function (res) { App.showToast(res.message, 'success'); App.closeModal(); self.loadClassGrades(); })
                     .fail(Api.toastError);
             });
         }

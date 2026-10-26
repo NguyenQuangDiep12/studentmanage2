@@ -1,0 +1,11 @@
+<VirtualHost *:80> 
+    DocumentRoot "C:/laragon/www/my-api"
+    ServerName my-api.test
+    ServerAlias *.my-api.test
+    <Directory "C:/laragon/www/my-api">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+# If you want to use SSL, enable it by going to Menu > Apache > SSL > Enabled

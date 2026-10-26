@@ -25,42 +25,80 @@ var SidebarComponent = (function ($) {
 
         var menuList = $('#sidebarNav').empty();
 
-        // 1. Tổng quan (Chung cho cả 3 vai trò)
-        menuList.append(createNavCard('dashboard', 'Tổng quan', 'Thống kê hệ thống và dữ liệu nhanh'));
+        // Menu theo sơ đồ chức năng: 1. Cơ cấu đào tạo · 2. Quản lý môn học · 3. Tổ chức giảng dạy ·
+        // 4. Kết quả học tập · 5. Tin tức · 6. Kiến nghị · 7. Tài khoản & phân quyền (mục hiện theo vai trò)
+        var sec = function (title) { menuList.append('<div class="nav-section-header">' + title + '</div>'); };
+        var item = function (page, title, desc) { menuList.append(createNavCard(page, title, desc)); };
 
-        // Phân quyền theo vai trò
+        item('dashboard', 'Tổng quan', 'Thống kê hệ thống và dữ liệu nhanh');
+
         if (role === 'admin') {
-            menuList.append('<div class="nav-section-header">Quản lý hồ sơ</div>');
-            menuList.append(createNavCard('users-sv', 'Hồ sơ sinh viên', 'Thêm, sửa, xóa thông tin sinh viên'));
-            menuList.append(createNavCard('users-gv', 'Hồ sơ giảng viên', 'Thêm, sửa, xóa giảng viên và cấp mã'));
+            sec('1. Cơ cấu đào tạo');
+            item('co-cau-dao-tao', 'Cơ cấu đào tạo', 'Khoa, chuyên ngành, CTĐT, nhóm tự chọn, lớp sinh viên');
+            item('chuong-trinh-dao-tao', 'Khung chương trình', 'Môn bắt buộc theo học kỳ và nhóm môn tự chọn');
 
-            menuList.append('<div class="nav-section-header">Đào tạo & Môn học</div>');
-            menuList.append(createNavCard('mon-hoc', 'Môn học', 'Tạo môn học mới bằng cách nhập trực tiếp'));
-            menuList.append(createNavCard('lop-hoc-phan', 'Lớp học phần', 'Quản lý lớp học phần và lịch học'));
-            menuList.append(createNavCard('co-cau-dao-tao', 'Cơ cấu đào tạo', 'Khoa, chuyên ngành, CTĐT và nhóm tự chọn'));
-            menuList.append(createNavCard('chuong-trinh-dao-tao', 'Chương trình đào tạo', 'Khung môn học theo học kỳ và nhóm tự chọn'));
+            sec('2. Quản lý môn học');
+            item('mon-hoc', 'Danh sách môn học', 'Thêm, sửa, xóa, tìm kiếm môn học');
 
-            menuList.append('<div class="nav-section-header">Bảng tin & Thông báo</div>');
-            menuList.append(createNavCard('tin-tuc-admin', 'Quản lý tin tức', 'Đăng tin, sửa tin và phê duyệt thông báo'));
+            sec('3. Tổ chức giảng dạy');
+            item('hoc-ky', 'Học kỳ', 'Danh sách, thêm / sửa và chi tiết học kỳ');
+            item('lop-hoc-phan', 'Lớp học phần', 'Danh sách lớp, lịch học và buổi học');
+            item('ds-dang-ky', 'Đăng ký học phần', 'Danh sách sinh viên đăng ký theo lớp');
+            item('tkb', 'Thời khóa biểu', 'Xem lịch học theo tuần');
+            item('diem-danh', 'Điểm danh', 'Chọn buổi học và điểm danh sinh viên');
+
+            sec('4. Kết quả học tập');
+            item('quan-ly-diem', 'Nhập & quản lý điểm', 'Nhập, sửa, xóa điểm theo lớp học phần');
+            item('tra-cuu-diem', 'Tra cứu bảng điểm', 'Chọn lớp sinh viên → sinh viên → kết quả');
+
+            sec('5. Tin tức');
+            item('tin-tuc-admin', 'Quản lý tin tức', 'Đăng, sửa, xóa tin tức');
+
+            sec('6. Kiến nghị');
+            item('kien-nghi', 'Quản lý kiến nghị', 'Theo dõi và phản hồi kiến nghị');
+
+            sec('7. Tài khoản & phân quyền');
+            item('users-sv', 'Tài khoản sinh viên', 'Danh sách, thêm, sửa, khóa tài khoản');
+            item('users-gv', 'Tài khoản giảng viên', 'Danh sách, thêm, sửa, khóa tài khoản');
         } else if (role === 'giang_vien') {
-            menuList.append('<div class="nav-section-header">Công tác giảng dạy</div>');
-            menuList.append(createNavCard('lop-hoc-phan', 'Lớp học phần phụ trách', 'Xem danh sách lớp và sinh viên phụ trách'));
-            menuList.append(createNavCard('diem-danh', 'Điểm danh', 'Điểm danh có mặt, vắng mặt theo buổi'));
-            menuList.append(createNavCard('quan-ly-diem', 'Nhập điểm', 'Quản lý bảng điểm theo môn học'));
-            menuList.append(createNavCard('tkb', 'Lịch giảng dạy', 'Thời khóa biểu giảng dạy theo tuần'));
-            menuList.append(createNavCard('mon-hoc', 'Danh mục môn học', 'Tra cứu thông tin môn học và số tín chỉ'));
-            menuList.append(createNavCard('chuong-trinh-dao-tao', 'Chương trình đào tạo', 'Khung môn học theo học kỳ và nhóm tự chọn'));
-        } else if (role === 'sinh_vien') {
-            menuList.append('<div class="nav-section-header">Học tập & Đăng ký</div>');
-            menuList.append(createNavCard('dang-ky', 'Đăng ký học phần', 'Tra cứu lớp HP và đăng ký môn học'));
-            menuList.append(createNavCard('tkb', 'Thời khóa biểu', 'Xem lịch học và phòng học theo tuần'));
-            menuList.append(createNavCard('ket-qua', 'Kết quả học tập', 'Tra cứu bảng điểm và điểm tích lũy'));
-            menuList.append(createNavCard('chuong-trinh-dao-tao', 'Chương trình đào tạo', 'Khung chương trình và các môn đã học'));
-        }
+            sec('1. Cơ cấu đào tạo');
+            item('chuong-trinh-dao-tao', 'Khung chương trình', 'Môn bắt buộc theo học kỳ và nhóm môn tự chọn');
 
-        // Chung
-        menuList.append(createNavCard('tin-tuc', 'Tin tức & Thông báo', 'Xem thông báo chính thức từ nhà trường'));
-        menuList.append(createNavCard('kien-nghi', 'Ý kiến & Kiến nghị', 'Gửi thắc mắc và nhận giải đáp học vụ'));
+            sec('2. Quản lý môn học');
+            item('mon-hoc', 'Danh sách môn học', 'Tra cứu và tạo môn học');
+
+            sec('3. Tổ chức giảng dạy');
+            item('lop-hoc-phan', 'Lớp học phần', 'Lớp phụ trách, lịch học và buổi học');
+            item('ds-dang-ky', 'Đăng ký học phần', 'Danh sách sinh viên đăng ký lớp');
+            item('tkb', 'Thời khóa biểu', 'Lịch giảng dạy theo tuần');
+            item('diem-danh', 'Điểm danh', 'Chọn buổi học và điểm danh sinh viên');
+
+            sec('4. Kết quả học tập');
+            item('quan-ly-diem', 'Nhập & quản lý điểm', 'Nhập, sửa, xóa điểm theo lớp học phần');
+            item('tra-cuu-diem', 'Tra cứu bảng điểm', 'Chọn lớp sinh viên → sinh viên → kết quả');
+
+            sec('5. Tin tức');
+            item('tin-tuc', 'Danh sách tin tức', 'Xem thông báo chính thức');
+
+            sec('6. Kiến nghị');
+            item('kien-nghi', 'Kiến nghị', 'Xem và phản hồi kiến nghị');
+        } else if (role === 'sinh_vien') {
+            sec('1. Chương trình học');
+            item('chuong-trinh-dao-tao', 'Khung chương trình', 'Khung chương trình và các môn đã học');
+
+            sec('3. Tổ chức giảng dạy');
+            item('dang-ky', 'Đăng ký học phần', 'Đăng ký và hủy đăng ký lớp học phần');
+            item('tkb', 'Thời khóa biểu', 'Xem lịch học theo tuần');
+
+            sec('4. Kết quả học tập');
+            item('ket-qua', 'Tra cứu bảng điểm', 'Điểm theo môn, kết quả theo học kỳ');
+
+            sec('5. Tin tức');
+            item('tin-tuc', 'Danh sách tin tức', 'Xem thông báo chính thức');
+
+            sec('6. Kiến nghị');
+            item('kien-nghi', 'Gửi & theo dõi kiến nghị', 'Gửi kiến nghị và theo dõi trạng thái');
+        }
 
         // Cập nhật trạng thái active
         setActive(activePage || 'dashboard');

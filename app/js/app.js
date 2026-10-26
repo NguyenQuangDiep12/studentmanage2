@@ -31,85 +31,103 @@ var App = (function ($) {
             roles: ['admin', 'giang_vien', 'sinh_vien']
         },
         'users-sv': {
-            category: 'QUẢN LÝ HỒ SƠ',
+            category: 'TÀI KHOẢN & PHÂN QUYỀN',
             title: 'Hồ sơ sinh viên',
             desc: 'Thêm, sửa, xóa thông tin sinh viên và quản lý lớp sinh hoạt',
             roles: ['admin']
         },
         'users-gv': {
-            category: 'QUẢN LÝ HỒ SƠ',
+            category: 'TÀI KHOẢN & PHÂN QUYỀN',
             title: 'Hồ sơ giảng viên',
             desc: 'Thêm, sửa, xóa giảng viên và cấp mã định danh',
             roles: ['admin']
         },
         'mon-hoc': {
-            category: 'ĐÀO TẠO & MÔN HỌC',
+            category: 'QUẢN LÝ MÔN HỌC',
             title: 'Môn học',
             desc: 'Tạo môn học mới bằng cách nhập trực tiếp từ bàn phím',
             roles: ['admin', 'giang_vien']
         },
         'lop-hoc-phan': {
-            category: 'ĐÀO TẠO & MÔN HỌC',
+            category: 'TỔ CHỨC GIẢNG DẠY',
             title: 'Lớp học phần',
             desc: 'Quản lý danh sách lớp học phần, phòng học và lịch học tuần',
             roles: ['admin', 'giang_vien']
         },
         'co-cau-dao-tao': {
-            category: 'ĐÀO TẠO & MÔN HỌC',
+            category: 'CƠ CẤU ĐÀO TẠO',
             title: 'Cơ cấu đào tạo',
             desc: 'Quản lý Khoa, Chuyên ngành, Chương trình đào tạo và Nhóm tự chọn',
             roles: ['admin']
         },
         'chuong-trinh-dao-tao': {
-            category: 'ĐÀO TẠO & MÔN HỌC',
+            category: 'CƠ CẤU ĐÀO TẠO',
             title: 'Chương trình đào tạo',
             desc: 'Khung môn học theo học kỳ - năm học và các nhóm tự chọn',
             roles: ['admin', 'giang_vien', 'sinh_vien']
         },
+        'hoc-ky': {
+            category: 'TỔ CHỨC GIẢNG DẠY',
+            title: 'Học kỳ',
+            desc: 'Danh sách học kỳ, thêm / sửa học kỳ và danh sách lớp học phần thuộc học kỳ',
+            roles: ['admin']
+        },
+        'ds-dang-ky': {
+            category: 'TỔ CHỨC GIẢNG DẠY',
+            title: 'Đăng ký học phần',
+            desc: 'Danh sách sinh viên đăng ký theo lớp học phần',
+            roles: ['admin', 'giang_vien']
+        },
+        'tra-cuu-diem': {
+            category: 'KẾT QUẢ HỌC TẬP',
+            title: 'Tra cứu bảng điểm sinh viên',
+            desc: 'Chọn lớp sinh viên, chọn sinh viên để xem điểm theo môn và kết quả theo học kỳ',
+            roles: ['admin', 'giang_vien']
+        },
         'diem-danh': {
-            category: 'CÔNG TÁC GIẢNG DẠY',
+            category: 'TỔ CHỨC GIẢNG DẠY',
             title: 'Điểm danh',
             desc: 'Điểm danh chuyên cần sinh viên theo từng buổi học',
             roles: ['giang_vien', 'admin']
         },
         'quan-ly-diem': {
-            category: 'CÔNG TÁC GIẢNG DẠY',
-            title: 'Nhập điểm',
+            category: 'KẾT QUẢ HỌC TẬP',
+            title: 'Nhập & quản lý điểm',
             desc: 'Quản lý bảng điểm theo môn học và tự động tính điểm tổng kết',
             roles: ['giang_vien', 'admin']
         },
         'dang-ky': {
-            category: 'HỌC TẬP & ĐĂNG KÝ',
+            category: 'TỔ CHỨC GIẢNG DẠY',
             title: 'Đăng ký học phần',
             desc: 'Tra cứu và đăng ký các lớp học phần trong kỳ',
             roles: ['sinh_vien']
         },
         'tkb': {
-            category: 'LỊCH TRÌNH',
+            category: 'TỔ CHỨC GIẢNG DẠY',
             title: 'Thời khóa biểu',
             desc: 'Thời khóa biểu học tập và giảng dạy theo từng tuần',
             roles: ['sinh_vien', 'giang_vien', 'admin']
         },
         'ket-qua': {
-            category: 'HỌC TẬP TRỰC TUYẾN',
+            category: 'KẾT QUẢ HỌC TẬP',
             title: 'Kết quả học tập',
             desc: 'Bảng điểm chi tiết học kỳ và điểm trung bình tích lũy',
             roles: ['sinh_vien']
         },
         'tin-tuc': {
-            category: 'THÔNG TIN CHUNG',
+            category: 'TIN TỨC',
             title: 'Tin tức & Thông báo',
             desc: 'Thông báo chính thức từ nhà trường và khoa',
-            roles: ['admin', 'giang_vien', 'sinh_vien']
+            roles: ['giang_vien', 'sinh_vien']   // quản trị viên dùng trang Quản lý tin tức
         },
         'tin-tuc-admin': {
-            category: 'QUẢN TRỊ NỘI DUNG',
+            category: 'TIN TỨC',
             title: 'Quản lý tin tức',
             desc: 'Đăng bài thông báo, chỉnh sửa và quản lý trạng thái hiển thị',
             roles: ['admin']
         },
         'kien-nghi': {
-            category: 'TƯƠNG TÁC & HỖ TRỢ',
+            category: 'KIẾN NGHỊ',
             title: 'Ý kiến & Kiến nghị',
             desc: 'Tiếp nhận đóng góp, phản hồi thắc mắc và giải đáp cho sinh viên',
             roles: ['admin', 'giang_vien', 'sinh_vien']
@@ -303,8 +321,11 @@ var App = (function ($) {
     function diemChuBadge(chu) {
         var colorMap = {
             'A': 'badge-success',
+            'B+': 'badge-info',
             'B': 'badge-info',
+            'C+': 'badge-warning',
             'C': 'badge-warning',
+            'D+': 'badge-secondary',
             'D': 'badge-secondary',
             'F': 'badge-danger'
         };

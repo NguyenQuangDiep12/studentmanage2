@@ -239,7 +239,7 @@
                         var thuName = App.thuLabel(b.thu);
                         var tag = b.da_diem_danh ? ' [Đã điểm danh]' : (b.la_tuong_lai ? ' [Chưa diễn ra]' : '');
                         if (!b.la_tuong_lai) defaultId = b.id;
-                        buoiSelect.append('<option value="' + b.id + '">Buổi ' + (idx + 1) + ': ' + App.formatDate(b.ngay_hoc) + ' (' + thuName + ', Tiết ' + b.tiet_bat_dau + '-' + b.tiet_ket_thuc + ')' + tag + '</option>');
+                        buoiSelect.append('<option value="' + b.id + '">Buổi ' + (b.so_thu_tu || idx + 1) + ': ' + App.formatDate(b.ngay_hoc) + ' (' + thuName + ', Tiết ' + b.tiet_bat_dau + '-' + b.tiet_ket_thuc + ')' + tag + '</option>');
                     });
                     buoiSelect.val(String(presetBuoiId || defaultId));
 

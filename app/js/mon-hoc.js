@@ -201,32 +201,89 @@
 
             App.showModal(html, 'lg');
 
-            // RULE-CREDIT-09: hiển thị kết quả quy đổi để kiểm tra trước khi lưu (backend tự tính lại khi lưu)
+            // RULE-CREDIT-08, RULE-CREDIT-09: hiển thị từng bước quy đổi để kiểm tra trước khi lưu
+            // (số liệu lấy từ backend; backend tự tính lại khi lưu, không nhận số tiết từ giao diện)
             var self = this;
             var hint = function () {
-                var q = self.quyDoi || { tiet_moi_tc_ly_thuyet: 18, tiet_moi_tc_thuc_hanh: 36, phut_moi_tiet: 50 };
-                var lt = $('#mhTcLT').val(), th = $('#mhTcTH').val();
+                var q = self.quyDoi;
                 var $h = $('#mhTietHint');
+                if (!q) { $h.empty(); return; }
+                var lt = $('#mhTcLT').val(), th = $('#mhTcTH').val();
+                var base = MonHocModule.quyDoiGiaiThich(q);
                 if (lt === '' && th === '') {
-                    $h.html('<span class="text-muted" style="font-size:0.82rem;">Nhập số tín chỉ lý thuyết và thực hành để hệ thống tính số tiết.</span>');
+                    $h.html('<p class="text-muted" style="font-size:0.82rem;">Nhập số tín chỉ lý thuyết và thực hành để xem cách tính số tiết.</p>' + base);
                     return;
                 }
                 if (lt === '' || th === '') {
-                    $h.html('<span class="text-warning" style="font-size:0.82rem;">Cần nhập đủ cả hai loại tín chỉ (nhập 0 cho loại không có).</span>');
+                    $h.html('<p class="text-warning" style="font-size:0.82rem;">Cần nhập đủ cả hai loại tín chỉ (nhập 0 cho loại không có).</p>' + base);
                     return;
                 }
-                var a = parseInt(lt, 10) || 0, b = parseInt(th, 10) || 0;
-                var tietLt = a * q.tiet_moi_tc_ly_thuyet, tietTh = b * q.tiet_moi_tc_thuc_hanh;
-                $h.html('<table class="data-table" style="font-size:0.82rem;"><tbody>' +
-                    '<tr><td>Loại môn học</td><td><strong>' + self.loaiTinChi({ so_tin_chi_ly_thuyet: a, so_tin_chi_thuc_hanh: b }) + '</strong></td></tr>' +
-                    '<tr><td>Tổng số tín chỉ</td><td><strong>' + (a + b) + '</strong></td></tr>' +
-                    '<tr><td>Số tiết lý thuyết</td><td>' + a + ' × ' + q.tiet_moi_tc_ly_thuyet + ' = <strong>' + tietLt + '</strong></td></tr>' +
-                    '<tr><td>Số tiết thực hành</td><td>' + b + ' × ' + q.tiet_moi_tc_thuc_hanh + ' = <strong>' + tietTh + '</strong></td></tr>' +
-                    '<tr><td>Tổng số tiết xếp TKB</td><td><strong>' + (tietLt + tietTh) + '</strong> tiết (' + q.phut_moi_tiet + ' phút/tiết, không tính tự học)</td></tr>' +
-                    '</tbody></table>');
+                $h.html(MonHocModule.quyDoiMon(q, parseInt(lt, 10) || 0, parseInt(th, 10) || 0) + base);
             };
             $('.mh-tc').on('input', hint);
             hint();
+        },
+
+        fmt: function (n) { return Number(n).toLocaleString('vi-VN'); },
+
+        /** Bảng tính số tiết của môn đang nhập: đầu vào → phép tính → đơn vị → kết quả (RULE-CREDIT-08) */
+        quyDoiMon: function (q, a, b) {
+            var f = this.fmt;
+            var gioLt = a * q.gio_moi_tc_ly_thuyet, phutLt = gioLt * q.phut_moi_gio, tietLt = phutLt / q.phut_moi_tiet;
+            var gioTh = b * q.gio_moi_tc_thuc_hanh, phutTh = gioTh * q.phut_moi_gio, tietTh = phutTh / q.phut_moi_tiet;
+            var row = function (buoc, phep, kq) {
+                return '<tr><td>' + buoc + '</td><td>' + phep + '</td><td class="text-right"><strong>' + kq + '</strong></td></tr>';
+            };
+            return '<div class="mb-2" style="font-size:0.84rem;">' +
+                '<div class="mb-1"><strong>Loại môn:</strong> ' + this.loaiTinChi({ so_tin_chi_ly_thuyet: a, so_tin_chi_thuc_hanh: b }) +
+                ' · <strong>Tổng số tín chỉ</strong> = ' + a + ' (LT) + ' + b + ' (TH) = <strong>' + (a + b) + ' tín chỉ</strong></div>' +
+                '<table class="data-table"><thead><tr><th>Bước</th><th>Phép tính</th><th class="text-right">Kết quả</th></tr></thead><tbody>' +
+                '<tr><td colspan="3"><strong>Lý thuyết (' + a + ' tín chỉ)</strong></td></tr>' +
+                row('1. Tín chỉ → giờ trên lớp', a + ' tín chỉ × ' + q.gio_moi_tc_ly_thuyet + ' giờ/tín chỉ', f(gioLt) + ' giờ') +
+                row('2. Giờ → phút', f(gioLt) + ' giờ × ' + q.phut_moi_gio + ' phút/giờ', f(phutLt) + ' phút') +
+                row('3. Phút → tiết', f(phutLt) + ' phút ÷ ' + q.phut_moi_tiet + ' phút/tiết', f(tietLt) + ' tiết') +
+                '<tr><td colspan="3"><strong>Thực hành (' + b + ' tín chỉ)</strong></td></tr>' +
+                row('1. Tín chỉ → giờ trên lớp', b + ' tín chỉ × ' + q.gio_moi_tc_thuc_hanh + ' giờ/tín chỉ', f(gioTh) + ' giờ') +
+                row('2. Giờ → phút', f(gioTh) + ' giờ × ' + q.phut_moi_gio + ' phút/giờ', f(phutTh) + ' phút') +
+                row('3. Phút → tiết', f(phutTh) + ' phút ÷ ' + q.phut_moi_tiet + ' phút/tiết', f(tietTh) + ' tiết') +
+                '<tr><td colspan="3"><strong>Tổng</strong></td></tr>' +
+                row('Tổng số tiết xếp thời khóa biểu', f(tietLt) + ' tiết LT + ' + f(tietTh) + ' tiết TH', f(tietLt + tietTh) + ' tiết') +
+                '</tbody></table>' +
+                '<div class="text-muted mt-1">Tổng số tiết là thời lượng học trên lớp đã đổi thành các tiết ' + q.phut_moi_tiet + ' phút; không gồm thời gian tự học.</div></div>';
+        },
+
+        /** Căn cứ quy đổi (mở rộng / thu gọn): quy định của trường, ảnh minh họa và 3 ví dụ */
+        quyDoiGiaiThich: function (q) {
+            var f = this.fmt;
+            var vd = function (ten, a, b) {
+                var lt = a * q.gio_moi_tc_ly_thuyet * q.phut_moi_gio / q.phut_moi_tiet;
+                var th = b * q.gio_moi_tc_thuc_hanh * q.phut_moi_gio / q.phut_moi_tiet;
+                return '<li><strong>' + ten + '</strong> (' + a + ' TC lý thuyết, ' + b + ' TC thực hành): ' +
+                    'tổng tín chỉ ' + a + ' + ' + b + ' = ' + (a + b) + '; ' +
+                    'lý thuyết ' + a + ' × ' + q.gio_moi_tc_ly_thuyet + ' = ' + f(a * q.gio_moi_tc_ly_thuyet) + ' giờ = ' + f(a * q.gio_moi_tc_ly_thuyet * q.phut_moi_gio) + ' phút = ' + f(lt) + ' tiết; ' +
+                    'thực hành ' + b + ' × ' + q.gio_moi_tc_thuc_hanh + ' = ' + f(b * q.gio_moi_tc_thuc_hanh) + ' giờ = ' + f(b * q.gio_moi_tc_thuc_hanh * q.phut_moi_gio) + ' phút = ' + f(th) + ' tiết; ' +
+                    'tổng ' + f(lt) + ' + ' + f(th) + ' = <strong>' + f(lt + th) + ' tiết</strong>.</li>';
+            };
+            var tLt = q.tiet_moi_tc_ly_thuyet, tTh = q.tiet_moi_tc_thuc_hanh;
+            return '<details class="mb-2" style="font-size:0.84rem; border:1px solid var(--border-color); border-radius:8px; padding:8px 12px;">' +
+                '<summary style="cursor:pointer;"><strong>Căn cứ và cách quy đổi tín chỉ → số tiết</strong> (bấm để xem)</summary>' +
+                '<ul class="mt-2">' +
+                '<li>1 tín chỉ lý thuyết = ' + q.gio_moi_tc_ly_thuyet + ' giờ học trên lớp = ' + tLt + ' tiết học ' + q.phut_moi_tiet + ' phút.</li>' +
+                '<li>1 tín chỉ thực hành = ' + q.gio_moi_tc_thuc_hanh + ' giờ học trên lớp = ' + tTh + ' tiết học ' + q.phut_moi_tiet + ' phút.</li>' +
+                '<li>1 giờ = ' + q.phut_moi_gio + ' phút; 1 tiết học = ' + q.phut_moi_tiet + ' phút.</li>' +
+                '<li>Thời gian tự học không được tính vào tổng số tiết xếp thời khóa biểu.</li></ul>' +
+                '<p class="mb-1"><strong>Lý thuyết:</strong> ' + q.gio_moi_tc_ly_thuyet + ' giờ là tổng thời lượng học trên lớp của 1 tín chỉ (không phải ' + q.gio_moi_tc_ly_thuyet + ' tiết). ' +
+                'Nhân ' + q.phut_moi_gio + ' để đổi giờ sang phút: ' + q.gio_moi_tc_ly_thuyet + ' × ' + q.phut_moi_gio + ' = ' + f(q.gio_moi_tc_ly_thuyet * q.phut_moi_gio) + ' phút. ' +
+                'Chia ' + q.phut_moi_tiet + ' để biết bao nhiêu tiết: ' + f(q.gio_moi_tc_ly_thuyet * q.phut_moi_gio) + ' ÷ ' + q.phut_moi_tiet + ' = ' + tLt + ' tiết. ' +
+                'Công thức: Số tiết LT = Số TC LT × ' + q.gio_moi_tc_ly_thuyet + ' × ' + q.phut_moi_gio + ' ÷ ' + q.phut_moi_tiet + ' = Số TC LT × ' + tLt + '.</p>' +
+                '<p class="mb-1"><strong>Thực hành:</strong> ' + q.gio_moi_tc_thuc_hanh + ' × ' + q.phut_moi_gio + ' = ' + f(q.gio_moi_tc_thuc_hanh * q.phut_moi_gio) + ' phút; ' +
+                f(q.gio_moi_tc_thuc_hanh * q.phut_moi_gio) + ' ÷ ' + q.phut_moi_tiet + ' = ' + tTh + ' tiết. ' +
+                'Công thức: Số tiết TH = Số TC TH × ' + q.gio_moi_tc_thuc_hanh + ' × ' + q.phut_moi_gio + ' ÷ ' + q.phut_moi_tiet + ' = Số TC TH × ' + tTh + '.</p>' +
+                '<p class="mb-1"><strong>Tổng:</strong> Tổng tín chỉ = TC LT + TC TH; Tổng số tiết xếp thời khóa biểu = Số tiết LT + Số tiết TH.</p>' +
+                '<p class="mb-1"><strong>Ví dụ:</strong></p><ul>' +
+                vd('Môn chỉ có lý thuyết', 3, 0) + vd('Môn chỉ có thực hành', 0, 2) + vd('Môn kết hợp', 3, 2) + '</ul>' +
+                '<img src="assets/img/quy-doi-tin-chi.png" alt="Cách quy đổi tín chỉ sang tiết học" style="max-width:100%; border:1px solid var(--border-color); border-radius:6px; margin-top:6px;">' +
+                '</details>';
         },
 
         // RULE-MH-01: loại môn xác định từ số tín chỉ lý thuyết / thực hành; môn cũ chưa phân loại (RULE-CREDIT-11)

@@ -8,12 +8,22 @@
     'use strict';
 
     var KetQuaModule = {
+        sinhVienId: null,   // tra cứu của quản trị viên / giảng viên (RULE-16.4); null = sinh viên xem của mình
+
         render: function () {
             var currentUser = App.getCurrentUser();
             if (!currentUser || currentUser.vai_tro !== 'sinh_vien') {
                 $('#contentArea').html('<div class="alert alert-danger"><i class="fa-solid fa-triangle-exclamation"></i> Chức năng này chỉ dành cho tài khoản sinh viên</div>');
                 return;
             }
+            this.sinhVienId = null;
+            this.renderInto($('#contentArea'), currentUser);
+            this.loadProfile();
+        },
+
+        /** Dựng bảng điểm vào $box; sv = {ho_ten, ma_dinh_danh} */
+        renderInto: function ($box, sv) {
+            var currentUser = sv;
 
             // Lớp sinh hoạt, CTĐT, khóa học được nạp từ /api/taikhoan/me
             var lsv = null;
@@ -33,7 +43,7 @@
                 '      </div>' +
                 '      <div class="detail-item">' +
                 '        <span class="detail-label">Lớp sinh hoạt</span>' +
-                '        <span class="detail-value" id="kqLopSinhHoat">—</span>' +
+                '        <span class="detail-value" id="kqLopSinhHoat">' + App.escapeHtml(sv.lop || '—') + '</span>' +
                 '      </div>' +
                 '      <div class="detail-item">' +
                 '        <span class="detail-label">Chương trình đào tạo</span>' +
@@ -83,6 +93,7 @@
                 '            <th class="text-center">Hệ 4</th>' +
                 '            <th class="text-center">Điểm chữ</th>' +
                 '            <th class="text-center">Kết quả</th>' +
+                '            <th class="text-center">Cách tính</th>' +
                 '          </tr>' +
                 '        </thead>' +
                 '        <tbody id="kqTableBody"></tbody>' +
@@ -127,12 +138,14 @@
                 '        <div class="gs-sub">Không trùng môn học lại</div>' +
                 '      </div>' +
                 '    </div>' +
+                // RULE-18.6: giải thích GPA học kỳ / tích lũy ngay trên trang (số liệu thật của sinh viên)
+                '    <div class="card mt-3"><div class="card-body" id="kqGiaiThichGpa"></div></div>' +
+                '    <div class="mt-3" id="kqQuyChe"></div>' +
                 '  </div>' +
                 '</div>';
 
-            $('#contentArea').html(html);
+            $box.html(html);
             this.bindEvents();
-            this.loadProfile();
             var self = this;
             App.fillTermSelects('#kqHocKy', '#kqNamHoc', { prefix: 'Năm học ' }, function () { self.loadGrades(); });
         },
@@ -151,12 +164,17 @@
             $('#kqHocKy, #kqNamHoc').on('change', function () {
                 self.loadGrades();
             });
+            $(document).off('click', '.btn-kq-cach-tinh').on('click', '.btn-kq-cach-tinh', function () {
+                $('#kqCachTinh-' + $(this).data('dk-id')).toggle();
+            });
         },
 
         loadGrades: function () {
             var self = this;
             // RULE-16, 17, 18: điểm, quy đổi, ĐTB học kỳ & tích lũy do backend tính
-            Api.get('/api/ketquahoctap/ket-qua', { hoc_ky: $('#kqHocKy').val(), nam_hoc: $('#kqNamHoc').val() })
+            var params = { hoc_ky: $('#kqHocKy').val(), nam_hoc: $('#kqNamHoc').val() };
+            if (this.sinhVienId) params.sinh_vien_id = this.sinhVienId;
+            Api.get('/api/ketquahoctap/ket-qua', params)
                 .done(function (res) { self.renderGrades(res); })
                 .fail(Api.toastError);
         },
@@ -165,6 +183,15 @@
             var rows = res.data || [];
             var hk = res.hoc_ky || {};
             var tl = res.tich_luy || {};
+            var q = res.quy_tac;
+            if (q) {
+                if (!$('#kqQuyChe').children().length) $('#kqQuyChe').html(GiaiThichDiem.quyChe(q));
+                var phamVi = $('#kqHocKy option:selected').text() + ' - ' + $('#kqNamHoc option:selected').text();
+                $('#kqGiaiThichGpa').html(
+                    '<h4 style="font-size:0.95rem; font-weight:800;" class="mb-2">Cách tính điểm trung bình</h4>' +
+                    GiaiThichDiem.gpa('GPA học kỳ (' + phamVi + ')', hk.mon || [], hk) +
+                    GiaiThichDiem.gpa('GPA tích lũy (toàn khóa, mỗi môn một lần)', tl.mon || [], tl));
+            }
             var fmt2 = function (v) { return v != null ? Number(v).toFixed(2) : '0.00'; };
             var fmt1 = function (v) { return v != null ? Number(v).toFixed(1) : '—'; };
 
@@ -192,7 +219,7 @@
 
             if (rows.length === 0) {
                 tbody.html(
-                    '<tr><td colspan="12" class="text-center py-4 text-gray">' +
+                    '<tr><td colspan="13" class="text-center py-4 text-gray">' +
                     '  <i class="fa-solid fa-folder-open" style="font-size:1.6rem; opacity:0.4; display:block; margin-bottom:8px;"></i>' +
                     '  Chưa có dữ liệu điểm cho học kỳ và năm học đã chọn' +
                     '</td></tr>'
@@ -214,12 +241,17 @@
                     '  <td class="text-center font-bold" style="color:var(--primary); font-size:0.95rem;">' + (d.diem_he_10 != null ? Number(d.diem_he_10).toFixed(1) : '—') + '</td>' +
                     '  <td class="text-center">' + (d.diem_he_4 != null ? Number(d.diem_he_4).toFixed(1) : '—') + '</td>' +
                     '  <td class="text-center">' + (d.diem_chu ? App.diemChuBadge(d.diem_chu) : '—') + '</td>' +
-                    '  <td class="text-center">' + (d.ket_qua ? App.ketQuaBadge(d.ket_qua) : '<span class="text-gray">Chưa tổng kết</span>') + retakeNote(d) + '</td>' +
-                    '</tr>';
+                    '  <td class="text-center">' + (d.cam_thi ? '<span class="badge badge-danger">Cấm thi</span><br>' : '') +
+                    (d.ket_qua ? App.ketQuaBadge(d.ket_qua) : '<span class="text-gray">Chưa tổng kết</span>') + retakeNote(d) + '</td>' +
+                    '  <td class="text-center"><button class="btn btn-sm btn-outline-primary btn-kq-cach-tinh" data-dk-id="' + d.dang_ky_id + '">Xem</button></td>' +
+                    '</tr>' +
+                    '<tr id="kqCachTinh-' + d.dang_ky_id + '" style="display:none; background:#f8fafc;"><td colspan="13">' +
+                    (q ? GiaiThichDiem.hocPhan(d, q) : '') + '</td></tr>';
                 tbody.append(row);
             });
         }
     };
 
+    window.KetQuaModule = KetQuaModule;
     App.registerModule('ket-qua', KetQuaModule);
 })(jQuery);

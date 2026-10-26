@@ -71,7 +71,8 @@ Dữ liệu liên quan: lop_hoc_phan.hoc_ky, lop_hoc_phan.nam_hoc, dang_ky_hoc_p
   - a: Điểm thi cuối kỳ.
   - b: Điểm kiểm tra giữa kỳ.
   - c: Điểm chuyên cần.
-- RULE-14.2: Hệ thống tự động tính điểm tổng kết sau khi có đủ điểm cuối kỳ, điểm giữa kỳ và điểm chuyên cần.
+- RULE-14.2: Hệ thống tự động tính điểm tổng kết sau khi có đủ điểm cuối kỳ, điểm giữa kỳ và điểm chuyên cần (D = 0.6A + 0.3B + 0.1C, làm tròn 2 chữ số). Chưa đủ điểm thì chưa tính, trừ sinh viên bị cấm thi (RULE-15.13).
+- RULE-14.3: Giảng viên / quản trị viên được thêm, sửa, xóa từng điểm thành phần (giữa kỳ, cuối kỳ hoặc toàn bộ); sau mỗi thay đổi hệ thống tính lại điểm tổng kết.
 
 ## RULE-15: Tự động tính điểm chuyên cần
 
@@ -90,6 +91,8 @@ Dữ liệu liên quan: lop_hoc_phan.hoc_ky, lop_hoc_phan.nam_hoc, dang_ky_hoc_p
 - **RULE-15.10:** Khi giảng viên cập nhật trạng thái điểm danh từ `Vắng mặt` thành `Có mặt` hoặc ngược lại, hệ thống phải tính lại tổng số tiết nghỉ, tỷ lệ nghỉ học và điểm chuyên cần.
 - **RULE-15.11:** Khi lịch học hoặc tổng số tiết của môn học thay đổi, hệ thống phải cập nhật kết quả tính chuyên cần theo dữ liệu lịch học mới.
 - **RULE-15.12:** Điểm tổng kết môn học phải được tính lại khi điểm chuyên cần thay đổi và các thành phần điểm cần thiết đã có đủ dữ liệu.
+- **RULE-15.13:** Điều kiện dự thi: tỷ lệ nghỉ R **từ 20% trở lên** (R ≥ 20%) thì sinh viên bị **cấm thi** (đồng thời C = 0): không được nhập điểm giữa kỳ / cuối kỳ, điểm tổng kết D = 0 (F, Không đạt). Khi điểm danh được sửa làm R < 20%, hệ thống tự gỡ cấm thi và tính lại.
+- **RULE-15.14:** Mọi bảng điểm hiển thị cách tính từng bước ngay trên trang (R, C, cấm thi, D, làm tròn, quy đổi), không chỉ trong nút Hướng dẫn.
 
 ### Ví dụ nghiệp vụ
 
@@ -113,14 +116,23 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-16.4: Hệ thống hiển thị số tín chỉ đạt trong học kỳ.
 - RULE-16.5: Hệ thống hiển thị điểm trung bình tích lũy hệ 4 và hệ 10, cùng tổng số tín chỉ tích lũy.
 - RULE-16.6: Hệ thống hiển thị phân loại điểm trung bình học kỳ.
-- RULE-16.7: Các môn học đạt chuẩn đầu ra có thể hiển thị điểm chữ Đ thay vì điểm số.
+- RULE-16.7: Các môn học đạt chuẩn đầu ra có thể hiển thị điểm chữ Đ thay vì điểm số; môn đánh giá Đạt/Không đạt không có điểm số thì không tính vào GPA (hệ thống hiện chưa có loại môn này).
+- RULE-16.8: Quản trị viên và giảng viên tra cứu bảng điểm sinh viên theo luồng: chọn lớp sinh viên → chọn sinh viên → xem điểm theo môn và kết quả theo học kỳ.
 
 ## RULE-17: Quy đổi điểm hệ 10 sang điểm chữ
-- 8.5–10.0: A (Xuất sắc / Giỏi) - Đạt
-- 7.0–8.4: B (Khá) - Đạt
-- 5.5–6.9: C (Trung bình) - Đạt
-- 4.0–5.4: D (Trung bình yếu) - Đạt, mức tối thiểu
-- Dưới 4.0: F (Kém) - Không đạt, trượt môn / học lại
+- Điểm học phần D làm tròn đến một chữ số thập phân rồi mới chuyển sang điểm chữ và hệ 4 (theo quy chế; VD 8,45 → 8,5 → A; 7,95 → 8,0 → B+).
+- Thang 8 mức (Academic::THANG_DIEM):
+
+| Điểm chữ | Hệ 10 | Hệ 4 | Loại | Kết quả |
+|---|---|---|---|---|
+| A | 8,5 – 10 | 4.0 | Giỏi | Đạt |
+| B+ | 8,0 – 8,4 | 3.5 | Khá | Đạt |
+| B | 7,0 – 7,9 | 3.0 | Khá | Đạt |
+| C+ | 6,5 – 6,9 | 2.5 | Trung bình | Đạt |
+| C | 5,5 – 6,4 | 2.0 | Trung bình | Đạt |
+| D+ | 5,0 – 5,4 | 1.5 | Trung bình yếu | Đạt |
+| D | 4,0 – 4,9 | 1.0 | Trung bình yếu | Đạt |
+| F | dưới 4,0 | 0.0 | Kém | Không đạt, học lại |
 
 ## RULE-18: Thống kê kết quả học tập học kỳ và tích lũy
 - RULE-18.1: Điểm trung bình học kỳ hệ 4 và hệ 10 được hiển thị riêng.
@@ -136,6 +148,10 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
   - n: Tổng số học phần được tính trong phạm vi xét.
   - GPA học kỳ: chỉ xét các học phần được tính trong học kỳ đó.
   - GPA tích lũy: xét các học phần được tính trong toàn bộ quá trình học.
+  - Môn F vẫn tính vào GPA với điểm hệ 4 = 0 và tín chỉ của môn F vẫn ở mẫu số. Kết quả làm tròn 2 chữ số thập phân.
+  - Ví dụ: 3 môn 3 TC, hệ 4 lần lượt 4.0; 3.0; 0.0 (F): GPA = (4×3 + 3×3 + 0×3) / 9 = 2.33.
+- RULE-18.12: Phân biệt hai chỉ số tín chỉ: tín chỉ dùng tính GPA (gồm cả môn F) và tín chỉ tích lũy đạt (chỉ môn Đạt).
+- RULE-18.13: Điểm F cũ vẫn giữ trong bảng điểm của học kỳ đã trượt; GPA tích lũy không tính đồng thời điểm F cũ và điểm học lại của cùng một môn.
 - RULE-18.11: Xử lý học phần học lại khi tính GPA
   - Hệ thống phải xác định các lần học của cùng một học phần thuộc cùng một sinh viên.
   - Việc lựa chọn điểm được sử dụng để tính GPA đối với học phần học lại phải tuân theo quy chế đào tạo đã xác định.
@@ -179,7 +195,7 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-CREDIT-05: Học phần chỉ được cộng vào tổng số tín chỉ đạt khi đạt môn học.
 - RULE-CREDIT-06: Tổng tín chỉ đạt trong học kỳ được phân biệt với tổng tín chỉ tích lũy.
 - RULE-CREDIT-07: Khi tính GPA dùng số tín chỉ quy định của học phần và quy tắc chọn kết quả học lại; không cộng tín chỉ nhiều lần cho cùng một học phần.
-- RULE-CREDIT-08: Quy đổi tín chỉ thành số tiết học trên lớp (không tính giờ tự học):
+- RULE-CREDIT-08: Quy đổi tín chỉ thành số tiết học trên lớp (không tính giờ tự học). Căn cứ: 1 TC lý thuyết = 15 giờ học trên lớp; 1 TC thực hành = 30 giờ học trên lớp; 1 giờ = 60 phút; 1 tiết = 50 phút. Các bước: tín chỉ × số giờ/tín chỉ = số giờ; số giờ × 60 = số phút; số phút ÷ 50 = số tiết:
   - Lý thuyết: 1 TC = 15 giờ trên lớp → 15 × 60 ÷ 50 = 18 tiết.
   - Thực hành/thảo luận: 1 TC = 30 giờ trên lớp → 30 × 60 ÷ 50 = 36 tiết.
   - Số tiết lý thuyết = TC lý thuyết × 18; Số tiết thực hành = TC thực hành × 36; Tổng số tiết = tổng hai loại.
@@ -200,7 +216,10 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-HK-03: Mọi buổi học phải nằm trong khoảng ngày của học kỳ.
 - RULE-HK-04: Không mặc định độ dài học kỳ; luôn dùng ngày bắt đầu và kết thúc đã khai báo.
 - RULE-HK-05: Không tạo bảng phân bố số tiết theo tuần.
-- RULE-HK-06: Không đổi ngày hoặc xóa học kỳ đã có lớp học phần (tránh làm lịch đã xếp nằm ngoài học kỳ).
+- RULE-HK-06: Học kỳ đã có lớp học phần thì không đổi năm học / số học kỳ và không xóa; được đổi ngày nếu khoảng ngày mới vẫn bao trùm mọi buổi học đã xếp (RULE-HK-03).
+- RULE-HK-07: Số tuần của học kỳ = số tuần lịch (Thứ 2 → Chủ nhật) mà học kỳ đi qua: (Thứ 2 của tuần chứa ngày kết thúc − Thứ 2 của tuần chứa ngày bắt đầu) ÷ 7 + 1. Danh sách học kỳ và thời khóa biểu dùng chung công thức này.
+- RULE-HK-08: Các học kỳ trong cùng năm học không được chồng thời gian nhau.
+- RULE-HK-09: Dữ liệu cũ vi phạm (chồng lấn, buổi học nằm ngoài học kỳ) được cảnh báo trên danh sách học kỳ và thời khóa biểu; thời khóa biểu mở rộng tuần để vẫn hiển thị đủ các buổi học.
 
 ## RULE-LHP: Tạo lớp học phần
 - RULE-LHP-01: Khi tạo lớp học phần, người dùng chọn môn học, học kỳ (đã khai báo), giảng viên phụ trách, phòng học, một hoặc nhiều thứ học trong tuần, tiết bắt đầu và tiết kết thúc của mỗi thứ.
@@ -224,7 +243,8 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-XL-08: Không tự chuyển sang thứ chưa chọn, không tự đổi khung tiết, không xếp lịch ngoài học kỳ.
 - RULE-XL-09: Buổi cuối được rút ngắn còn đúng số tiết còn thiếu (theo quy định của trường, cấu hình CHO_PHEP_RUT_NGAN_BUOI_CUOI); không kéo dài. VD 54 tiết, mỗi buổi 4 tiết: 13 buổi đủ + 1 buổi 2 tiết. Nếu không cho phép rút ngắn thì dừng và báo số tiết còn thiếu.
 - RULE-XL-10: Hết học kỳ mà chưa đủ tiết thì thông báo số tiết đã xếp và số tiết còn thiếu.
-- RULE-XL-11: Khi sửa lịch hoặc số tiết môn, buổi đã điểm danh được giữ nguyên và tính vào tổng; các buổi chưa điểm danh được xếp lại. Sinh lịch nhiều lần không tạo bản ghi trùng.
+- RULE-XL-11: Khi sửa lịch hoặc số tiết môn, buổi đã điểm danh và buổi đã diễn ra (ngày học trước hôm nay) được giữ nguyên và tính vào tổng; chỉ các buổi tương lai chưa điểm danh được xếp lại. Lịch trong tuần đã có buổi đã diễn ra không được xóa. Không xóa lịch sử điểm danh, điểm hoặc đăng ký. Sinh lịch nhiều lần không tạo bản ghi trùng.
+- RULE-XL-12: Buổi học mới chỉ được xếp từ ngày hiện tại trở đi; các ngày đã qua chỉ giữ buổi đã có, không tạo thêm buổi trong quá khứ.
 
 ## RULE-XD: Kiểm tra xung đột
 - RULE-XD-01: Một buổi học bị xung đột nếu cùng ngày thực tế, khoảng tiết giao nhau và trùng giảng viên hoặc phòng học với buổi của lớp học phần đang mở khác.
@@ -248,6 +268,7 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-DL-04: lich_hoc lưu thứ, khung tiết và khoảng ngày áp dụng; buoi_hoc lưu từng buổi thực tế dùng cho TKB, điểm danh và kiểm tra xung đột.
 - RULE-DL-05: Không tạo bảng phân bố tiết theo tuần; không xóa dữ liệu cũ hoặc tạo lại cơ sở dữ liệu; thay đổi schema bằng migration an toàn.
 - RULE-DL-06: Backend kiểm tra quyền (401 chưa đăng nhập, 403 sai quyền), không chỉ ẩn nút trên giao diện.
+- RULE-DL-07: Thời khóa biểu, điểm danh và danh sách buổi học của lớp cùng đọc một nguồn buoi_hoc; số thứ tự buổi do backend đánh theo ngày học, tiết bắt đầu (Academic::soThuTuBuoi) để mọi màn hình thống nhất.
 
 ## RULE-HL: Điều kiện lịch hợp lệ
 - RULE-HL-01: Chỉ lưu lớp học phần khi tổng số tiết đã xếp bằng tổng số tiết yêu cầu.

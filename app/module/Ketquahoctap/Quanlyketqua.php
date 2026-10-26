@@ -73,8 +73,11 @@ class Quanlyketqua
         $stmt->execute([':id' => $lhp['id']]);
 
         $today = date('Y-m-d');
-        $list = array_map(function ($b) use ($today) {
+        // RULE-DL-07: số thứ tự buổi dùng chung với thời khóa biểu
+        $stt = Academic::soThuTuBuoi($this->db, (int) $lhp['id']);
+        $list = array_map(function ($b) use ($today, $stt) {
             $b['id'] = (int) $b['id'];
+            $b['so_thu_tu'] = $stt[$b['id']] ?? null;
             $b['so_tiet'] = Academic::soTiet($b);
             $b['da_diem_danh'] = (int) $b['so_ban_ghi_diem_danh'] > 0;
             $b['la_tuong_lai'] = $b['ngay_hoc'] > $today;
@@ -251,12 +254,8 @@ class Quanlyketqua
         $stat = ['tong' => 0, 'co_diem' => 0, 'dat' => 0, 'diem_a' => 0, 'diem_f' => 0];
 
         foreach ($stmt->fetchAll() as $r) {
-            $tietNghi = Academic::tietNghi($this->db, (int) $r['dang_ky_id']);
-            $r['tiet_nghi'] = $tietNghi;
-            $r['tong_tiet_mon'] = $tongTiet;
-            $r['ty_le_nghi'] = $tongTiet > 0 ? round($tietNghi / $tongTiet * 100, 2) : 0;
-            // Chuyên cần luôn tính trực tiếp từ điểm danh (RULE-15)
-            $r['diem_chuyen_can'] = Academic::diemChuyenCan($tietNghi, $tongTiet);
+            // RULE-15, RULE-15.13: chuyên cần và cấm thi luôn tính trực tiếp từ điểm danh
+            $r = array_merge($r, Academic::chuyenCan($this->db, (int) $r['dang_ky_id']));
 
             $stat['tong']++;
             if ($r['diem_chu'] !== null) {
@@ -269,7 +268,8 @@ class Quanlyketqua
         }
         $stat['ty_le_dat'] = $stat['co_diem'] > 0 ? round($stat['dat'] / $stat['co_diem'] * 100) : 0;
 
-        Response::json(['success' => true, 'lop_hoc_phan' => $lhp, 'thong_ke' => $stat, 'data' => $rows]);
+        Response::json(['success' => true, 'lop_hoc_phan' => $lhp, 'thong_ke' => $stat, 'data' => $rows,
+                        'quy_tac' => $this->quyTacDiem()]);
     }
 
     /**
@@ -284,6 +284,7 @@ class Quanlyketqua
 
         [$gk, $ck] = $this->readScores(true);
         $cur = $this->currentDiem((int) $dk['id']);
+        $this->chanNeuCamThi((int) $dk['id'], $dk['ma_dinh_danh'] ?? '');
 
         if ($gk !== null && $cur['diem_giua_ky'] !== null) {
             Response::json(['success' => false, 'message' => 'Sinh viên đã có điểm giữa kỳ, hãy dùng chức năng sửa điểm.'], 409);
@@ -309,6 +310,7 @@ class Quanlyketqua
 
         [$gk, $ck] = $this->readScores(true);
         $cur = $this->currentDiem((int) $dk['id']);
+        $this->chanNeuCamThi((int) $dk['id'], $dk['ma_dinh_danh'] ?? '');
 
         if ($gk !== null && $cur['diem_giua_ky'] === null) {
             Response::json(['success' => false, 'message' => 'Sinh viên chưa có điểm giữa kỳ để sửa, hãy dùng chức năng thêm điểm.'], 404);
@@ -393,6 +395,13 @@ class Quanlyketqua
                 $this->checkScore($it['diem_giua_ky'] ?? null, $prefix . 'điểm giữa kỳ'),
                 $this->checkScore($it['diem_cuoi_ky'] ?? null, $prefix . 'điểm cuối kỳ'),
             ];
+            // RULE-15.13: sinh viên bị cấm thi không được nhập/sửa điểm (D = 0); giữ nguyên giá trị đang có thì bỏ qua
+            if (Academic::chuyenCan($this->db, $dkId)['cam_thi']) {
+                $cur = $this->currentDiem($dkId);
+                if ($clean[$dkId][0] !== $cur['diem_giua_ky'] || $clean[$dkId][1] !== $cur['diem_cuoi_ky']) {
+                    Response::json(['success' => false, 'message' => $prefix . 'bị cấm thi (nghỉ từ 20% số tiết) nên không được nhập điểm; điểm tổng kết = 0.'], 409);
+                }
+            }
         }
 
         $saved = 0;
@@ -431,10 +440,27 @@ class Quanlyketqua
     // TRA CỨU KẾT QUẢ HỌC TẬP (SINH VIÊN)
     // ==================================================================
 
-    /** GET /api/ketquahoctap/ket-qua?hoc_ky=1|all&nam_hoc=2026-2027|all */
+    /**
+     * GET /api/ketquahoctap/ket-qua?hoc_ky=1|all&nam_hoc=2026-2027|all[&sinh_vien_id=]
+     * Sinh viên xem của mình; quản trị viên / giảng viên tra cứu bảng điểm theo sinh_vien_id (RULE-16.4).
+     */
     public function ketQua(): void
     {
-        $user = AuthService::requireUser($this->db, ['sinh_vien']);
+        $user = AuthService::requireUser($this->db, ['sinh_vien', 'admin', 'giang_vien']);
+        $svInfo = null;
+        if ($user['vai_tro'] !== 'sinh_vien') {
+            $sv = $this->db->prepare("
+                SELECT u.id, u.ma_dinh_danh, u.ho_ten, l.ma_lop, l.ten_lop
+                FROM users u LEFT JOIN lop_sinh_vien l ON l.id = u.lop_sinh_vien_id
+                WHERE u.id = :id AND u.vai_tro IN ('sinh_vien', 'student')
+            ");
+            $sv->execute([':id' => Request::int(Request::query('sinh_vien_id'))]);
+            $svInfo = $sv->fetch();
+            if (!$svInfo) {
+                Response::json(['success' => false, 'message' => 'Vui lòng chọn sinh viên hợp lệ để tra cứu.'], 422);
+            }
+            $user = ['id' => (int) $svInfo['id']];
+        }
 
         $hk = Request::str(Request::query('hoc_ky', 'all'));
         $nh = Request::str(Request::query('nam_hoc', 'all'));
@@ -460,10 +486,9 @@ class Quanlyketqua
 
         $attempts = [];
         foreach ($all as $i => &$r) {
-            // Chuyên cần hiển thị theo điểm danh hiện tại
-            $tongTiet = Academic::tongTietLop($this->db, (int) $r['lop_hoc_phan_id']);
-            $r['diem_chuyen_can'] = Academic::diemChuyenCan(Academic::tietNghi($this->db, (int) $r['dang_ky_id']), $tongTiet);
-            $r['trang_thai_mon'] = $r['ket_qua'] ?? 'Chưa tổng kết';
+            // RULE-15, 15.13: chuyên cần, tỷ lệ nghỉ, cấm thi theo điểm danh hiện tại
+            $r = array_merge($r, Academic::chuyenCan($this->db, (int) $r['dang_ky_id']));
+            $r['trang_thai_mon'] = $r['cam_thi'] ? 'Cấm thi' : ($r['ket_qua'] ?? 'Chưa tổng kết');
 
             $attempts[$r['mon_hoc_id']][] = $i;
             $r['lan_hoc'] = count($attempts[$r['mon_hoc_id']]);
@@ -478,41 +503,43 @@ class Quanlyketqua
         }
         unset($r);
 
-        $tichLuy = $this->summary(array_map(fn($i) => $all[$i], $chosen));
+        $monTichLuy = array_map(fn($i) => $all[$i], $chosen);
+        $tichLuy = $this->summary($monTichLuy);
 
         // Học kỳ đang chọn (RULE-16.1). Nếu phạm vi lọc gồm nhiều học kỳ có cùng học phần,
         // cũng chỉ tính một lần theo cùng quy tắc để không trùng tín chỉ.
         $rows = array_values(array_filter($all, function ($r) use ($hk, $nh) {
             return ($hk === 'all' || (string) $r['hoc_ky'] === $hk) && ($nh === 'all' || $r['nam_hoc'] === $nh);
         }));
-        $hocKy = $this->summary(array_map(fn($i) => $rows[$i], Academic::chonLanHoc($rows)));
+        $monHocKy = array_map(fn($i) => $rows[$i], Academic::chonLanHoc($rows));
+        $hocKy = $this->summary($monHocKy);
+        // Danh sách môn thực sự đưa vào công thức GPA (để giao diện giải thích tử số / mẫu số)
+        $gon = fn(array $list) => array_map(fn($r) => [
+            'ma_mon_hoc' => $r['ma_mon_hoc'], 'ten_mon_hoc' => $r['ten_mon_hoc'], 'hoc_ky' => $r['hoc_ky'], 'nam_hoc' => $r['nam_hoc'],
+            'so_tin_chi' => (int) $r['so_tin_chi'], 'diem_he_10' => $r['diem_he_10'], 'diem_he_4' => $r['diem_he_4'],
+            'diem_chu' => $r['diem_chu'], 'ket_qua' => $r['ket_qua'],
+        ], $list);
 
         Response::json([
             'success' => true,
             'data' => $rows,
-            'hoc_ky' => [
-                'dtb_he_10' => $hocKy['dtb_he_10'],
-                'dtb_he_4' => $hocKy['dtb_he_4'],
-                'so_tin_chi_dat' => $hocKy['so_tin_chi_dat'],
-                'phan_loai' => Academic::phanLoai($hocKy['dtb_he_10']),
-            ],
+            'sinh_vien' => $svInfo,
+            'hoc_ky' => $hocKy + ['phan_loai' => Academic::phanLoai($hocKy['dtb_he_10']), 'mon' => $gon($monHocKy)],
             'quy_tac_hoc_lai' => Academic::RETAKE_POLICY,
-            'tich_luy' => [
-                'dtb_he_10' => $tichLuy['dtb_he_10'],
-                'dtb_he_4' => $tichLuy['dtb_he_4'],
-                'so_tin_chi_tich_luy' => $tichLuy['so_tin_chi_dat'],
-            ],
+            'tich_luy' => $tichLuy + ['so_tin_chi_tich_luy' => $tichLuy['so_tin_chi_dat'], 'mon' => $gon($monTichLuy)],
+            'quy_tac' => $this->quyTacDiem(),
         ]);
     }
 
     // ------------------------------------------------------------------
 
     /**
-     * RULE-18.6: A = Σ(a_i × n_i) / Σ n_i
-     *  a_i: điểm học phần thứ i (hệ 10 hoặc hệ 4), n_i: số tín chỉ học phần thứ i.
-     *  GPA học kỳ: các học phần đã có điểm tổng kết trong học kỳ được chọn.
-     *  GPA tích lũy: các học phần đã có điểm trong toàn bộ quá trình học,
-     *  học phần học lại chỉ tính một lần theo Academic::RETAKE_POLICY (RULE-18.11).
+     * RULE-18.6: GPA = Σ(D4_i × TC_i) ÷ Σ TC_i, làm tròn 2 chữ số thập phân.
+     *  - Môn F vẫn tính (D4 = 0) và tín chỉ của môn F vẫn ở mẫu số.
+     *  - GPA học kỳ: các học phần đã có điểm tổng kết trong học kỳ chọn.
+     *  - GPA tích lũy: mỗi học phần một lần, học lại chọn theo Academic::RETAKE_POLICY (RULE-18.11).
+     *  - RULE-18.12: tín chỉ tính GPA (gồm môn F) khác tín chỉ tích lũy đạt (chỉ môn Đạt).
+     * Trả kèm tử số / mẫu số để giao diện giải thích từng bước.
      */
     private function summary(array $rows): array
     {
@@ -534,8 +561,67 @@ class Quanlyketqua
         return [
             'dtb_he_10' => $tc > 0 ? round($s10 / $tc, 2) : null,
             'dtb_he_4' => $tc > 0 ? round($s4 / $tc, 2) : null,
+            'tong_d4_x_tc' => round($s4, 2),
+            'tong_d10_x_tc' => round($s10, 2),
+            'so_tin_chi_tinh_gpa' => $tc,
+            'so_mon_tinh_gpa' => count($rows),
             'so_tin_chi_dat' => $dat,
         ];
+    }
+
+    /** Hệ số và ngưỡng dùng để giao diện giải thích công thức (lấy từ một nguồn: Academic) */
+    private function quyTacDiem(): array
+    {
+        return [
+            'cc_toi_da' => Academic::CC_DIEM_TOI_DA,
+            'cc_phan_tram_moi_diem' => Academic::CC_PHAN_TRAM_MOI_DIEM,
+            'cc_nguong_bang_0' => Academic::CC_NGUONG_BANG_0,
+            'nguong_cam_thi' => Academic::NGUONG_CAM_THI,
+            'he_so_cuoi_ky' => Academic::HE_SO_CUOI_KY,
+            'he_so_giua_ky' => Academic::HE_SO_GIUA_KY,
+            'he_so_chuyen_can' => Academic::HE_SO_CHUYEN_CAN,
+            'thang_diem' => Academic::THANG_DIEM,   // RULE-17: cùng bảng dùng để quy đổi
+        ];
+    }
+
+    /** RULE-15.13: không cho nhập / sửa điểm của sinh viên bị cấm thi */
+    private function chanNeuCamThi(int $dkId, string $ma): void
+    {
+        $cc = Academic::chuyenCan($this->db, $dkId);
+        if ($cc['cam_thi']) {
+            if ($ma === '') {
+                $s = $this->db->prepare('SELECT u.ma_dinh_danh FROM dang_ky_hoc_phan dk INNER JOIN users u ON u.id = dk.sinh_vien_user_id WHERE dk.id = :id');
+                $s->execute([':id' => $dkId]);
+                $ma = (string) $s->fetchColumn();
+            }
+            Response::json([
+                'success' => false,
+                'message' => 'Sinh viên ' . $ma . ' bị cấm thi: nghỉ ' . $cc['tiet_nghi'] . '/' . $cc['tong_tiet_mon'] . ' tiết = '
+                    . $cc['ty_le_nghi'] . '% ≥ ' . Academic::NGUONG_CAM_THI . '%. Không được nhập điểm; điểm tổng kết = 0.'
+            ], 409);
+        }
+    }
+
+    /**
+     * GET /api/ketquahoctap/lop-sinh-vien — lớp sinh viên kèm danh sách sinh viên để tra cứu bảng điểm
+     * (quản trị viên, giảng viên). Luồng: chọn lớp sinh viên → chọn sinh viên → xem kết quả theo học kỳ.
+     */
+    public function lopSinhVien(): void
+    {
+        AuthService::requireUser($this->db, ['admin', 'giang_vien']);
+
+        $lop = $this->db->query('SELECT id, ma_lop, ten_lop, khoa_hoc FROM lop_sinh_vien ORDER BY ma_lop')->fetchAll();
+        $sv = $this->db->prepare("
+            SELECT id, ma_dinh_danh, ho_ten FROM users
+            WHERE lop_sinh_vien_id = :id AND vai_tro IN ('sinh_vien', 'student') ORDER BY ma_dinh_danh
+        ");
+        foreach ($lop as &$l) {
+            $sv->execute([':id' => $l['id']]);
+            $l['sinh_vien'] = $sv->fetchAll();
+        }
+        unset($l);
+
+        Response::json(['success' => true, 'data' => $lop]);
     }
 
     /** Lấy lớp học phần và kiểm tra quyền (RULE-12.1) */

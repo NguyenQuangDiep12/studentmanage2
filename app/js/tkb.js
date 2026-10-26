@@ -21,12 +21,21 @@
     var TKBModule = {
         currentWeek: 1,
 
-        // Ngày bắt đầu / kết thúc học kỳ lấy từ lịch học thực tế (API /api/lophocphan/nam-hoc)
-        getTermRange: function (hk, namHoc) {
-            var term = ((App.getTerms() || {}).hoc_ky || []).find(function (x) {
+        getTerm: function (hk, namHoc) {
+            return ((App.getTerms() || {}).hoc_ky || []).find(function (x) {
                 return parseInt(x.hoc_ky, 10) === hk && x.nam_hoc === namHoc;
-            });
-            return term ? { start: new Date(term.bat_dau + 'T00:00:00'), end: new Date(term.ket_thuc + 'T00:00:00') } : null;
+            }) || null;
+        },
+
+        // RULE-HK-03, RULE-DL-07: khoảng tuần = ngày học kỳ đã khai báo, mở rộng để bao trùm mọi buổi học thực tế
+        // (dữ liệu cũ có buổi nằm ngoài học kỳ vẫn hiển thị, không bị ẩn khỏi thời khóa biểu)
+        getTermRange: function (hk, namHoc) {
+            var term = this.getTerm(hk, namHoc);
+            if (!term) return null;
+            var start = term.bat_dau, end = term.ket_thuc;
+            if (term.buoi_tu && term.buoi_tu < start) start = term.buoi_tu;
+            if (term.buoi_den && term.buoi_den > end) end = term.buoi_den;
+            return { start: new Date(start + 'T00:00:00'), end: new Date(end + 'T00:00:00') };
         },
 
         // Thứ Hai của tuần đầu tiên học kỳ; học kỳ chưa có lịch thì lấy tuần hiện tại
@@ -39,12 +48,12 @@
             return d;
         },
 
-        // Số tuần của học kỳ theo lịch học (tối thiểu 1)
+        // RULE-HK-07: số tuần = (Thứ 2 tuần chứa ngày cuối − Thứ 2 tuần chứa ngày đầu) ÷ 7 + 1 (cùng công thức backend)
         getMaxWeek: function (hk, namHoc) {
             var range = this.getTermRange(hk, namHoc);
             if (!range) return 1;
             var start = this.getSemesterStartDate(hk, namHoc);
-            return Math.max(1, Math.floor((range.end - start) / (7 * 86400000)) + 1);
+            return Math.max(1, Math.floor((range.end - start) / (7 * 86400000) + 1e-9) + 1);
         },
 
         render: function () {
@@ -111,6 +120,7 @@
                 '      </div>' +
                 '    </div>' +
 
+                '    <div id="tkbCanhBao"></div>' +
                 '    <!-- Timetable Grid 13 Tiết -->' +
                 '    <div class="timetable-wrapper">' +
                 '      <table class="timetable" id="mainTimetable">' +
@@ -218,7 +228,18 @@
             var weekRange = this.getWeekRange(this.currentWeek);
             var startStr = App.formatDate(weekRange.start);
             var endStr = App.formatDate(weekRange.end);
-            $('#currentWeekLabel').text('Tuần ' + this.currentWeek + ' (' + startStr + ' - ' + endStr + ')');
+            $('#currentWeekLabel').text('Tuần ' + this.currentWeek + '/' + this.getMaxWeek(hk, namHoc) + ' (' + startStr + ' - ' + endStr + ')');
+
+            // Cảnh báo dữ liệu: học kỳ chưa khai báo hoặc có buổi học nằm ngoài khoảng ngày học kỳ
+            var term = this.getTerm(hk, namHoc);
+            var warn = '';
+            if (term && parseInt(term.da_khai_bao, 10) !== 1) {
+                warn = 'Học kỳ này chưa được khai báo ngày bắt đầu / kết thúc; tuần học đang tính theo các buổi học thực tế.';
+            } else if (term && parseInt(term.so_buoi_ngoai_hoc_ky, 10) > 0) {
+                warn = 'Có ' + term.so_buoi_ngoai_hoc_ky + ' buổi học nằm ngoài học kỳ đã khai báo (' + App.formatDate(term.bat_dau) + ' → ' + App.formatDate(term.ket_thuc) +
+                    '; buổi thực tế ' + App.formatDate(term.buoi_tu) + ' → ' + App.formatDate(term.buoi_den) + '). Tuần học được mở rộng để hiển thị đủ; quản trị viên cần sửa ngày học kỳ.';
+            }
+            $('#tkbCanhBao').html(warn ? '<div class="alert alert-warning mb-3" style="font-size:0.84rem;">' + warn + '</div>' : '');
 
             var dayKeys = ['thu2', 'thu3', 'thu4', 'thu5', 'thu6', 'thu7', 'cn'];
             for (var d = 0; d < 7; d++) {
@@ -296,6 +317,7 @@
                                 '    <div style="font-weight:800; color:#1e40af; font-size:0.86rem; margin-bottom:2px;">' + (mh ? App.escapeHtml(mh.ten_mon_hoc) : '—') + '</div>' +
                                 '    <div style="font-weight:700; color:#2563eb; font-size:0.78rem; margin-bottom:4px;">' + (mh ? App.escapeHtml(mh.ma_mon_hoc) : '') + '</div>' +
                                 '    <div style="font-size:0.76rem; color:#334155;"><strong>Lớp:</strong> ' + App.escapeHtml(lhp.ma_lop_hoc_phan) + '</div>' +
+                                (b.so_thu_tu ? '    <div style="font-size:0.76rem; color:#334155;"><strong>Buổi:</strong> ' + b.so_thu_tu + '/' + b.tong_so_buoi + '</div>' : '') +
                                 '    <div style="font-size:0.76rem; color:#334155;"><strong>Phòng:</strong> ' + App.escapeHtml(lhp.phong_hoc || '—') + '</div>' +
                                 (gv ? '    <div style="font-size:0.76rem; color:#334155;"><strong>GV:</strong> ' + App.escapeHtml(gv.ho_ten) + '</div>' : '') +
                                 '    <div style="font-size:0.74rem; color:#64748b; margin-top:2px;"><i class="fa-regular fa-clock"></i> ' + timeRangeStr + '</div>' +

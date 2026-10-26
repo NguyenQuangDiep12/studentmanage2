@@ -98,6 +98,22 @@ class Quanlylophocphan
         $lhp['lich_hoc'] = $lich->fetchAll();
         $lhp['tong_buoi'] = array_sum(array_column($lhp['lich_hoc'], 'so_buoi'));
 
+        // Quản lý lịch học > Danh sách buổi học (RULE-DL-04, RULE-DL-07: cùng số thứ tự với TKB / điểm danh)
+        $buoi = $this->db->prepare("
+            SELECT b.id, b.ngay_hoc, b.tiet_bat_dau, b.tiet_ket_thuc, b.trang_thai, lh.thu,
+                   (SELECT COUNT(*) FROM diem_danh dd WHERE dd.buoi_hoc_id = b.id) AS so_ban_ghi_diem_danh
+            FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id
+            WHERE lh.lop_hoc_phan_id = :id ORDER BY b.ngay_hoc, b.tiet_bat_dau, b.id
+        ");
+        $buoi->execute([':id' => $lhp['id']]);
+        $stt = Academic::soThuTuBuoi($this->db, (int) $lhp['id']);
+        $lhp['buoi_hoc'] = array_map(function ($b) use ($stt) {
+            $b['so_thu_tu'] = $stt[(int) $b['id']] ?? null;
+            $b['so_tiet'] = Academic::soTiet($b);
+            return $b;
+        }, $buoi->fetchAll());
+        $lhp['tong_tiet_da_xep'] = array_sum(array_column($lhp['buoi_hoc'], 'so_tiet'));
+
         $sv = $this->db->prepare('
             SELECT dk.id AS dang_ky_id, dk.ngay_dang_ky, dk.trang_thai,
                    u.id AS sinh_vien_id, u.ma_dinh_danh, u.ho_ten, l.ma_lop
@@ -160,6 +176,23 @@ class Quanlylophocphan
                 $terms[] = $term;
             }
         }
+        // RULE-HK-03, RULE-HK-07: số tuần theo một công thức; khoảng ngày thực tế của các buổi học trong học kỳ
+        $buoiRange = $this->db->prepare('
+            SELECT MIN(b.ngay_hoc) AS tu, MAX(b.ngay_hoc) AS den,
+                   SUM(CASE WHEN b.ngay_hoc < :bd OR b.ngay_hoc > :kt THEN 1 ELSE 0 END) AS ngoai
+            FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id
+            INNER JOIN lop_hoc_phan l ON l.id = lh.lop_hoc_phan_id
+            WHERE l.hoc_ky = :hk AND l.nam_hoc = :nh
+        ');
+        foreach ($terms as &$term) {
+            $buoiRange->execute([':bd' => $term['bat_dau'], ':kt' => $term['ket_thuc'], ':hk' => $term['hoc_ky'], ':nh' => $term['nam_hoc']]);
+            $r = $buoiRange->fetch();
+            $term['so_tuan'] = Academic::soTuan($term['bat_dau'], $term['ket_thuc']);
+            $term['buoi_tu'] = $r['tu'];
+            $term['buoi_den'] = $r['den'];
+            $term['so_buoi_ngoai_hoc_ky'] = (int) $r['ngoai'];
+        }
+        unset($term);
         usort($terms, fn($a, $b) => strcmp($a['bat_dau'], $b['bat_dau']));
         rsort($list);
 
@@ -672,9 +705,11 @@ class Quanlylophocphan
                        b.ngay_hoc, b.tiet_bat_dau, b.tiet_ket_thuc
                 FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id
                 WHERE lh.lop_hoc_phan_id = :id
-                  AND (b.trang_thai != 'Dự kiến' OR EXISTS (SELECT 1 FROM diem_danh dd WHERE dd.buoi_hoc_id = b.id))
+                  AND (b.trang_thai != 'Dự kiến' OR b.ngay_hoc < :today
+                       OR EXISTS (SELECT 1 FROM diem_danh dd WHERE dd.buoi_hoc_id = b.id))
             ");
-            $stmt->execute([':id' => $selfId]);
+            // RULE-XL-11: buổi đã điểm danh hoặc đã diễn ra được giữ nguyên
+            $stmt->execute([':id' => $selfId, ':today' => date('Y-m-d')]);
             foreach ($stmt->fetchAll() as $b) {
                 $k = $key(['thu' => $b['thu'], 'tiet_bat_dau' => $b['l_tbd'], 'tiet_ket_thuc' => $b['l_tkt'],
                            'ngay_bat_dau' => $b['ngay_bat_dau'], 'ngay_ket_thuc' => $b['ngay_ket_thuc']]);
@@ -826,17 +861,19 @@ class Quanlylophocphan
                 continue;
             }
 
+            // RULE-XL-11: lịch đã có buổi điểm danh hoặc buổi đã diễn ra thì không xóa (không đổi lịch sử)
             $att = $this->db->prepare("
                 SELECT COUNT(*) FROM buoi_hoc b
                 WHERE b.lich_hoc_id = :id
-                  AND (b.trang_thai != 'Dự kiến' OR EXISTS (SELECT 1 FROM diem_danh dd WHERE dd.buoi_hoc_id = b.id))
+                  AND (b.trang_thai != 'Dự kiến' OR b.ngay_hoc < :today
+                       OR EXISTS (SELECT 1 FROM diem_danh dd WHERE dd.buoi_hoc_id = b.id))
             ");
-            $att->execute([':id' => $c['id']]);
+            $att->execute([':id' => $c['id'], ':today' => date('Y-m-d')]);
 
             if ((int) $att->fetchColumn() > 0) {
                 throw new DomainException(
                     'Không thể xóa/sửa lịch ' . $this->thuLabel((int) $c['thu']) . ' (Tiết ' . $c['tiet_bat_dau'] . '-' . $c['tiet_ket_thuc']
-                    . ') vì đã có buổi học được điểm danh. Hãy giữ lịch này và thêm lịch mới nếu cần.'
+                    . ') vì đã có buổi học đã diễn ra hoặc đã điểm danh. Hãy giữ lịch này và thêm lịch mới nếu cần.'
                 );
             }
 

@@ -103,6 +103,7 @@ return [
     'PUT /api/ketquahoctap/diem-thanh-phan'      => $kq . '/Quanlyketqua@suaDiem',
     'DELETE /api/ketquahoctap/diem-thanh-phan'   => $kq . '/Quanlyketqua@xoaDiem',
     'GET /api/ketquahoctap/ket-qua'              => $kq . '/Quanlyketqua@ketQua',
+    'GET /api/ketquahoctap/lop-sinh-vien'        => $kq . '/Quanlyketqua@lopSinhVien',
 
     // 6. Tin tức
     'GET /api/tintuc'                            => $tt . '/Quanlytintuc@index',
@@ -140,6 +141,8 @@ return [
     'DELETE /api/cocaudaotao/nhom-tu-chon'       => $cc . '/Quanlycocau@xoaNhom',
     'POST /api/cocaudaotao/nhom-tu-chon/mon'     => $cc . '/Quanlycocau@themMonNhom',
     'DELETE /api/cocaudaotao/nhom-tu-chon/mon'   => $cc . '/Quanlycocau@xoaMonNhom',
+    'GET /api/cocaudaotao/hoc-ky'                => $cc . '/Quanlycocau@dsHocKy',
+    'GET /api/cocaudaotao/hoc-ky/chi-tiet'       => $cc . '/Quanlycocau@chiTietHocKy',
     'POST /api/cocaudaotao/hoc-ky'               => $cc . '/Quanlycocau@luuHocKy',
     'PUT /api/cocaudaotao/hoc-ky'                => $cc . '/Quanlycocau@luuHocKy',
     'DELETE /api/cocaudaotao/hoc-ky'             => $cc . '/Quanlycocau@xoaHocKy',

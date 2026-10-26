@@ -35,18 +35,14 @@
             var html =
                 '<div class="tabs">' +
                 '  <button class="tab-btn' + (this.currentTab === 'ctdt' ? ' active' : '') + '" data-tab="ctdt"><i class="fa-solid fa-graduation-cap"></i> Chương trình đào tạo</button>' +
-                '  <button class="tab-btn' + (this.currentTab === 'nhom-tu-chon' ? ' active' : '') + '" data-tab="nhom-tu-chon"><i class="fa-solid fa-layer-group"></i> Nhóm môn tự chọn</button>' +
                 '  <button class="tab-btn' + (this.currentTab === 'khoa' ? ' active' : '') + '" data-tab="khoa"><i class="fa-solid fa-building-columns"></i> Khoa & Chuyên ngành</button>' +
                 '  <button class="tab-btn' + (this.currentTab === 'lop-sv' ? ' active' : '') + '" data-tab="lop-sv"><i class="fa-solid fa-users-rectangle"></i> Lớp sinh viên</button>' +
-                '  <button class="tab-btn' + (this.currentTab === 'hoc-ky' ? ' active' : '') + '" data-tab="hoc-ky"><i class="fa-solid fa-calendar-week"></i> Học kỳ</button>' +
                 '</div>' +
 
                 '<div class="tab-content' + (this.currentTab === 'ctdt' ? ' active' : '') + '" id="tab-ctdt">' +
                 card('ctdt', 'fa-graduation-cap', 'Danh sách Chương trình đào tạo', 'btnThemCTDT', 'Thêm CTĐT mới',
                     [H('STT', 1), H('Mã CTĐT'), H('Tên chương trình'), H('Chuyên ngành / Khoa'), H('Thời gian'), H('Môn bắt buộc', 1), H('Nhóm tự chọn', 1), H('Lớp SV', 1), H('Thao tác', 1)], 'ctdtTableBody') +
-                '</div>' +
-
-                '<div class="tab-content' + (this.currentTab === 'nhom-tu-chon' ? ' active' : '') + '" id="tab-nhom-tu-chon">' +
+                // Khung chương trình gồm môn bắt buộc + nhóm môn tự chọn: đặt nhóm tự chọn ngay trong tab CTĐT
                 card('nhom', 'fa-layer-group', 'Nhóm môn tự chọn theo Chương trình đào tạo', 'btnThemNhomTC', 'Thêm nhóm tự chọn',
                     [H('STT', 1), H('Mã nhóm'), H('Tên nhóm tự chọn'), H('Thuộc CTĐT'), H('Tín chỉ tối thiểu', 1), H('Danh sách môn học thuộc nhóm'), H('Thao tác', 1)], 'nhomTCTableBody') +
                 '</div>' +
@@ -61,12 +57,6 @@
                 '<div class="tab-content' + (this.currentTab === 'lop-sv' ? ' active' : '') + '" id="tab-lop-sv">' +
                 card('lop', 'fa-users-rectangle', 'Danh sách Lớp sinh viên', 'btnThemLopSV', 'Tạo lớp sinh viên',
                     [H('STT', 1), H('Mã lớp'), H('Tên lớp'), H('Khóa học'), H('Chương trình đào tạo'), H('Sĩ số sinh viên', 1), H('Thao tác', 1)], 'lopSVTableBody') +
-                '</div>' +
-
-                // RULE-HK-01: học kỳ lưu ngày bắt đầu / kết thúc, lớp học phần xếp lịch trong khoảng này
-                '<div class="tab-content' + (this.currentTab === 'hoc-ky' ? ' active' : '') + '" id="tab-hoc-ky">' +
-                card('hk', 'fa-calendar-week', 'Danh sách Học kỳ', 'btnThemHocKy', 'Khai báo học kỳ',
-                    [H('STT', 1), H('Năm học'), H('Học kỳ', 1), H('Ngày bắt đầu', 1), H('Ngày kết thúc', 1), H('Số tuần', 1), H('Lớp học phần', 1), H('Thao tác', 1)], 'hocKyTableBody') +
                 '</div>';
 
             $('#contentArea').html(html);
@@ -90,7 +80,6 @@
             $('#btnThemCTDT').on('click', function () { self.showCTDTModal(); });
             $('#btnThemNhomTC').on('click', function () { self.showNhomTCModal(); });
             $('#btnThemLopSV').on('click', function () { self.showLopSVModal(); });
-            $('#btnThemHocKy').on('click', function () { self.showHocKyModal(); });
 
             var on = function (cls, fn) {
                 $(document).off('click', cls).on('click', cls, function () { fn.call(self, parseInt($(this).data('id'), 10)); });
@@ -109,8 +98,7 @@
             on('.btn-del-nhom', function (id) { this.remove('nhom-tu-chon', id, 'Nhóm tự chọn'); });
             on('.btn-edit-lopsv', function (id) { this.showLopSVModal(this.find('lop_sinh_vien', id)); });
             on('.btn-del-lopsv', function (id) { this.remove('lop-sinh-vien', id, 'Lớp sinh viên'); });
-            on('.btn-edit-hk', function (id) { this.showHocKyModal(this.find('hoc_ky', id)); });
-            on('.btn-del-hk', function (id) { this.remove('hoc-ky', id, 'Học kỳ'); });
+            on('.btn-sv-lopsv', function (id) { this.showSinhVienLop(this.find('lop_sinh_vien', id)); });
         },
 
         find: function (key, id) {
@@ -126,8 +114,6 @@
                     self.drawNhomTC();
                     self.drawKhoa();
                     self.drawLopSV();
-                    self.drawHocKy();
-                    App.loadTerms(function () {});   // cập nhật danh sách học kỳ dùng ở các trang khác
                 })
                 .fail(Api.toastError);
         },
@@ -233,32 +219,45 @@
                     '  <td>' + App.escapeHtml(l.khoa_hoc || '—') + '</td>' +
                     '  <td>' + App.escapeHtml(l.ten_chuong_trinh || '—') + '</td>' +
                     '  <td class="text-center"><span class="badge badge-success">' + l.so_sinh_vien + ' sinh viên</span></td>' +
-                    '  <td class="text-center">' + self.actions('btn-edit-lopsv', 'btn-del-lopsv', l.id) + '</td>' +
+                    '  <td class="text-center">' + self.actions('btn-edit-lopsv', 'btn-del-lopsv', l.id,
+                        '<button class="btn btn-sm btn-outline-primary btn-sv-lopsv" data-id="' + l.id + '">Sinh viên</button>') + '</td>' +
                     '</tr>'
                 );
             });
         },
 
-        drawHocKy: function () {
+        /** Lớp sinh viên > Danh sách sinh viên > Hồ sơ sinh viên */
+        showSinhVienLop: function (l) {
             var self = this;
-            var tbody = $('#hocKyTableBody').empty();
-            var list = this.data.hoc_ky || [];
-            if (!list.length) return this.empty(tbody, 8, 'Chưa khai báo học kỳ nào - lớp học phần cần học kỳ đã khai báo để xếp lịch');
-            list.forEach(function (h, idx) {
-                var tuan = Math.ceil((new Date(h.ngay_ket_thuc) - new Date(h.ngay_bat_dau)) / 86400000 / 7);
-                tbody.append(
-                    '<tr>' +
-                    '  <td class="text-center">' + (idx + 1) + '</td>' +
-                    '  <td><strong>' + App.escapeHtml(h.nam_hoc) + '</strong></td>' +
-                    '  <td class="text-center">' + (parseInt(h.hoc_ky, 10) === 3 ? 'Học kỳ Hè' : 'Học kỳ ' + h.hoc_ky) + '</td>' +
-                    '  <td class="text-center">' + App.formatDate(h.ngay_bat_dau) + '</td>' +
-                    '  <td class="text-center">' + App.formatDate(h.ngay_ket_thuc) + '</td>' +
-                    '  <td class="text-center">' + tuan + '</td>' +
-                    '  <td class="text-center">' + h.so_lop_hoc_phan + '</td>' +
-                    '  <td class="text-center">' + self.actions('btn-edit-hk', 'btn-del-hk', h.id) + '</td>' +
-                    '</tr>'
-                );
-            });
+            if (!l) return;
+            Api.get('/api/taikhoan/users', { vai_tro: 'sinh_vien', lop_sinh_vien_id: l.id }).done(function (res) {
+                var list = res.data || [];
+                self.svCache = list;
+                var rows = list.map(function (u, i) {
+                    return '<tr><td class="text-center">' + (i + 1) + '</td><td><strong>' + App.escapeHtml(u.ma_dinh_danh) + '</strong></td><td>' + App.escapeHtml(u.ho_ten) + '</td>' +
+                        '<td>' + App.escapeHtml(u.email || '—') + '</td><td class="text-center">' + App.trangThaiUserBadge(u.trang_thai) + '</td>' +
+                        '<td class="text-center"><button class="btn btn-sm btn-outline-primary btn-ho-so-sv" data-id="' + u.id + '">Hồ sơ</button></td></tr>';
+                }).join('');
+                App.showModal(
+                    '<div class="modal-header"><h3>Danh sách sinh viên lớp ' + App.escapeHtml(l.ma_lop + ' - ' + l.ten_lop) + '</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
+                    '<div class="modal-body"><p class="text-muted" style="font-size:0.82rem;">Khóa ' + App.escapeHtml(l.khoa_hoc || '—') + ' · CTĐT: ' + App.escapeHtml(l.ten_chuong_trinh || '—') + ' · ' + list.length + ' sinh viên</p>' +
+                    '<div class="table-responsive"><table class="data-table"><thead><tr><th class="text-center">STT</th><th>MSSV</th><th>Họ và tên</th><th>Email</th><th class="text-center">Trạng thái</th><th></th></tr></thead>' +
+                    '<tbody>' + (rows || '<tr><td colspan="6" class="text-center text-muted py-3">Lớp chưa có sinh viên</td></tr>') + '</tbody></table></div>' +
+                    '<div id="hoSoSvBox" class="mt-3"></div></div>' +
+                    '<div class="modal-footer"><button class="btn btn-primary" onclick="App.closeModal()">Đóng</button></div>', 'lg');
+                $('.btn-ho-so-sv').on('click', function () { self.showHoSo(parseInt($(this).data('id'), 10)); });
+            }).fail(Api.toastError);
+        },
+
+        showHoSo: function (id) {
+            Api.get('/api/taikhoan/user', { id: id }).done(function (res) {
+                var u = res.data || {};
+                var f = function (k, v) { return '<div class="detail-item"><span class="detail-label">' + k + '</span><span class="detail-value">' + App.escapeHtml(v || '—') + '</span></div>'; };
+                $('#hoSoSvBox').html('<h4 style="font-size:0.95rem; font-weight:800;" class="mb-2">Hồ sơ sinh viên</h4><div class="detail-grid">' +
+                    f('Mã sinh viên', u.ma_dinh_danh) + f('Họ và tên', u.ho_ten) + f('Ngày sinh', u.ngay_sinh ? App.formatDate(u.ngay_sinh) : '') +
+                    f('Giới tính', u.gioi_tinh) + f('Email', u.email) + f('Số điện thoại', u.so_dien_thoai) + f('Địa chỉ', u.dia_chi) +
+                    f('Lớp sinh viên', u.ma_lop ? u.ma_lop + ' - ' + (u.ten_lop || '') : '') + f('Trạng thái', u.trang_thai) + '</div>');
+            }).fail(Api.toastError);
         },
 
         // ---------------- Form dùng chung ----------------
@@ -348,20 +347,6 @@
                 { key: 'chuong_trinh_id', id: 'lCTDT', label: 'Chương trình đào tạo áp dụng', value: l && l.chuong_trinh_id,
                     options: this.opts(this.data.chuong_trinh_dao_tao, 'id', function (x) { return x.ma_chuong_trinh + ' - ' + x.ten_chuong_trinh; }) }
             ], '/api/cocaudaotao/lop-sinh-vien', l);
-        },
-
-        // RULE-HK-02, RULE-HK-06: backend kiểm tra ngày kết thúc > ngày bắt đầu và chặn sửa học kỳ đã có lớp
-        showHocKyModal: function (h) {
-            var y = new Date().getFullYear();
-            var years = [];
-            for (var i = y - 2; i <= y + 2; i++) years.push({ v: i + '-' + (i + 1), t: i + '-' + (i + 1) });
-            if (h && !years.some(function (o) { return o.v === h.nam_hoc; })) years.unshift({ v: h.nam_hoc, t: h.nam_hoc });
-            this.openForm(h ? 'Sửa Học kỳ' : 'Khai báo Học kỳ', [
-                { key: 'nam_hoc', id: 'hkNam', label: 'Năm học', value: (h && h.nam_hoc) || ((App.getTerms() || {}).hien_tai || {}).nam_hoc, options: years },
-                { key: 'hoc_ky', id: 'hkSo', label: 'Học kỳ', value: h && h.hoc_ky, options: [{ v: 1, t: 'Học kỳ 1' }, { v: 2, t: 'Học kỳ 2' }, { v: 3, t: 'Học kỳ Hè' }] },
-                { key: 'ngay_bat_dau', id: 'hkBd', label: 'Ngày bắt đầu', value: h && h.ngay_bat_dau, type: 'date' },
-                { key: 'ngay_ket_thuc', id: 'hkKt', label: 'Ngày kết thúc', value: h && h.ngay_ket_thuc, type: 'date' }
-            ], '/api/cocaudaotao/hoc-ky', h);
         },
 
         remove: function (endpoint, id, label) {

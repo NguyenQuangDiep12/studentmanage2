@@ -555,6 +555,17 @@
                     '</tr>';
             }).join('');
 
+            // Quản lý lịch học > Danh sách buổi học: số thứ tự buổi do backend đánh (cùng nguồn với TKB, điểm danh - RULE-DL-07)
+            var today = new Date().toISOString().slice(0, 10);
+            var buoiRows = (lhp.buoi_hoc || []).map(function (b) {
+                var tt = parseInt(b.so_ban_ghi_diem_danh, 10) > 0 || b.trang_thai !== 'Dự kiến'
+                    ? '<span class="badge badge-success">Đã điểm danh</span>'
+                    : (b.ngay_hoc < today ? '<span class="badge badge-warning">Đã qua, chưa điểm danh</span>' : '<span class="badge badge-info">Sắp diễn ra</span>');
+                return '<tr><td class="text-center">' + b.so_thu_tu + '</td><td>' + App.formatDate(b.ngay_hoc) + '</td><td>' + App.thuLabel(b.thu) + '</td>' +
+                    '<td class="text-center">' + b.tiet_bat_dau + ' - ' + b.tiet_ket_thuc + '</td><td>' + App.gioHoc(b.tiet_bat_dau, b.tiet_ket_thuc) + '</td>' +
+                    '<td class="text-center">' + b.so_tiet + '</td><td class="text-center">' + tt + '</td></tr>';
+            }).join('');
+
             var html =
                 '<div class="modal-header">' +
                 '  <h3><i class="fa-solid fa-circle-info" style="color:var(--primary);"></i> Chi tiết Lớp học phần: ' + App.escapeHtml(lhp.ma_lop_hoc_phan) + '</h3>' +
@@ -578,6 +589,12 @@
                 '    </table>' +
                 '  </div>' +
 
+                '  <h4 class="mb-2" style="font-size:0.95rem; font-weight:800;"><i class="fa-solid fa-list-ol" style="color:var(--primary);"></i> Danh sách buổi học (' + (lhp.buoi_hoc || []).length + ' buổi, ' + (lhp.tong_tiet_da_xep || 0) + '/' + (lhp.so_tiet || '—') + ' tiết)</h4>' +
+                '  <div class="table-responsive mb-3" style="max-height:260px; overflow-y:auto;">' +
+                '    <table class="data-table"><thead><tr><th class="text-center">Buổi</th><th>Ngày học</th><th>Thứ</th><th class="text-center">Tiết</th><th>Giờ học</th><th class="text-center">Số tiết</th><th class="text-center">Trạng thái</th></tr></thead>' +
+                '      <tbody>' + (buoiRows || '<tr><td colspan="7" class="text-center text-muted">Chưa có buổi học</td></tr>') + '</tbody></table>' +
+                '  </div>' +
+
                 '  <h4 class="mb-2" style="font-size:0.95rem; font-weight:800;"><i class="fa-solid fa-users" style="color:var(--primary);"></i> Danh sách sinh viên đăng ký (' + activeCount + ' SV)</h4>' +
                 '  <div class="table-responsive" style="max-height:240px; overflow-y:auto;">' +
                 '    <table class="data-table">' +
@@ -594,5 +611,6 @@
         }
     };
 
+    window.LopHocPhanModule = LopHocPhanModule;
     App.registerModule('lop-hoc-phan', LopHocPhanModule);
 })(jQuery);

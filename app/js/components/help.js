@@ -73,14 +73,13 @@ var HelpComponent = (function ($) {
             steps: [
                 'Tab "Khoa & Chuyên ngành": tạo khoa trước, sau đó tạo chuyên ngành thuộc khoa.',
                 'Tab "Chương trình đào tạo": tạo CTĐT cho chuyên ngành; bấm "Xem khung" để thêm môn bắt buộc theo học kỳ - năm học.',
-                'Tab "Nhóm môn tự chọn": tạo nhóm (A, B, C...) với số tín chỉ tối thiểu; thêm môn vào nhóm tại "Xem khung" của CTĐT.',
-                'Tab "Lớp sinh viên": tạo lớp gắn với CTĐT; sinh viên thuộc lớp sẽ học theo CTĐT này.',
-                'Tab "Học kỳ": khai báo năm học, học kỳ, ngày bắt đầu và ngày kết thúc; lớp học phần chỉ mở được trong học kỳ đã khai báo.',
+                'Cũng trong tab "Chương trình đào tạo": bảng "Nhóm môn tự chọn" - tạo nhóm (A, B, C...) với số tín chỉ tối thiểu; thêm môn vào nhóm tại "Xem khung" của CTĐT.',
+                'Tab "Lớp sinh viên": tạo lớp gắn với CTĐT; bấm "Sinh viên" để xem danh sách sinh viên của lớp và "Hồ sơ" từng sinh viên.',
+                'Học kỳ được quản lý ở mục Tổ chức giảng dạy > Học kỳ.',
                 'Mỗi mục có "Sửa" / "Xóa"; hệ thống chặn xóa khi dữ liệu đang được sử dụng.'
             ],
             rules: ['RULE-01', 'RULE-02', 'RULE-03', 'RULE-04', 'RULE-05', 'RULE-06', 'RULE-07', 'RULE-HK'],
             notes: [
-                'Học kỳ đã có lớp học phần thì không đổi được ngày và không xóa được.',
                 'Thứ tự nhóm tự chọn được xác định theo mã nhóm (A → B → C): muốn đăng ký nhóm sau phải đạt đủ tín chỉ tối thiểu của các nhóm trước.',
                 'Một môn không thể vừa là môn bắt buộc vừa thuộc nhóm tự chọn trong cùng chương trình.'
             ]
@@ -109,6 +108,30 @@ var HelpComponent = (function ($) {
                 'Chỉ hủy được trong thời gian đăng ký và khi chưa có dữ liệu điểm danh hoặc điểm.'
             ]
         },
+        'hoc-ky': {
+            steps: [
+                'Bấm "Thêm học kỳ": chọn năm học, học kỳ, ngày bắt đầu, ngày kết thúc rồi "Lưu học kỳ".',
+                '"Chi tiết" để xem thông tin học kỳ và danh sách lớp học phần thuộc học kỳ; bấm "Xem lớp" để mở chi tiết lớp và danh sách buổi học.',
+                '"Sửa" để đổi ngày (học kỳ đã có lớp chỉ đổi được ngày, khoảng mới phải bao trùm các buổi đã xếp); "Xóa" khi học kỳ chưa có lớp.',
+                'Cột "Kiểm tra dữ liệu" cảnh báo học kỳ chồng thời gian hoặc có buổi học nằm ngoài học kỳ - cần sửa lại ngày.'
+            ],
+            rules: ['RULE-HK'],
+            notes: ['Số tuần = số tuần lịch Thứ 2 → Chủ nhật mà học kỳ đi qua, cùng cách tính với Thời khóa biểu.']
+        },
+        'ds-dang-ky': {
+            steps: [
+                'Chọn học kỳ, năm học và lớp học phần để xem danh sách sinh viên đã đăng ký, ngày đăng ký và trạng thái.',
+                'Sinh viên tự đăng ký / hủy đăng ký ở trang Đăng ký học phần trong thời gian đăng ký của lớp.'
+            ],
+            rules: ['RULE-08']
+        },
+        'tra-cuu-diem': {
+            steps: [
+                'Chọn lớp sinh viên, rồi chọn sinh viên.',
+                'Chọn học kỳ / năm học để xem điểm theo môn, GPA học kỳ và GPA tích lũy; bấm "Xem" ở cột "Cách tính" để xem từng bước tính điểm của môn.'
+            ],
+            rules: ['RULE-15', 'RULE-14', 'RULE-17', 'RULE-18']
+        },
         'tkb': {
             steps: [
                 'Chọn học kỳ, năm học; hệ thống tự mở tuần hiện tại (tuần tính từ ngày bắt đầu học kỳ theo lịch học).',
@@ -131,18 +154,20 @@ var HelpComponent = (function ($) {
         },
         'quan-ly-diem': {
             steps: [
-                'Chọn lớp học phần, nhập điểm giữa kỳ và cuối kỳ cho từng sinh viên, bấm "Lưu bảng điểm".',
-                'Điểm chuyên cần do hệ thống tự tính từ điểm danh (không nhập tay).',
-                'Để trống ô điểm nghĩa là chưa có điểm thành phần đó; bấm "Xóa" ở cột Thao tác để xóa điểm thành phần của sinh viên.',
+                'Chọn lớp học phần, nhập điểm giữa kỳ (B) và cuối kỳ (A) cho từng sinh viên, bấm "Lưu bảng điểm".',
+                'Hoặc dùng "Sửa" ở từng sinh viên để thêm / sửa / để trống từng điểm; "Xóa" để xóa điểm giữa kỳ, cuối kỳ hoặc toàn bộ.',
+                'Bấm "Cách tính" để xem từng bước: tỷ lệ nghỉ R, điểm chuyên cần C, điều kiện dự thi, D = 0.6A + 0.3B + 0.1C, làm tròn và quy đổi.',
+                'Sinh viên bị cấm thi (nghỉ từ 20% số tiết) bị khóa ô điểm, điểm tổng kết = 0.',
                 '"Tính lại toàn bộ" tải lại chuyên cần và tổng kết mới nhất.'
             ],
-            rules: ['RULE-14', 'RULE-15', 'RULE-17']
+            rules: ['RULE-14', 'RULE-15', 'RULE-17', 'RULE-18']
         },
         'ket-qua': {
             steps: [
                 'Chọn học kỳ, năm học (hoặc "Tất cả") để xem bảng điểm.',
                 'Phía dưới hiển thị điểm trung bình học kỳ, tích lũy (hệ 10 và hệ 4), số tín chỉ đạt và xếp loại.',
-                'Môn học lại có ghi chú "Lần học x/y" và cho biết lần nào được tính vào tích lũy.'
+                'Môn học lại có ghi chú "Lần học x/y" và cho biết lần nào được tính vào tích lũy.',
+                'Bấm "Xem" ở cột "Cách tính" để xem từng bước tính điểm môn; phần "Cách tính điểm trung bình" liệt kê tử số, mẫu số của GPA học kỳ và tích lũy.'
             ],
             rules: ['RULE-16', 'RULE-17', 'RULE-18', 'RULE-CREDIT']
         },

@@ -13,11 +13,42 @@ class Academic
     public const TIN_CHI_MIN = 1;
     public const TIN_CHI_MAX = 10;
 
-    // RULE-CREDIT-08: 1 tiết = 50 phút. LT: 15 giờ/TC -> 15*60/50 = 18 tiết; TH/thảo luận: 30 giờ/TC -> 30*60/50 = 36 tiết.
-    // Thời gian tự học không tính. Đổi hằng số nếu quy định chính thức của trường khác.
+    // RULE-CREDIT-08: căn cứ quy đổi của trường (không tự đổi hệ số):
+    //  1 TC lý thuyết = 15 giờ học trên lớp; 1 TC thực hành = 30 giờ học trên lớp; 1 giờ = 60 phút; 1 tiết = 50 phút.
+    //  Số tiết / TC = số giờ × 60 ÷ 50  ->  LT: 15 × 60 ÷ 50 = 18 tiết;  TH: 30 × 60 ÷ 50 = 36 tiết.
+    //  Thời gian tự học không tính vào số tiết xếp thời khóa biểu.
+    public const GIO_MOI_TC_LY_THUYET = 15;
+    public const GIO_MOI_TC_THUC_HANH = 30;
+    public const PHUT_MOI_GIO = 60;
     public const PHUT_MOI_TIET = 50;
-    public const TIET_MOI_TC_LY_THUYET = 18;
-    public const TIET_MOI_TC_THUC_HANH = 36;
+    public const TIET_MOI_TC_LY_THUYET = self::GIO_MOI_TC_LY_THUYET * self::PHUT_MOI_GIO / self::PHUT_MOI_TIET;   // 18
+    public const TIET_MOI_TC_THUC_HANH = self::GIO_MOI_TC_THUC_HANH * self::PHUT_MOI_GIO / self::PHUT_MOI_TIET;   // 36
+
+    // RULE-15: điểm chuyên cần C. Tối đa 10; mỗi 2% tỷ lệ nghỉ trừ 1 điểm; R >= 20% thì C = 0.
+    public const CC_DIEM_TOI_DA = 10;
+    public const CC_PHAN_TRAM_MOI_DIEM = 2;
+    public const CC_NGUONG_BANG_0 = 20;
+    // RULE-15.13: cấm thi khi tỷ lệ nghỉ từ 20% trở lên (R >= 20%); bị cấm thi thì điểm tổng kết D = 0.
+    public const NGUONG_CAM_THI = 20;
+
+    /**
+     * RULE-17: thang điểm theo quy chế (8 mức). Điểm D làm tròn 1 chữ số rồi so với "tu" (cận dưới, tính cả).
+     * Một nguồn duy nhất cho quy đổi và phần giải thích trên giao diện.
+     */
+    public const THANG_DIEM = [
+        ['tu' => 8.5, 'den' => 10.0, 'chu' => 'A',  'he_4' => 4.0, 'xep_loai' => 'Giỏi',           'ket_qua' => 'Đạt'],
+        ['tu' => 8.0, 'den' => 8.4,  'chu' => 'B+', 'he_4' => 3.5, 'xep_loai' => 'Khá',            'ket_qua' => 'Đạt'],
+        ['tu' => 7.0, 'den' => 7.9,  'chu' => 'B',  'he_4' => 3.0, 'xep_loai' => 'Khá',            'ket_qua' => 'Đạt'],
+        ['tu' => 6.5, 'den' => 6.9,  'chu' => 'C+', 'he_4' => 2.5, 'xep_loai' => 'Trung bình',     'ket_qua' => 'Đạt'],
+        ['tu' => 5.5, 'den' => 6.4,  'chu' => 'C',  'he_4' => 2.0, 'xep_loai' => 'Trung bình',     'ket_qua' => 'Đạt'],
+        ['tu' => 5.0, 'den' => 5.4,  'chu' => 'D+', 'he_4' => 1.5, 'xep_loai' => 'Trung bình yếu', 'ket_qua' => 'Đạt'],
+        ['tu' => 4.0, 'den' => 4.9,  'chu' => 'D',  'he_4' => 1.0, 'xep_loai' => 'Trung bình yếu', 'ket_qua' => 'Đạt'],
+        ['tu' => 0.0, 'den' => 3.9,  'chu' => 'F',  'he_4' => 0.0, 'xep_loai' => 'Kém',            'ket_qua' => 'Không đạt'],
+    ];
+    // RULE-14.1: D = 0.6A + 0.3B + 0.1C (A cuối kỳ, B giữa kỳ, C chuyên cần)
+    public const HE_SO_CUOI_KY = 0.6;
+    public const HE_SO_GIUA_KY = 0.3;
+    public const HE_SO_CHUYEN_CAN = 0.1;
 
     // RULE-TKB-01, RULE-TKB-02: 13 tiết/ngày
     public const SO_TIET_NGAY = 13;
@@ -79,6 +110,41 @@ class Academic
         return ['so_tiet_ly_thuyet' => $lt, 'so_tiet_thuc_hanh' => $th, 'so_tiet' => $lt + $th];
     }
 
+    /**
+     * RULE-HK-07: Số tuần của một khoảng ngày = số tuần lịch (Thứ 2 → Chủ nhật) mà khoảng ngày đi qua.
+     * Một công thức duy nhất cho danh sách học kỳ và thời khóa biểu:
+     *   so_tuan = (Thứ 2 của tuần chứa ngày kết thúc − Thứ 2 của tuần chứa ngày bắt đầu) ÷ 7 + 1
+     */
+    public static function soTuan(string $tu, string $den): int
+    {
+        $a = new DateTime($tu);
+        $b = new DateTime($den);
+        $a->modify('-' . ((int) $a->format('N') - 1) . ' days');
+        $b->modify('-' . ((int) $b->format('N') - 1) . ' days');
+
+        return max(1, intdiv((int) $a->diff($b)->format('%r%a'), 7) + 1);
+    }
+
+    /**
+     * RULE-DL-07: số thứ tự buổi học của một lớp - một nguồn duy nhất (buoi_hoc) cho TKB và điểm danh.
+     * Đánh số theo ngày học, tiết bắt đầu, id. Trả về [buoi_id => số thứ tự].
+     */
+    public static function soThuTuBuoi(PDO $db, int $lopHocPhanId): array
+    {
+        $stmt = $db->prepare('
+            SELECT b.id FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id
+            WHERE lh.lop_hoc_phan_id = :id
+            ORDER BY b.ngay_hoc, b.tiet_bat_dau, b.id
+        ');
+        $stmt->execute([':id' => $lopHocPhanId]);
+        $map = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $i => $id) {
+            $map[(int) $id] = $i + 1;
+        }
+
+        return $map;
+    }
+
     /** RULE-TKB-03: Số tiết của một buổi/lịch = tiết kết thúc - tiết bắt đầu + 1 (RULE-11.6) */
     public static function soTiet(array $row): int
     {
@@ -124,8 +190,11 @@ class Academic
      * $busy:      buổi của lớp khác cùng giảng viên/phòng theo ngày: ngay => [[tbd, tkt, mô tả], ...] (RULE-XD-01).
      * Trả về ['buoi', 'bo_qua', 'tong_tiet_mon', 'da_xep', 'con_thieu', 'nguyen_nhan'].
      */
-    public static function planBuoiHoc(array $schedules, int $tongTiet, array $fixed = [], array $busy = []): array
+    public static function planBuoiHoc(array $schedules, int $tongTiet, array $fixed = [], array $busy = [], ?string $tuNgay = null): array
     {
+        // RULE-XL-12: chỉ xếp buổi mới từ hôm nay trở đi; ngày đã qua chỉ giữ buổi đang có (không tạo lịch sử mới)
+        $tuNgay = $tuNgay ?? date('Y-m-d');
+        $boQuaQuaKhu = 0;
         // RULE-XL-02, RULE-XL-03, RULE-XL-08: chỉ các ngày thuộc thứ đã chọn, trong khoảng ngày (học kỳ), theo thời gian
         $slots = [];
         foreach ($schedules as $s) {
@@ -150,6 +219,10 @@ class Academic
             }
             // RULE-XL-07: dừng khi đủ tổng số tiết
             if ($conLai <= 0 || $dungVi !== null) {
+                continue;
+            }
+            if ($sl['ngay_hoc'] < $tuNgay) {
+                $boQuaQuaKhu++;
                 continue;
             }
             $n = $sl['tiet_ket_thuc'] - $sl['tiet_bat_dau'] + 1;
@@ -195,6 +268,9 @@ class Academic
             }
             if ($boQua) {
                 $nguyenNhan[] = count($boQua) . ' ngày bị bỏ qua do trùng lịch giảng viên/phòng học';
+            }
+            if ($boQuaQuaKhu) {
+                $nguyenNhan[] = $boQuaQuaKhu . ' ngày đã qua (trước ' . date('d/m/Y', strtotime($tuNgay)) . ') không được xếp buổi mới';
             }
             if ($dungVi === null) {
                 $nguyenNhan[] = 'hết ngày học hợp lệ của các thứ đã chọn trong học kỳ';
@@ -283,7 +359,8 @@ class Academic
 
         $fixed = [];
         foreach ($existing as $b) {
-            if ($giuBuoiHienCo || (int) $b['so_diem_danh'] > 0 || $b['trang_thai'] !== 'Dự kiến') {
+            // RULE-XL-11: giữ nguyên buổi đã điểm danh và buổi đã diễn ra (ngày học trước hôm nay) - không đổi lịch sử
+            if ($giuBuoiHienCo || (int) $b['so_diem_danh'] > 0 || $b['trang_thai'] !== 'Dự kiến' || $b['ngay_hoc'] < date('Y-m-d')) {
                 $fixed[$b['lich_hoc_id'] . '|' . $b['ngay_hoc']] = (int) $b['tiet_ket_thuc'] - (int) $b['tiet_bat_dau'] + 1;
             }
         }
@@ -363,20 +440,49 @@ class Academic
      */
     public static function diemChuyenCan(int $tietNghi, int $tongTietMon): float
     {
-        if ($tongTietMon <= 0 || $tietNghi <= 0) {
-            return 10.0;
+        // RULE-15.5: R = tiết nghỉ ÷ tổng tiết môn × 100%
+        $tyLe = self::tyLeNghi($tietNghi, $tongTietMon);
+        if ($tyLe <= 0) {
+            return (float) self::CC_DIEM_TOI_DA;
         }
 
-        $tyLe = $tietNghi / $tongTietMon * 100;
-
-        if ($tyLe >= 20) {
+        // RULE-15.8: R >= 20% thì C = 0
+        if ($tyLe >= self::CC_NGUONG_BANG_0 - 1e-9) {
             return 0.0;
         }
 
-        // Cộng sai số nhỏ để tránh lỗi làm tròn số thực (vd 4% / 2 = 1.9999)
-        $soLanTru = (int) floor($tyLe / 2 + 1e-9);
+        // RULE-15.6, 15.7: mỗi mức 2% hoàn chỉnh trừ 1 điểm: C = 10 − ⌊R ÷ 2⌋
+        // (cộng sai số nhỏ để tránh lỗi số thực, vd 4% / 2 = 1.9999)
+        $soLanTru = (int) floor($tyLe / self::CC_PHAN_TRAM_MOI_DIEM + 1e-9);
 
-        return (float) max(0, 10 - $soLanTru);
+        return (float) max(0, self::CC_DIEM_TOI_DA - $soLanTru);
+    }
+
+    /** RULE-15.5: tỷ lệ nghỉ R (%) = tiết nghỉ ÷ tổng tiết môn × 100 */
+    public static function tyLeNghi(int $tietNghi, int $tongTietMon): float
+    {
+        return $tongTietMon > 0 ? $tietNghi / $tongTietMon * 100 : 0.0;
+    }
+
+    /** RULE-15.13: cấm thi khi R >= 20% (cùng ngưỡng với C = 0) */
+    public static function camThi(int $tietNghi, int $tongTietMon): bool
+    {
+        return self::tyLeNghi($tietNghi, $tongTietMon) >= self::NGUONG_CAM_THI - 1e-9;
+    }
+
+    /** Trạng thái chuyên cần đầy đủ của một đăng ký (dùng cho bảng điểm và tra cứu) */
+    public static function chuyenCan(PDO $db, int $dangKyId): array
+    {
+        $nghi = self::tietNghi($db, $dangKyId);
+        $tong = self::tongTietMon($db, $dangKyId);
+
+        return [
+            'tiet_nghi' => $nghi,
+            'tong_tiet_mon' => $tong,
+            'ty_le_nghi' => round(self::tyLeNghi($nghi, $tong), 2),
+            'diem_chuyen_can' => self::diemChuyenCan($nghi, $tong),
+            'cam_thi' => self::camThi($nghi, $tong),
+        ];
     }
 
     /** Tổng số tiết nghỉ của một đăng ký (RULE-15.2, RULE-15.6) */
@@ -394,17 +500,24 @@ class Academic
         return (int) $stmt->fetchColumn();
     }
 
-    /** RULE-14.1: Điểm tổng kết = a*0.6 + b*0.3 + c*0.1 */
+    /**
+     * RULE-14.1: D = 0.6A + 0.3B + 0.1C, làm tròn 2 chữ số thập phân.
+     * RULE-14.2: chưa đủ A, B (C luôn tính từ điểm danh) thì chưa tính D.
+     */
     public static function diemTongKet(?float $cuoiKy, ?float $giuaKy, ?float $chuyenCan): ?float
     {
         if ($cuoiKy === null || $giuaKy === null || $chuyenCan === null) {
             return null;
         }
 
-        return round($cuoiKy * 0.6 + $giuaKy * 0.3 + $chuyenCan * 0.1, 2);
+        return round($cuoiKy * self::HE_SO_CUOI_KY + $giuaKy * self::HE_SO_GIUA_KY + $chuyenCan * self::HE_SO_CHUYEN_CAN, 2);
     }
 
-    /** RULE-17: Quy đổi hệ 10 sang điểm chữ, hệ 4, xếp loại, kết quả */
+    /**
+     * RULE-17: quy đổi điểm tổng kết D (hệ 10) sang điểm chữ, hệ 4, xếp loại, kết quả theo THANG_DIEM.
+     * Theo quy chế: điểm học phần làm tròn đến MỘT chữ số thập phân rồi mới chuyển sang điểm chữ
+     * (VD D = 7.95 → 8.0 → B+; D = 8.45 → 8.5 → A).
+     */
     public static function quyDoi(?float $he10): array
     {
         if ($he10 === null) {
@@ -412,21 +525,14 @@ class Academic
         }
 
         $d = round($he10, 1);
+        foreach (self::THANG_DIEM as $muc) {
+            if ($d >= $muc['tu'] - 1e-9) {
+                return ['diem_chu' => $muc['chu'], 'diem_he_4' => $muc['he_4'], 'xep_loai' => $muc['xep_loai'], 'ket_qua' => $muc['ket_qua']];
+            }
+        }
+        $f = self::THANG_DIEM[count(self::THANG_DIEM) - 1];
 
-        if ($d >= 8.5) {
-            return ['diem_chu' => 'A', 'diem_he_4' => 4.0, 'xep_loai' => 'Xuất sắc / Giỏi', 'ket_qua' => 'Đạt'];
-        }
-        if ($d >= 7.0) {
-            return ['diem_chu' => 'B', 'diem_he_4' => 3.0, 'xep_loai' => 'Khá', 'ket_qua' => 'Đạt'];
-        }
-        if ($d >= 5.5) {
-            return ['diem_chu' => 'C', 'diem_he_4' => 2.0, 'xep_loai' => 'Trung bình', 'ket_qua' => 'Đạt'];
-        }
-        if ($d >= 4.0) {
-            return ['diem_chu' => 'D', 'diem_he_4' => 1.0, 'xep_loai' => 'Trung bình yếu', 'ket_qua' => 'Đạt'];
-        }
-
-        return ['diem_chu' => 'F', 'diem_he_4' => 0.0, 'xep_loai' => 'Kém', 'ket_qua' => 'Không đạt'];
+        return ['diem_chu' => $f['chu'], 'diem_he_4' => $f['he_4'], 'xep_loai' => $f['xep_loai'], 'ket_qua' => $f['ket_qua']];
     }
 
     /** Phân loại điểm trung bình học kỳ theo thang RULE-17 (hệ 10) */
@@ -436,8 +542,10 @@ class Academic
     }
 
     /**
-     * Tính lại chuyên cần + tổng kết cho một đăng ký và lưu vào bảng diem
-     * (chỉ khi đã có bản ghi điểm). RULE-14.2.
+     * RULE-14.2, RULE-15.12, RULE-15.13: tính lại chuyên cần, cấm thi và điểm tổng kết của một đăng ký.
+     *  - Đã có điểm: tính lại theo điểm danh hiện tại.
+     *  - Chưa có điểm nhưng bị cấm thi: tạo kết quả D = 0 (F, Không đạt).
+     *  - Không còn cấm thi và chưa có điểm A, B nào: bỏ bản ghi kết quả tạm.
      */
     public static function recalcDiem(PDO $db, int $dangKyId): void
     {
@@ -445,11 +553,19 @@ class Academic
         $stmt->execute([':dk' => $dangKyId]);
         $diem = $stmt->fetch();
 
-        if (!$diem) {
+        $gk = $diem ? self::nullableFloat($diem['diem_giua_ky']) : null;
+        $ck = $diem ? self::nullableFloat($diem['diem_cuoi_ky']) : null;
+        $camThi = self::chuyenCan($db, $dangKyId)['cam_thi'];
+
+        if (!$diem && !$camThi) {
+            return;
+        }
+        if ($diem && !$camThi && $gk === null && $ck === null) {
+            $db->prepare('DELETE FROM diem WHERE dang_ky_id = :dk')->execute([':dk' => $dangKyId]);
             return;
         }
 
-        self::saveDiem($db, $dangKyId, self::nullableFloat($diem['diem_giua_ky']), self::nullableFloat($diem['diem_cuoi_ky']));
+        self::saveDiem($db, $dangKyId, $gk, $ck);
     }
 
     /**
@@ -481,13 +597,13 @@ class Academic
         return $lhpId === false ? 0 : self::tongTietLop($db, (int) $lhpId);
     }
 
-    /** RULE-15.11: tính lại chuyên cần / tổng kết cho toàn bộ sinh viên của lớp */
+    /** RULE-15.11: tính lại chuyên cần / cấm thi / tổng kết cho toàn bộ sinh viên đang học của lớp */
     public static function recalcLop(PDO $db, int $lopHocPhanId): void
     {
         $stmt = $db->prepare('
-            SELECT d.dang_ky_id FROM diem d
-            INNER JOIN dang_ky_hoc_phan dk ON dk.id = d.dang_ky_id
-            WHERE dk.lop_hoc_phan_id = :id
+            SELECT dk.id FROM dang_ky_hoc_phan dk
+            WHERE dk.lop_hoc_phan_id = :id AND (' . self::activeDkSql('dk.trang_thai') . '
+                  OR EXISTS (SELECT 1 FROM diem d WHERE d.dang_ky_id = dk.id))
         ');
         $stmt->execute([':id' => $lopHocPhanId]);
 
@@ -501,8 +617,10 @@ class Academic
      */
     public static function saveDiem(PDO $db, int $dangKyId, ?float $giuaKy, ?float $cuoiKy): array
     {
-        $chuyenCan = self::diemChuyenCan(self::tietNghi($db, $dangKyId), self::tongTietMon($db, $dangKyId));
-        $tongKet = self::diemTongKet($cuoiKy, $giuaKy, $chuyenCan);
+        $cc = self::chuyenCan($db, $dangKyId);
+        $chuyenCan = $cc['diem_chuyen_can'];
+        // RULE-15.13: bị cấm thi -> D = 0 (F, Không đạt); ngược lại D = 0.6A + 0.3B + 0.1C (RULE-14.1)
+        $tongKet = $cc['cam_thi'] ? 0.0 : self::diemTongKet($cuoiKy, $giuaKy, $chuyenCan);
         $he10 = $tongKet === null ? null : round($tongKet, 1);
         $qd = self::quyDoi($tongKet);
         $now = date('Y-m-d H:i:s');
@@ -546,6 +664,7 @@ class Academic
             'diem_he_4' => $qd['diem_he_4'],
             'diem_chu' => $qd['diem_chu'],
             'ket_qua' => $qd['ket_qua'],
+            'cam_thi' => $cc['cam_thi'],
             'updated_at' => $now,
         ];
     }
