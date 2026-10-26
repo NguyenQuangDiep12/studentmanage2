@@ -38,21 +38,24 @@ var SidebarComponent = (function ($) {
             menuList.append(createNavCard('mon-hoc', 'Môn học', 'Tạo môn học mới bằng cách nhập trực tiếp'));
             menuList.append(createNavCard('lop-hoc-phan', 'Lớp học phần', 'Quản lý lớp học phần và lịch học'));
             menuList.append(createNavCard('co-cau-dao-tao', 'Cơ cấu đào tạo', 'Khoa, chuyên ngành, CTĐT và nhóm tự chọn'));
+            menuList.append(createNavCard('chuong-trinh-dao-tao', 'Chương trình đào tạo', 'Khung môn học theo học kỳ và nhóm tự chọn'));
 
             menuList.append('<div class="nav-section-header">Bảng tin & Thông báo</div>');
             menuList.append(createNavCard('tin-tuc-admin', 'Quản lý tin tức', 'Đăng tin, sửa tin và phê duyệt thông báo'));
         } else if (role === 'giang_vien') {
             menuList.append('<div class="nav-section-header">Công tác giảng dạy</div>');
             menuList.append(createNavCard('lop-hoc-phan', 'Lớp học phần phụ trách', 'Xem danh sách lớp và sinh viên phụ trách'));
-            menuList.append(createNavCard('diem-danh', 'Điểm danh', 'Điểm danh có mặt, vắng mặt, đi muộn'));
+            menuList.append(createNavCard('diem-danh', 'Điểm danh', 'Điểm danh có mặt, vắng mặt theo buổi'));
             menuList.append(createNavCard('quan-ly-diem', 'Nhập điểm', 'Quản lý bảng điểm theo môn học'));
             menuList.append(createNavCard('tkb', 'Lịch giảng dạy', 'Thời khóa biểu giảng dạy theo tuần'));
             menuList.append(createNavCard('mon-hoc', 'Danh mục môn học', 'Tra cứu thông tin môn học và số tín chỉ'));
+            menuList.append(createNavCard('chuong-trinh-dao-tao', 'Chương trình đào tạo', 'Khung môn học theo học kỳ và nhóm tự chọn'));
         } else if (role === 'sinh_vien') {
             menuList.append('<div class="nav-section-header">Học tập & Đăng ký</div>');
             menuList.append(createNavCard('dang-ky', 'Đăng ký học phần', 'Tra cứu lớp HP và đăng ký môn học'));
             menuList.append(createNavCard('tkb', 'Thời khóa biểu', 'Xem lịch học và phòng học theo tuần'));
             menuList.append(createNavCard('ket-qua', 'Kết quả học tập', 'Tra cứu bảng điểm và điểm tích lũy'));
+            menuList.append(createNavCard('chuong-trinh-dao-tao', 'Chương trình đào tạo', 'Khung chương trình và các môn đã học'));
         }
 
         // Chung

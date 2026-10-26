@@ -13,6 +13,7 @@
 
     var UsersModule = {
         render: function (mode) {
+            var self = this;
             var currentUser = App.getCurrentUser();
             if (!currentUser || currentUser.vai_tro !== 'admin') {
                 $('#contentArea').html(
@@ -36,9 +37,18 @@
             var titleIcon = isSv ? 'fa-user-graduate' : (isGv ? 'fa-chalkboard-user' : 'fa-users');
             var addBtnText = isSv ? 'Thêm sinh viên' : (isGv ? 'Thêm giảng viên' : 'Tạo tài khoản');
 
-            // Lấy danh sách lớp sinh viên & khoa để lọc nhanh
-            var allKhoa = MockDB.khoa.getAll();
-            var allLopSV = MockDB.lop_sinh_vien.getAll();
+            // Danh sách lớp sinh viên & khoa lấy từ API rồi mới dựng giao diện
+            Api.get('/api/taikhoan/danh-muc')
+                .done(function (res) {
+                    self.danhMuc = res.data || { khoa: [], lop_sinh_vien: [] };
+                    self.renderPage(isSv, isGv, pageTitle, titleIcon, addBtnText);
+                })
+                .fail(Api.toastError);
+        },
+
+        renderPage: function (isSv, isGv, pageTitle, titleIcon, addBtnText) {
+            var allKhoa = this.danhMuc.khoa;
+            var allLopSV = this.danhMuc.lop_sinh_vien;
 
             var filterExtraHtml = '';
             if (isSv) {
@@ -91,13 +101,12 @@
                 '        <thead>' +
                 '          <tr>' +
                 '            <th style="width:50px;">STT</th>' +
-                '            <th>Mã định danh</th>' +
-                '            <th>Tên đăng nhập</th>' +
+                '            <th>' + (isSv ? 'Mã sinh viên' : (isGv ? 'Mã giảng viên' : 'Mã định danh')) + '</th>' +
                 '            <th>Họ và tên</th>' +
                 '            <th>' + (isSv ? 'Lớp sinh hoạt / Khoa' : (isGv ? 'Khoa công tác' : 'Khoa / Lớp')) + '</th>' +
                 '            <th>Liên hệ (Email/SĐT)</th>' +
                 '            <th class="text-center">Trạng thái</th>' +
-                '            <th class="text-center" style="width:140px;">Thao tác</th>' +
+                '            <th class="text-center">Thao tác</th>' +
                 '          </tr>' +
                 '        </thead>' +
                 '        <tbody id="usersTableBody"></tbody>' +
@@ -158,50 +167,27 @@
         },
 
         loadUsers: function () {
-            var kw = ($('#searchUsers').val() || '').toLowerCase().trim();
-            var st = $('#filterTrangThaiUser').val();
-            var lopFilter = $('#filterLopSV').length ? $('#filterLopSV').val() : '';
-            var khoaFilter = $('#filterKhoaGV').length ? $('#filterKhoaGV').val() : '';
+            var self = this;
+            // Tìm kiếm & lọc theo vai trò / trạng thái / lớp / khoa do backend xử lý
+            Api.get('/api/taikhoan/users', {
+                vai_tro: currentViewMode === 'all' ? '' : currentViewMode,
+                search: ($('#searchUsers').val() || '').trim(),
+                trang_thai: $('#filterTrangThaiUser').val(),
+                lop_sinh_vien_id: $('#filterLopSV').length ? $('#filterLopSV').val() : '',
+                khoa_id: $('#filterKhoaGV').length ? $('#filterKhoaGV').val() : ''
+            })
+                .done(function (res) {
+                    self.cache = res.data || [];
+                    self.renderUsers(self.cache);
+                })
+                .fail(Api.toastError);
+        },
 
-            var list = MockDB.users.getAll();
+        findCached: function (id) {
+            return (this.cache || []).find(function (u) { return u.id === parseInt(id, 10); }) || null;
+        },
 
-            // Lọc theo chế độ view mode
-            if (currentViewMode === 'sinh_vien') {
-                list = list.filter(function (u) { return u.vai_tro === 'sinh_vien'; });
-            } else if (currentViewMode === 'giang_vien') {
-                list = list.filter(function (u) { return u.vai_tro === 'giang_vien'; });
-            }
-
-            // Lọc trạng thái
-            if (st) {
-                list = list.filter(function (u) {
-                    if (st === 'Hoạt động') return u.trang_thai === 'Hoạt động' || u.trang_thai === 'active';
-                    if (st === 'Đã khóa') return u.trang_thai === 'Đã khóa' || u.trang_thai === 'locked';
-                    return u.trang_thai === st;
-                });
-            }
-
-            // Lọc lớp SV
-            if (lopFilter) {
-                list = list.filter(function (u) { return String(u.lop_sinh_vien_id) === String(lopFilter); });
-            }
-
-            // Lọc khoa GV
-            if (khoaFilter) {
-                list = list.filter(function (u) { return String(u.khoa_id) === String(khoaFilter); });
-            }
-
-            // Lọc từ khóa
-            if (kw) {
-                list = list.filter(function (u) {
-                    var m = (u.ma_dinh_danh || '').toLowerCase();
-                    var un = (u.username || '').toLowerCase();
-                    var h = (u.ho_ten || '').toLowerCase();
-                    var e = (u.email || '').toLowerCase();
-                    return m.indexOf(kw) !== -1 || un.indexOf(kw) !== -1 || h.indexOf(kw) !== -1 || e.indexOf(kw) !== -1;
-                });
-            }
-
+        renderUsers: function (list) {
             $('#totalUsersCount').text('Tổng: ' + list.length + ' tài khoản');
 
             var tbody = $('#usersTableBody');
@@ -209,7 +195,7 @@
 
             if (list.length === 0) {
                 tbody.html(
-                    '<tr><td colspan="8" class="text-center text-gray py-4">' +
+                    '<tr><td colspan="7" class="text-center text-gray py-4">' +
                     '  <i class="fa-solid fa-user-slash" style="font-size:1.6rem; opacity:0.3; display:block; margin-bottom:8px;"></i>' +
                     '  Không tìm thấy tài khoản phù hợp' +
                     '</td></tr>'
@@ -220,18 +206,15 @@
             list.forEach(function (u, idx) {
                 var infoOrg = '—';
                 if (u.vai_tro === 'sinh_vien') {
-                    var lsv = u.lop_sinh_vien_id ? MockDB.lop_sinh_vien.getById(u.lop_sinh_vien_id) : null;
-                    if (lsv) {
-                        var ctdt = MockDB.chuong_trinh_dao_tao.getById(lsv.chuong_trinh_id);
-                        infoOrg = '<strong>' + App.escapeHtml(lsv.ma_lop) + '</strong> (' + App.escapeHtml(lsv.ten_lop) + ')' +
-                            (ctdt ? '<br><small class="text-gray">' + App.escapeHtml(ctdt.ten_chuong_trinh) + '</small>' : '');
+                    if (u.ma_lop) {
+                        infoOrg = '<strong>' + App.escapeHtml(u.ma_lop) + '</strong> (' + App.escapeHtml(u.ten_lop) + ')' +
+                            (u.ten_chuong_trinh ? '<br><small class="text-gray">' + App.escapeHtml(u.ten_chuong_trinh) + '</small>' : '');
                     } else {
                         infoOrg = '<span class="text-danger font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Chưa phân lớp</span>';
                     }
                 } else if (u.vai_tro === 'giang_vien') {
-                    var kh = u.khoa_id ? MockDB.khoa.getById(u.khoa_id) : null;
-                    if (kh) {
-                        infoOrg = '<strong>' + App.escapeHtml(kh.ten_khoa) + '</strong> (' + App.escapeHtml(kh.ma_khoa) + ')';
+                    if (u.ma_khoa) {
+                        infoOrg = '<strong>' + App.escapeHtml(u.ten_khoa) + '</strong> (' + App.escapeHtml(u.ma_khoa) + ')';
                     } else {
                         infoOrg = '<span class="text-danger font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Chưa gán khoa</span>';
                     }
@@ -242,8 +225,8 @@
                 var isLocked = (u.trang_thai === 'Đã khóa' || u.trang_thai === 'locked');
                 var toggleTitle = isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản';
                 var toggleBtn = isLocked
-                    ? '<button class="btn btn-sm btn-outline text-success btn-toggle-user-status" data-id="' + u.id + '" title="' + toggleTitle + '"><i class="fa-solid fa-lock-open"></i></button>'
-                    : '<button class="btn btn-sm btn-outline text-danger btn-toggle-user-status" data-id="' + u.id + '" title="' + toggleTitle + '"><i class="fa-solid fa-lock"></i></button>';
+                    ? '<button class="btn btn-sm btn-outline text-success btn-toggle-user-status" data-id="' + u.id + '" title="' + toggleTitle + '">Mở khóa</button>'
+                    : '<button class="btn btn-sm btn-outline text-danger btn-toggle-user-status" data-id="' + u.id + '" title="' + toggleTitle + '">Khóa</button>';
 
                 var contactHtml = '';
                 if (u.email) contactHtml += '<div><i class="fa-regular fa-envelope"></i> ' + App.escapeHtml(u.email) + '</div>';
@@ -254,7 +237,6 @@
                     '<tr>' +
                     '  <td class="text-center font-bold">' + (idx + 1) + '</td>' +
                     '  <td><strong>' + App.escapeHtml(u.ma_dinh_danh) + '</strong></td>' +
-                    '  <td><code>' + App.escapeHtml(u.username) + '</code></td>' +
                     '  <td><strong>' + App.escapeHtml(u.ho_ten) + '</strong>' +
                     (u.gioi_tinh ? ' <small class="text-gray">(' + App.escapeHtml(u.gioi_tinh) + ')</small>' : '') +
                     '  </td>' +
@@ -263,8 +245,8 @@
                     '  <td class="text-center">' + App.trangThaiUserBadge(u.trang_thai) + '</td>' +
                     '  <td class="text-center">' +
                     '    <div class="table-actions justify-center">' +
-                    '      <button class="btn btn-sm btn-outline btn-edit-user" data-id="' + u.id + '" title="Sửa thông tin"><i class="fa-solid fa-pen-to-square"></i></button>' +
-                    '      <button class="btn btn-sm btn-outline btn-reset-user-pass" data-id="' + u.id + '" title="Đặt lại mật khẩu"><i class="fa-solid fa-key"></i></button>' +
+                    '      <button class="btn btn-sm btn-outline btn-edit-user" data-id="' + u.id + '" title="Sửa thông tin">Sửa</button>' +
+                    '      <button class="btn btn-sm btn-outline btn-reset-user-pass" data-id="' + u.id + '" title="Đặt lại mật khẩu">Đặt lại mật khẩu</button>' +
                     toggleBtn +
                     '    </div>' +
                     '  </td>' +
@@ -274,14 +256,14 @@
         },
 
         showFormModal: function (id) {
-            var u = id ? MockDB.users.getById(id) : null;
+            var u = id ? this.findCached(id) : null;
             var isEdit = !!u;
 
             var defaultRole = currentViewMode === 'giang_vien' ? 'giang_vien' : 'sinh_vien';
             var currentRole = u ? u.vai_tro : defaultRole;
 
-            var allKhoa = MockDB.khoa.getAll();
-            var allLopSV = MockDB.lop_sinh_vien.getAll();
+            var allKhoa = this.danhMuc.khoa;
+            var allLopSV = this.danhMuc.lop_sinh_vien;
 
             var khoaOptions = allKhoa.map(function (k) {
                 var sel = (u && u.khoa_id === k.id) ? 'selected' : '';
@@ -311,21 +293,16 @@
                 '  <input type="hidden" id="modalUserId" value="' + (u ? u.id : '') + '">' +
                 '  <div class="form-row">' +
                 '    <div class="form-group">' +
-                '      <label>Mã định danh <span class="required">*</span> (' + (currentRole === 'giang_vien' ? 'MSGV' : 'MSSV') + ')</label>' +
+                '      <label>' + (currentRole === 'giang_vien' ? 'Mã giảng viên' : (currentRole === 'admin' ? 'Mã quản trị viên' : 'Mã sinh viên')) + ' <span class="required">*</span> <small class="text-muted">(dùng để đăng nhập)</small></label>' +
                 '      <input type="text" class="form-control" id="modalMaDinhDanh" value="' + (u ? App.escapeHtml(u.ma_dinh_danh) : '') + '" placeholder="VD: ' + (currentRole === 'giang_vien' ? 'GV001' : 'SV001') + '" ' + (isEdit ? 'readonly' : '') + '>' +
                 '    </div>' +
-                '    <div class="form-group">' +
-                '      <label>Tên đăng nhập <span class="required">*</span></label>' +
-                '      <input type="text" class="form-control" id="modalUsername" value="' + (u ? App.escapeHtml(u.username) : '') + '" placeholder="VD: ' + (currentRole === 'giang_vien' ? 'lecturer_account' : 'student_account') + '" ' + (isEdit ? 'readonly' : '') + '>' +
-                '    </div>' +
-                '  </div>' +
-
                 (!isEdit ?
-                '  <div class="form-group">' +
-                '    <label>Mật khẩu khởi tạo <span class="required">*</span></label>' +
-                '    <input type="password" class="form-control" id="modalPassword" value="123456">' +
-                '    <small class="text-gray">Mật khẩu mặc định hệ thống là 123456</small>' +
-                '  </div>' : '') +
+                '    <div class="form-group">' +
+                '      <label>Mật khẩu khởi tạo <span class="required">*</span></label>' +
+                '      <input type="password" class="form-control" id="modalPassword" value="123456">' +
+                '      <small class="text-gray">Mật khẩu mặc định hệ thống là 123456</small>' +
+                '    </div>' : '') +
+                '  </div>' +
 
                 '  <div class="form-row">' +
                 '    <div class="form-group" style="flex:2;">' +
@@ -406,169 +383,93 @@
         saveUser: function () {
             var self = this;
             var id = $('#modalUserId').val();
-            var ma = $('#modalMaDinhDanh').val().trim().toUpperCase();
-            var username = $('#modalUsername').val().trim().toLowerCase();
-            var hoTen = $('#modalHoTen').val().trim();
-            var vaiTro = $('#modalVaiTro').val();
-            var pass = $('#modalPassword').length ? $('#modalPassword').val().trim() : null;
-            var ngaySinh = $('#modalNgaySinh').val();
-            var gioiTinh = $('#modalGioiTinh').val();
-            var trangThai = $('#modalTrangThai').val();
-            var email = $('#modalEmail').val().trim();
-            var phone = $('#modalPhone').val().trim();
-            var diaChi = $('#modalDiaChi').val().trim();
-
-            var lopId = $('#modalLopSV').val() ? parseInt($('#modalLopSV').val(), 10) : null;
-            var khoaId = $('#modalKhoaGV').val() ? parseInt($('#modalKhoaGV').val(), 10) : null;
-
-            if (!ma || !username || !hoTen) {
-                App.showToast('Vui lòng điền các trường bắt buộc (Mã định danh, Tên đăng nhập, Họ tên)!', 'error');
-                return;
+            var payload = {
+                ma_dinh_danh: $('#modalMaDinhDanh').val(),
+                ho_ten: $('#modalHoTen').val(),
+                vai_tro: $('#modalVaiTro').val(),
+                ngay_sinh: $('#modalNgaySinh').val(),
+                gioi_tinh: $('#modalGioiTinh').val(),
+                trang_thai: $('#modalTrangThai').val(),
+                email: $('#modalEmail').val(),
+                so_dien_thoai: $('#modalPhone').val(),
+                dia_chi: $('#modalDiaChi').val(),
+                lop_sinh_vien_id: $('#modalLopSV').val(),
+                khoa_id: $('#modalKhoaGV').val()
+            };
+            if ($('#modalPassword').length) {
+                payload.password = $('#modalPassword').val();
             }
-
-            // Ràng buộc nghiệp vụ: Sinh viên bắt buộc phải có lớp sinh hoạt
-            if (vaiTro === 'sinh_vien' && !lopId) {
-                App.showToast('Vui lòng chọn lớp sinh viên sinh hoạt cho sinh viên!', 'error');
-                return;
-            }
-
-            // Ràng buộc nghiệp vụ: Giảng viên bắt buộc phải có khoa trực thuộc
-            if (vaiTro === 'giang_vien' && !khoaId) {
-                App.showToast('Vui lòng chọn khoa trực thuộc cho giảng viên!', 'error');
-                return;
-            }
-
-            var allUsers = MockDB.users.getAll();
 
             if (id) {
-                var uid = parseInt(id, 10);
-                var existingUser = MockDB.users.getById(uid);
-
-                // Kiểm tra cảnh báo nếu đổi trạng thái sang 'Đã khóa' cho giảng viên đang phụ trách lớp
-                if (existingUser && existingUser.vai_tro === 'giang_vien' && trangThai === 'Đã khóa' && (existingUser.trang_thai === 'Hoạt động' || existingUser.trang_thai === 'active')) {
-                    var activeClasses = MockDB.lop_hoc_phan.getAll({
-                        giang_vien_user_id: uid,
-                        trang_thai: 'Đang mở'
-                    });
-
-                    if (activeClasses.length > 0) {
-                        App.confirm(
-                            '<strong>CẢNH BÁO AN TOÀN:</strong><br>' +
-                            'Giảng viên <strong>' + App.escapeHtml(existingUser.ho_ten) + '</strong> hiện đang phụ trách <strong>' + activeClasses.length + ' lớp học phần đang mở</strong>.<br>' +
-                            'Khóa tài khoản sẽ ảnh hưởng đến việc vào điểm và điểm danh của các lớp này. Bạn vẫn muốn tiếp tục khóa?',
-                            function () {
-                                self.performUpdateUser(uid, hoTen, ngaySinh, gioiTinh, trangThai, email, phone, diaChi, vaiTro, lopId, khoaId);
-                            }
-                        );
-                        return;
-                    }
-                }
-
-                self.performUpdateUser(uid, hoTen, ngaySinh, gioiTinh, trangThai, email, phone, diaChi, vaiTro, lopId, khoaId);
-            } else {
-                // Kiểm tra tính duy nhất của Username
-                var dupUsername = allUsers.some(function (u) { return u.username.toLowerCase() === username; });
-                if (dupUsername) {
-                    App.showToast('Tên đăng nhập "' + username + '" đã có người sử dụng!', 'error');
-                    return;
-                }
-
-                // Kiểm tra tính duy nhất của Mã định danh
-                var dupMa = allUsers.some(function (u) { return u.ma_dinh_danh.toUpperCase() === ma; });
-                if (dupMa) {
-                    App.showToast('Mã định danh "' + ma + '" đã tồn tại trong hệ thống!', 'error');
-                    return;
-                }
-
-                MockDB.users.create({
-                    ma_dinh_danh: ma,
-                    username: username,
-                    password: pass || '123456',
-                    ho_ten: hoTen,
-                    vai_tro: vaiTro,
-                    ngay_sinh: ngaySinh,
-                    gioi_tinh: gioiTinh,
-                    trang_thai: trangThai,
-                    email: email,
-                    so_dien_thoai: phone,
-                    dia_chi: diaChi,
-                    lop_sinh_vien_id: vaiTro === 'sinh_vien' ? lopId : null,
-                    khoa_id: vaiTro === 'giang_vien' ? khoaId : null,
-                    created_at: new Date().toISOString()
-                });
-                App.showToast('Tạo mới tài khoản thành công!', 'success');
-                App.closeModal();
-                self.loadUsers();
-            }
-        },
-
-        performUpdateUser: function (uid, hoTen, ngaySinh, gioiTinh, trangThai, email, phone, diaChi, vaiTro, lopId, khoaId) {
-            MockDB.users.update(uid, {
-                ho_ten: hoTen,
-                ngay_sinh: ngaySinh,
-                gioi_tinh: gioiTinh,
-                trang_thai: trangThai,
-                email: email,
-                so_dien_thoai: phone,
-                dia_chi: diaChi,
-                lop_sinh_vien_id: vaiTro === 'sinh_vien' ? lopId : null,
-                khoa_id: vaiTro === 'giang_vien' ? khoaId : null
-            });
-            App.showToast('Cập nhật thông tin tài khoản thành công!', 'success');
-            App.closeModal();
-            this.loadUsers();
-        },
-
-        toggleStatus: function (id) {
-            var self = this;
-            var u = MockDB.users.getById(id);
-            if (!u) return;
-
-            var isCurrentlyLocked = (u.trang_thai === 'Đã khóa' || u.trang_thai === 'locked');
-            var newStatus = isCurrentlyLocked ? 'Hoạt động' : 'Đã khóa';
-
-            // Nếu chuẩn bị khóa tài khoản giảng viên: kiểm tra xem có lớp đang phụ trách không
-            if (!isCurrentlyLocked && u.vai_tro === 'giang_vien') {
-                var activeClasses = MockDB.lop_hoc_phan.getAll({
-                    giang_vien_user_id: u.id,
-                    trang_thai: 'Đang mở'
-                });
-
-                if (activeClasses.length > 0) {
+                var existingUser = this.findCached(id);
+                // Cảnh báo khi khóa giảng viên đang phụ trách lớp học phần đang mở
+                if (existingUser && existingUser.vai_tro === 'giang_vien' && payload.trang_thai === 'Đã khóa' &&
+                    existingUser.trang_thai === 'Hoạt động' && existingUser.so_lop_dang_mo > 0) {
                     App.confirm(
                         '<strong>CẢNH BÁO AN TOÀN:</strong><br>' +
-                        'Giảng viên <strong>' + App.escapeHtml(u.ho_ten) + '</strong> đang phụ trách <strong>' + activeClasses.length + ' lớp học phần đang mở</strong>.<br>' +
-                        'Bạn có chắc chắn muốn khóa tài khoản này?',
-                        function () {
-                            MockDB.users.update(id, { trang_thai: 'Đã khóa' });
-                            App.showToast('Đã khóa tài khoản ' + u.ho_ten, 'info');
-                            self.loadUsers();
-                        }
+                        'Giảng viên <strong>' + App.escapeHtml(existingUser.ho_ten) + '</strong> hiện đang phụ trách <strong>' + existingUser.so_lop_dang_mo + ' lớp học phần đang mở</strong>.<br>' +
+                        'Khóa tài khoản sẽ ảnh hưởng đến việc vào điểm và điểm danh của các lớp này. Bạn vẫn muốn tiếp tục khóa?',
+                        function () { self.sendSave(id, payload); }
                     );
                     return;
                 }
             }
 
-            var confirmMsg = isCurrentlyLocked
-                ? 'Bạn có chắc chắn muốn mở khóa cho tài khoản <strong>' + App.escapeHtml(u.ho_ten) + '</strong> (' + u.username + ')?'
-                : 'Bạn có chắc chắn muốn khóa tài khoản <strong>' + App.escapeHtml(u.ho_ten) + '</strong> (' + u.username + ')?';
+            self.sendSave(id, payload);
+        },
+
+        sendSave: function (id, payload) {
+            var self = this;
+            // Kiểm tra hợp lệ, trùng mã định danh / tên đăng nhập do backend xử lý (RULE-24, 25)
+            var req = id
+                ? Api.put('/api/taikhoan/users', $.extend({ id: parseInt(id, 10) }, payload))
+                : Api.post('/api/taikhoan/users', payload);
+
+            req.done(function (res) {
+                App.showToast(res.message, 'success');
+                App.closeModal();
+                self.loadUsers();
+            }).fail(Api.toastError);
+        },
+
+        toggleStatus: function (id) {
+            var self = this;
+            var u = this.findCached(id);
+            if (!u) return;
+
+            var isCurrentlyLocked = u.trang_thai === 'Đã khóa';
+            var newStatus = isCurrentlyLocked ? 'Hoạt động' : 'Đã khóa';
+
+            var confirmMsg;
+            if (!isCurrentlyLocked && u.vai_tro === 'giang_vien' && u.so_lop_dang_mo > 0) {
+                confirmMsg = '<strong>CẢNH BÁO AN TOÀN:</strong><br>' +
+                    'Giảng viên <strong>' + App.escapeHtml(u.ho_ten) + '</strong> đang phụ trách <strong>' + u.so_lop_dang_mo + ' lớp học phần đang mở</strong>.<br>' +
+                    'Bạn có chắc chắn muốn khóa tài khoản này?';
+            } else {
+                confirmMsg = (isCurrentlyLocked ? 'Bạn có chắc chắn muốn mở khóa cho tài khoản <strong>' : 'Bạn có chắc chắn muốn khóa tài khoản <strong>') +
+                    App.escapeHtml(u.ho_ten) + '</strong> (' + App.escapeHtml(u.ma_dinh_danh) + ')?';
+            }
 
             App.confirm(confirmMsg, function () {
-                MockDB.users.update(id, { trang_thai: newStatus });
-                App.showToast('Đã chuyển trạng thái tài khoản sang: ' + newStatus, 'info');
-                self.loadUsers();
+                Api.post('/api/taikhoan/users/trang-thai', { id: u.id, trang_thai: newStatus })
+                    .done(function (res) {
+                        App.showToast(res.message, 'info');
+                        self.loadUsers();
+                    })
+                    .fail(Api.toastError);
             });
         },
 
         resetPassword: function (id) {
-            var u = MockDB.users.getById(id);
+            var u = this.findCached(id);
             if (!u) return;
 
             App.confirm(
-                'Đặt lại mật khẩu cho tài khoản <strong>' + App.escapeHtml(u.username) + ' (' + App.escapeHtml(u.ho_ten) + ')</strong> về mật khẩu mặc định <code>123456</code>?',
+                'Đặt lại mật khẩu cho <strong>' + App.escapeHtml(u.ho_ten) + ' (' + App.escapeHtml(u.ma_dinh_danh) + ')</strong> về mật khẩu mặc định <code>123456</code>?',
                 function () {
-                    MockDB.users.update(id, { password: '123456' });
-                    App.showToast('Đặt lại mật khẩu thành công! Mật khẩu mới là 123456', 'success');
+                    Api.post('/api/taikhoan/users/dat-lai-mat-khau', { id: u.id })
+                        .done(function (res) { App.showToast(res.message, 'success'); })
+                        .fail(Api.toastError);
                 }
             );
         }

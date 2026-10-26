@@ -97,3 +97,20 @@ a:hover {
 @media (max-width: 768px) {
     .app-body-wrapper { flex-direction: column; }
 }
+
+/* Font Awesome (thư viện icon ngoài): trả lại font icon vì quy tắc
+   "*::before { font-family: Arial !important }" ở trên làm icon thành ô vuông */
+.fa, .fas, .far, .fa-solid, .fa-regular,
+.fa::before, .fas::before, .far::before, .fa-solid::before, .fa-regular::before {
+    font-family: "Font Awesome 6 Free" !important;
+}
+.fa, .fas, .fa-solid { font-weight: 900; }
+.far, .fa-regular { font-weight: 400; }
+.fab, .fa-brands, .fab::before, .fa-brands::before {
+    font-family: "Font Awesome 6 Brands" !important;
+    font-weight: 400;
+}
+
+/* Khoảng cách giữa các khối nội dung do module render */
+#contentArea > * + * { margin-top: 16px; }
+#contentArea > .mb-3 + * { margin-top: 0; }

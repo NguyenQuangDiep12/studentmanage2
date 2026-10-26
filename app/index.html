@@ -175,6 +175,44 @@
             box-shadow: 0 0 0 2px rgba(59, 91, 253, 0.15);
         }
 
+        /* Nhãn và ô "Mã định danh" nằm ngoài .form-group */
+        #loginForm > label {
+            display: block;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 5px;
+        }
+
+        #loginForm > .form-control {
+            margin-bottom: 15px;
+        }
+
+        /* Nút trong modal quên mật khẩu */
+        .btn {
+            padding: 9px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.86rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-primary {
+            background: #3b5bfd;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .btn-login {
             width: 100%;
             padding: 11px;
@@ -319,18 +357,17 @@
             <p class="login-subtitle">Chào mừng bạn quay lại hệ thống quản lí sinh viên</p>
 
             <div class="login-error" id="loginError">
-                <span id="loginErrorText">Tên đăng nhập hoặc mật khẩu không chính xác</span>
+                <span id="loginErrorText">Mã sinh viên / mã giảng viên hoặc mật khẩu không chính xác</span>
             </div>
 
-            <form id="loginForm" autocomplete="off">
-                <label for="username">Mã định danh</label>
+            <form id="loginForm" autocomplete="off" novalidate>
+                <label for="username">Mã sinh viên / Mã giảng viên</label>
                 <input
                     type="text"
                     class="form-control"
                     id="username"
-                    placeholder="Nhập mã định danh"
+                    placeholder="VD: SV001 hoặc GV001"
                     autocomplete="username"
-                    required
                 >
                 <div class="form-group">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
@@ -339,7 +376,7 @@
                             Quên mật khẩu?
                         </a>
                     </div>
-                    <input type="password" class="form-control" id="password" placeholder="Nhập password" required>
+                    <input type="password" class="form-control" id="password" placeholder="Nhập password">
                 </div>
                 <button type="submit" class="btn-login">
                     Đăng nhập hệ thống
@@ -365,30 +402,30 @@
         </div>
     </div>
 
-    <!-- Modal Quên mật khẩu: 3 cột gồm password cũ, password mới và xác nhận password -->
+    <!-- Modal Quên mật khẩu (RULE-22): xác minh bằng mã định danh + email đã đăng ký, rồi đặt mật khẩu mới -->
     <div class="modal-fp" id="forgotPassModal">
         <div class="modal-fp-card">
             <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:6px; color:#1e293b;">
-                Đổi mật khẩu / Quên mật khẩu
+                Quên mật khẩu
             </h3>
             <p style="font-size:0.82rem; color:#64748b; margin-bottom:14px;">
-                Nhập tên đăng nhập, mật khẩu cũ cùng mật khẩu mới để cập nhật mật khẩu
+                Nhập mã sinh viên / mã giảng viên và email đã đăng ký trong hồ sơ để xác minh, sau đó đặt mật khẩu mới
             </p>
             <div class="form-group">
-                <label>Tên đăng nhập hoặc Mã định danh <span style="color:#dc2626;">*</span></label>
-                <input type="text" class="form-control" id="fpUsername" placeholder="VD: adminaccount1 hoặc SV001">
+                <label>Mã sinh viên / Mã giảng viên <span style="color:#dc2626;">*</span></label>
+                <input type="text" class="form-control" id="fpUsername" placeholder="VD: SV001 hoặc GV001">
             </div>
-            <!-- Cột 1: Password cũ -->
+            <!-- Xác minh danh tính bằng email đã đăng ký -->
             <div class="form-group">
-                <label>Mật khẩu cũ (hiện tại) <span style="color:#dc2626;">*</span></label>
-                <input type="password" class="form-control" id="fpOldPassword" placeholder="Nhập mật khẩu hiện tại">
+                <label>Email đã đăng ký <span style="color:#dc2626;">*</span></label>
+                <input type="email" class="form-control" id="fpEmail" placeholder="VD: sinhvien@sms.edu.vn">
             </div>
-            <!-- Cột 2: Password mới -->
+            <!-- Mật khẩu mới -->
             <div class="form-group">
                 <label>Mật khẩu mới <span style="color:#dc2626;">*</span></label>
                 <input type="password" class="form-control" id="fpNewPassword" placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)">
             </div>
-            <!-- Cột 3: Xác nhận password mới -->
+            <!-- Xác nhận mật khẩu mới -->
             <div class="form-group">
                 <label>Xác nhận mật khẩu mới <span style="color:#dc2626;">*</span></label>
                 <input type="password" class="form-control" id="fpConfirmPassword" placeholder="Nhập lại mật khẩu mới">
@@ -406,7 +443,7 @@
     <script>
     $(function () {
         const LOGIN_API = '/api/taikhoan/dang-nhap';
-        const CHANGE_PASSWORD_API = '/api/taikhoan/doi-mat-khau';
+        const FORGOT_PASSWORD_API = '/api/taikhoan/quen-mat-khau';
 
         const $loginForm = $('#loginForm');
         const $username = $('#username');
@@ -467,7 +504,7 @@
 
         // Nếu đã có phiên đăng nhập, chuyển đến dashboard.
         // Token được lưu trong sessionStorage thay vì chỉ lưu thông tin user.
-        if (sessionStorage.getItem('sms_access_token')) {
+        if (sessionStorage.getItem('sms_access_token') && sessionStorage.getItem('sms_current_user')) {
             window.location.replace('dashboard.html');
             return;
         }
@@ -488,11 +525,7 @@
             const maDinhDanh = $username.val().trim();
             const password = $password.val();
 
-            if (!maDinhDanh || !password) {
-                showLoginError('Vui lòng nhập đầy đủ mã định danh và mật khẩu.');
-                return;
-            }
-
+            // Kiểm tra dữ liệu do backend thực hiện, frontend hiển thị thông báo trả về
             clearLoginError();
 
             $loginButton.prop('disabled', true).text('Đang đăng nhập...');
@@ -524,13 +557,20 @@
                     return;
                 }
 
-                // Lưu token và thông tin người dùng.
+                // Lưu token và thông tin người dùng (đồng bộ cả sessionStorage và localStorage).
                 sessionStorage.setItem(
                     'sms_access_token',
                     data.access_token
                 );
-
                 sessionStorage.setItem(
+                    'sms_current_user',
+                    JSON.stringify(data.user)
+                );
+                localStorage.setItem(
+                    'sms_access_token',
+                    data.access_token
+                );
+                localStorage.setItem(
                     'sms_current_user',
                     JSON.stringify(data.user)
                 );
@@ -579,7 +619,7 @@
             clearPasswordAlert();
 
             $('#fpUsername').val($username.val().trim());
-            $('#fpOldPassword, #fpNewPassword, #fpConfirmPassword').val('');
+            $('#fpEmail, #fpNewPassword, #fpConfirmPassword').val('');
 
             $fpModal.addClass('active');
         });
@@ -597,59 +637,38 @@
             }
         });
 
-        // Gửi yêu cầu đổi mật khẩu đến PHP.
+        // Gửi yêu cầu quên mật khẩu đến PHP (backend xác minh và kiểm tra mật khẩu mới).
         $('#btnSubmitForgotPass').on('click', function () {
             const maDinhDanh = $('#fpUsername').val().trim();
-            const oldPassword = $('#fpOldPassword').val();
+            const email = $('#fpEmail').val().trim();
             const newPassword = $('#fpNewPassword').val();
             const confirmPassword = $('#fpConfirmPassword').val();
 
-            if (!maDinhDanh || !oldPassword || !newPassword || !confirmPassword) {
-                showPasswordAlert('Vui lòng nhập đầy đủ các trường thông tin.', true);
-                return;
-            }
-
-            if (newPassword.length < 6) {
-                showPasswordAlert('Mật khẩu mới phải có ít nhất 6 ký tự.', true);
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                showPasswordAlert('Xác nhận mật khẩu mới không khớp.', true);
-                return;
-            }
-
-            if (newPassword === oldPassword) {
-                showPasswordAlert(
-                    'Mật khẩu mới không được trùng với mật khẩu cũ.',
-                    true
-                );
-                return;
-            }
-
+            clearPasswordAlert();
             $fpSubmit.prop('disabled', true).text('Đang cập nhật...');
 
             $.ajax({
-                url: CHANGE_PASSWORD_API,
+                url: FORGOT_PASSWORD_API,
                 method: 'POST',
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
                 data: JSON.stringify({
                     ma_dinh_danh: maDinhDanh,
-                    old_password: oldPassword,
-                    new_password: newPassword
+                    email: email,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
                 })
             })
             .done(function (response) {
                 if (response.success === false) {
                     showPasswordAlert(
-                        response.message || 'Không thể đổi mật khẩu.',
+                        response.message || 'Không thể đặt lại mật khẩu.',
                         true
                     );
                     return;
                 }
 
-                showPasswordAlert('Đổi mật khẩu thành công.', false);
+                showPasswordAlert(response.message || 'Đặt lại mật khẩu thành công.', false);
 
                 // Điền thông tin vào form đăng nhập.
                 $username.val(maDinhDanh);
@@ -657,7 +676,7 @@
                 clearLoginError();
 
                 // Xóa mật khẩu cũ và mới khỏi modal sau khi thành công.
-                $('#fpOldPassword, #fpNewPassword, #fpConfirmPassword').val('');
+                $('#fpEmail, #fpNewPassword, #fpConfirmPassword').val('');
 
                 // Không tự đăng nhập hoặc giả định mật khẩu mới đã được lưu
                 // cho đến khi API xác nhận thành công.

@@ -102,30 +102,19 @@
             var role = currentUser.vai_tro;
             var isSv = (role === 'sinh_vien');
 
-            var kw = ($('#searchKienNghi').val() || '').toLowerCase().trim();
-            var st = $('#filterTrangThaiKN').val();
+            var self = this;
+            Api.get('/api/kiennghi', {
+                search: ($('#searchKienNghi').val() || '').trim(),
+                trang_thai: $('#filterTrangThaiKN').val()
+            })
+                .done(function (res) {
+                    self.cache = res.data || [];
+                    self.renderList(self.cache, role, isSv);
+                })
+                .fail(Api.toastError);
+        },
 
-            var list = MockDB.kien_nghi.getAll();
-
-            // Sinh viên chỉ thấy ý kiến của chính mình
-            if (isSv) {
-                list = list.filter(function (k) { return k.sinh_vien_user_id === currentUser.id; });
-            }
-
-            if (st) {
-                list = list.filter(function (k) { return k.trang_thai === st; });
-            }
-
-            if (kw) {
-                list = list.filter(function (k) {
-                    var t = (k.tieu_de || '').toLowerCase();
-                    var n = (k.noi_dung || '').toLowerCase();
-                    return t.indexOf(kw) !== -1 || n.indexOf(kw) !== -1;
-                });
-            }
-
-            list.sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
-
+        renderList: function (list, role, isSv) {
             $('#totalKNCount').text('Tổng: ' + list.length + ' ý kiến');
 
             var tbody = $('#knTableBody');
@@ -144,11 +133,8 @@
             }
 
             list.forEach(function (k, idx) {
-                var replies = MockDB.phan_hoi_kien_nghi.getAll({ kien_nghi_id: k.id });
-                var countReplies = replies.length;
-
-                var sv = MockDB.users.getById(k.sinh_vien_user_id);
-                var svName = sv ? sv.ho_ten + ' (' + sv.ma_dinh_danh + ')' : 'Sinh viên';
+                var countReplies = k.so_phan_hoi || 0;
+                var svName = k.ten_sinh_vien ? k.ten_sinh_vien + ' (' + k.ma_sinh_vien + ')' : 'Sinh viên';
 
                 var statusBadge = (k.trang_thai === 'Đã phản hồi')
                     ? '<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Đã phản hồi</span>'
@@ -165,7 +151,7 @@
                     '  <td class="text-center">' +
                     '    <div class="table-actions justify-center">' +
                     '      <button class="btn btn-sm btn-outline btn-view-kn" data-id="' + k.id + '" title="Xem chi tiết & Phản hồi"><i class="fa-solid fa-comment-dots"></i> Chi tiết</button>' +
-                    (role === 'admin' ? '      <button class="btn btn-sm btn-outline btn-del-kn text-danger" data-id="' + k.id + '" title="Xóa ý kiến"><i class="fa-solid fa-trash-can"></i></button>' : '') +
+                    (role === 'admin' ? '      <button class="btn btn-sm btn-outline btn-del-kn text-danger" data-id="' + k.id + '" title="Xóa ý kiến">Xóa</button>' : '') +
                     '    </div>' +
                     '  </td>' +
                     '</tr>';
@@ -198,50 +184,39 @@
         },
 
         submitKienNghi: function () {
-            var currentUser = App.getCurrentUser();
-            var tieuDe = $('#knTieuDe').val().trim();
-            var noiDung = $('#knNoiDung').val().trim();
-
-            if (!tieuDe || !noiDung) {
-                App.showToast('Vui lòng điền đầy đủ tiêu đề và nội dung kiến nghị!', 'error');
-                return;
-            }
-
-            var nowStr = new Date().toISOString();
-            MockDB.kien_nghi.create({
-                sinh_vien_user_id: currentUser.id,
-                tieu_de: tieuDe,
-                noi_dung: noiDung,
-                trang_thai: 'Chờ xử lý',
-                created_at: nowStr,
-                updated_at: nowStr
-            });
-
-            App.showToast('Gửi kiến nghị thành công! Nhà trường sẽ sớm phản hồi', 'success');
-            App.closeModal();
-            this.loadKienNghi();
+            var self = this;
+            // Kiểm tra dữ liệu do backend thực hiện
+            Api.post('/api/kiennghi', { tieu_de: $('#knTieuDe').val(), noi_dung: $('#knNoiDung').val() })
+                .done(function (res) {
+                    App.showToast(res.message, 'success');
+                    App.closeModal();
+                    self.loadKienNghi();
+                })
+                .fail(Api.toastError);
         },
 
         showDetailModal: function (id) {
-            var k = MockDB.kien_nghi.getById(id);
-            if (!k) return;
+            var self = this;
+            Api.get('/api/kiennghi/chi-tiet', { id: id })
+                .done(function (res) { self.renderDetail(res.data); })
+                .fail(Api.toastError);
+        },
 
+        renderDetail: function (k) {
             var currentUser = App.getCurrentUser();
             var role = currentUser.vai_tro;
             var canReply = (role === 'admin' || role === 'giang_vien');
-
-            var sv = MockDB.users.getById(k.sinh_vien_user_id);
-            var svName = sv ? sv.ho_ten + ' (' + sv.ma_dinh_danh + ')' : 'Sinh viên';
-
-            var replies = MockDB.phan_hoi_kien_nghi.getAll({ kien_nghi_id: k.id });
+            var svName = k.ten_sinh_vien ? k.ten_sinh_vien + ' (' + k.ma_sinh_vien + ')' : 'Sinh viên';
+            var replies = k.phan_hoi || [];
 
             var repliesHtml = '';
             if (replies.length === 0) {
                 repliesHtml = '<div class="alert alert-info py-2" style="font-size:0.88rem;"><i class="fa-solid fa-clock"></i> Chưa có phản hồi nào cho ý kiến này</div>';
             } else {
                 replies.forEach(function (r) {
-                    var replier = MockDB.users.getById(r.nguoi_phan_hoi_user_id);
-                    var replierName = replier ? replier.ho_ten + ' (' + (replier.vai_tro === 'admin' ? 'Quản trị viên' : 'Giảng viên') + ')' : 'Phòng Đào tạo';
+                    var replierName = r.ten_nguoi_phan_hoi
+                        ? r.ten_nguoi_phan_hoi + ' (' + (r.vai_tro_nguoi_phan_hoi === 'admin' ? 'Quản trị viên' : 'Giảng viên') + ')'
+                        : 'Phòng Đào tạo';
                     repliesHtml +=
                         '<div class="p-3 mb-2" style="background:#f8fafc; border-left:3px solid var(--primary); border-radius:4px;">' +
                         '  <div class="d-flex justify-between mb-1" style="font-size:0.82rem; color:var(--text-gray);">' +
@@ -290,48 +265,28 @@
         },
 
         submitPhanHoi: function (knId) {
-            var currentUser = App.getCurrentUser();
-            var content = $('#replyContent').val().trim();
-
-            if (!content) {
-                App.showToast('Vui lòng nhập nội dung phản hồi!', 'error');
-                return;
-            }
-
-            var nowStr = new Date().toISOString();
-
-            MockDB.phan_hoi_kien_nghi.create({
-                kien_nghi_id: knId,
-                nguoi_phan_hoi_user_id: currentUser.id,
-                noi_dung: content,
-                created_at: nowStr
-            });
-
-            // Cập nhật trạng thái kiến nghị sang 'Đã phản hồi'
-            MockDB.kien_nghi.update(knId, {
-                trang_thai: 'Đã phản hồi',
-                updated_at: nowStr
-            });
-
-            App.showToast('Gửi phản hồi thành công!', 'success');
-            App.closeModal();
-            this.loadKienNghi();
+            var self = this;
+            Api.post('/api/kiennghi/phan-hoi', { kien_nghi_id: knId, noi_dung: $('#replyContent').val() })
+                .done(function (res) {
+                    App.showToast(res.message, 'success');
+                    App.closeModal();
+                    self.loadKienNghi();
+                })
+                .fail(Api.toastError);
         },
 
         deleteKienNghi: function (id) {
             var self = this;
-            var k = MockDB.kien_nghi.getById(id);
+            var k = (this.cache || []).find(function (x) { return x.id === parseInt(id, 10); });
             if (!k) return;
 
             App.confirm('Bạn có chắc muốn xóa ý kiến <strong>' + App.escapeHtml(k.tieu_de) + '</strong>?', function () {
-                MockDB.kien_nghi.remove(id);
-                // Xóa cả các phản hồi liên quan
-                var replies = MockDB.phan_hoi_kien_nghi.getAll({ kien_nghi_id: id });
-                replies.forEach(function (r) {
-                    MockDB.phan_hoi_kien_nghi.remove(r.id);
-                });
-                App.showToast('Đã xóa kiến nghị thành công!', 'success');
-                self.loadKienNghi();
+                Api.del('/api/kiennghi', { id: k.id })
+                    .done(function (res) {
+                        App.showToast(res.message, 'success');
+                        self.loadKienNghi();
+                    })
+                    .fail(Api.toastError);
             });
         }
     };

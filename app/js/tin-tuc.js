@@ -62,30 +62,17 @@
         },
 
         loadNews: function () {
-            var kw = ($('#searchNewsViewer').val() || '').toLowerCase().trim();
-            var dm = $('#filterDanhMucNews').val();
+            var self = this;
+            // RULE-20: backend chỉ trả về tin đã công khai
+            Api.get('/api/tintuc', {
+                search: ($('#searchNewsViewer').val() || '').trim(),
+                danh_muc: $('#filterDanhMucNews').val()
+            })
+                .done(function (res) { self.renderNews(res.data || []); })
+                .fail(Api.toastError);
+        },
 
-            // Chỉ hiển thị các tin tức có trạng thái công khai
-            var list = MockDB.tin_tuc.getAll().filter(function (n) {
-                return n.trang_thai === 'Công khai' || n.trang_thai === 'cong_khai';
-            });
-
-            if (dm) {
-                list = list.filter(function (n) { return n.danh_muc === dm; });
-            }
-
-            if (kw) {
-                list = list.filter(function (n) {
-                    var t = (n.tieu_de || '').toLowerCase();
-                    var s = (n.tom_tat || '').toLowerCase();
-                    var c = (n.noi_dung || '').toLowerCase();
-                    return t.indexOf(kw) !== -1 || s.indexOf(kw) !== -1 || c.indexOf(kw) !== -1;
-                });
-            }
-
-            // Sắp xếp bài mới nhất lên đầu
-            list.sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
-
+        renderNews: function (list) {
             var container = $('#publicNewsList');
             container.empty();
 
@@ -101,8 +88,7 @@
             }
 
             list.forEach(function (n) {
-                var author = MockDB.users.getById(n.nguoi_dang_user_id);
-                var authorName = author ? author.ho_ten : 'Ban Quản trị';
+                var authorName = n.ten_nguoi_dang || 'Ban Quản trị';
 
                 var itemHtml =
                     '<div class="news-item news-item-card" data-id="' + n.id + '" style="cursor:pointer;">' +
@@ -126,11 +112,14 @@
         },
 
         showNewsDetail: function (id) {
-            var n = MockDB.tin_tuc.getById(id);
-            if (!n) return;
+            var self = this;
+            Api.get('/api/tintuc/chi-tiet', { id: id })
+                .done(function (res) { self.renderNewsDetail(res.data); })
+                .fail(Api.toastError);
+        },
 
-            var author = MockDB.users.getById(n.nguoi_dang_user_id);
-            var authorName = author ? author.ho_ten : 'Ban Quản trị';
+        renderNewsDetail: function (n) {
+            var authorName = n.ten_nguoi_dang || 'Ban Quản trị';
 
             // Bảo vệ XSS: escape trước rồi mới thay thế xuống dòng thành <br>
             var contentHtml = App.escapeHtml(n.noi_dung || '').replace(/\n/g, '<br>');
@@ -251,28 +240,20 @@
         },
 
         loadAdminNews: function () {
-            var kw = ($('#searchNewsAdmin').val() || '').toLowerCase().trim();
-            var st = $('#filterTrangThaiNewsAdmin').val();
+            var self = this;
+            Api.get('/api/tintuc', {
+                quan_ly: 1,
+                search: ($('#searchNewsAdmin').val() || '').trim(),
+                trang_thai: $('#filterTrangThaiNewsAdmin').val()
+            })
+                .done(function (res) {
+                    self.cache = res.data || [];
+                    self.renderAdminNews(self.cache);
+                })
+                .fail(Api.toastError);
+        },
 
-            var list = MockDB.tin_tuc.getAll();
-
-            if (st) {
-                list = list.filter(function (n) {
-                    if (st === 'Công khai') return n.trang_thai === 'Công khai' || n.trang_thai === 'cong_khai';
-                    if (st === 'Đã ẩn') return n.trang_thai === 'Đã ẩn' || n.trang_thai === 'an';
-                    if (st === 'Bản nháp') return n.trang_thai === 'Bản nháp' || n.trang_thai === 'nhap';
-                    return n.trang_thai === st;
-                });
-            }
-
-            if (kw) {
-                list = list.filter(function (n) {
-                    return (n.tieu_de && n.tieu_de.toLowerCase().indexOf(kw) !== -1);
-                });
-            }
-
-            list.sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
-
+        renderAdminNews: function (list) {
             $('#totalNewsAdminCount').text('Tổng: ' + list.length + ' bài viết');
 
             var tbody = $('#newsAdminTableBody');
@@ -284,8 +265,7 @@
             }
 
             list.forEach(function (n, idx) {
-                var author = MockDB.users.getById(n.nguoi_dang_user_id);
-                var authorName = author ? author.ho_ten : 'Admin';
+                var authorName = n.ten_nguoi_dang || 'Admin';
 
                 var isPublic = (n.trang_thai === 'Công khai' || n.trang_thai === 'cong_khai');
                 var toggleBtnText = isPublic
@@ -303,8 +283,8 @@
                     '  <td class="text-center">' +
                     '    <div class="table-actions justify-center">' +
                     '      <button class="btn btn-sm btn-outline btn-toggle-news-status" data-id="' + n.id + '" title="Thay đổi trạng thái">' + toggleBtnText + '</button>' +
-                    '      <button class="btn btn-sm btn-outline btn-edit-news" data-id="' + n.id + '" title="Chỉnh sửa"><i class="fa-solid fa-pen-to-square"></i></button>' +
-                    '      <button class="btn btn-sm btn-outline btn-del-news text-danger" data-id="' + n.id + '" title="Xóa bài viết"><i class="fa-solid fa-trash-can"></i></button>' +
+                    '      <button class="btn btn-sm btn-outline btn-edit-news" data-id="' + n.id + '" title="Chỉnh sửa">Sửa</button>' +
+                    '      <button class="btn btn-sm btn-outline btn-del-news text-danger" data-id="' + n.id + '" title="Xóa bài viết">Xóa</button>' +
                     '    </div>' +
                     '  </td>' +
                     '</tr>';
@@ -313,7 +293,7 @@
         },
 
         showFormModal: function (id) {
-            var n = id ? MockDB.tin_tuc.getById(id) : null;
+            var n = id ? this.findCached(id) : null;
             var isEdit = !!n;
 
             var currentStatus = 'Công khai';
@@ -367,78 +347,62 @@
                 '  <button class="btn btn-primary" id="btnSaveNews"><i class="fa-solid fa-floppy-disk"></i> Lưu tin tức</button>' +
                 '</div>';
 
-            App.showModal(modalHtml, 'lg');
+            App.showModal(html, 'lg');
+        },
+
+        findCached: function (id) {
+            return (this.cache || []).find(function (n) { return n.id === parseInt(id, 10); }) || null;
         },
 
         saveNews: function () {
-            var currentUser = App.getCurrentUser();
+            var self = this;
             var id = $('#newsId').val();
-            var tieuDe = $('#newsTieuDe').val().trim();
-            var danhMuc = $('#newsDanhMuc').val();
-            var trangThai = $('#newsTrangThai').val();
-            var tomTat = $('#newsTomTat').val().trim();
-            var noiDung = $('#newsNoiDung').val().trim();
+            var payload = {
+                tieu_de: $('#newsTieuDe').val(),
+                danh_muc: $('#newsDanhMuc').val(),
+                trang_thai: $('#newsTrangThai').val(),
+                tom_tat: $('#newsTomTat').val(),
+                noi_dung: $('#newsNoiDung').val()
+            };
 
-            if (!tieuDe) {
-                App.showToast('Tiêu đề tin tức không được để trống!', 'error');
-                return;
-            }
-            if (!noiDung) {
-                App.showToast('Nội dung tin tức không được để trống!', 'error');
-                return;
-            }
+            // RULE-19.3: trường bắt buộc do backend kiểm tra
+            var req = id
+                ? Api.put('/api/tintuc', $.extend({ id: parseInt(id, 10) }, payload))
+                : Api.post('/api/tintuc', payload);
 
-            var nowStr = new Date().toISOString();
-
-            if (id) {
-                MockDB.tin_tuc.update(parseInt(id, 10), {
-                    tieu_de: tieuDe,
-                    danh_muc: danhMuc,
-                    trang_thai: trangThai,
-                    tom_tat: tomTat,
-                    noi_dung: noiDung,
-                    updated_at: nowStr
-                });
-                App.showToast('Cập nhật tin tức thành công!', 'success');
-            } else {
-                MockDB.tin_tuc.create({
-                    tieu_de: tieuDe,
-                    danh_muc: danhMuc,
-                    trang_thai: trangThai,
-                    tom_tat: tomTat,
-                    noi_dung: noiDung,
-                    nguoi_dang_user_id: currentUser.id,
-                    created_at: nowStr,
-                    updated_at: nowStr
-                });
-                App.showToast('Đăng tin tức mới thành công!', 'success');
-            }
-
-            App.closeModal();
-            this.loadAdminNews();
+            req.done(function (res) {
+                App.showToast(res.message, 'success');
+                App.closeModal();
+                self.loadAdminNews();
+            }).fail(Api.toastError);
         },
 
         toggleStatus: function (id) {
             var self = this;
-            var n = MockDB.tin_tuc.getById(id);
+            var n = this.findCached(id);
             if (!n) return;
 
-            var isCurrentlyPublic = (n.trang_thai === 'Công khai' || n.trang_thai === 'cong_khai');
-            var newStatus = isCurrentlyPublic ? 'Đã ẩn' : 'Công khai';
-            MockDB.tin_tuc.update(id, { trang_thai: newStatus });
-            App.showToast('Đã đổi trạng thái sang: ' + newStatus, 'info');
-            self.loadAdminNews();
+            var newStatus = n.trang_thai === 'Công khai' ? 'Đã ẩn' : 'Công khai';
+            Api.post('/api/tintuc/trang-thai', { id: n.id, trang_thai: newStatus })
+                .done(function (res) {
+                    App.showToast(res.message, 'info');
+                    self.loadAdminNews();
+                })
+                .fail(Api.toastError);
         },
 
         deleteNews: function (id) {
             var self = this;
-            var n = MockDB.tin_tuc.getById(id);
+            var n = this.findCached(id);
             if (!n) return;
 
             App.confirm('Bạn có chắc chắn muốn xóa tin tức <strong>' + App.escapeHtml(n.tieu_de) + '</strong>?', function () {
-                MockDB.tin_tuc.remove(id);
-                App.showToast('Đã xóa bài viết thành công!', 'success');
-                self.loadAdminNews();
+                Api.del('/api/tintuc', { id: n.id })
+                    .done(function (res) {
+                        App.showToast(res.message, 'success');
+                        self.loadAdminNews();
+                    })
+                    .fail(Api.toastError);
             });
         }
     };

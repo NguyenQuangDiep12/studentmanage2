@@ -15,8 +15,9 @@
                 return;
             }
 
-            var lsv = currentUser.lop_sinh_vien_id ? MockDB.lop_sinh_vien.getById(currentUser.lop_sinh_vien_id) : null;
-            var ctdt = lsv ? MockDB.chuong_trinh_dao_tao.getById(lsv.chuong_trinh_id) : null;
+            // Lớp sinh hoạt, CTĐT, khóa học được nạp từ /api/taikhoan/me
+            var lsv = null;
+            var ctdt = null;
 
             var html =
                 '<div class="card mb-3">' +
@@ -32,15 +33,15 @@
                 '      </div>' +
                 '      <div class="detail-item">' +
                 '        <span class="detail-label">Lớp sinh hoạt</span>' +
-                '        <span class="detail-value">' + (lsv ? App.escapeHtml(lsv.ma_lop + ' - ' + lsv.ten_lop) : '—') + '</span>' +
+                '        <span class="detail-value" id="kqLopSinhHoat">—</span>' +
                 '      </div>' +
                 '      <div class="detail-item">' +
                 '        <span class="detail-label">Chương trình đào tạo</span>' +
-                '        <span class="detail-value">' + (ctdt ? App.escapeHtml(ctdt.ten_chuong_trinh) : '—') + '</span>' +
+                '        <span class="detail-value" id="kqChuongTrinh">—</span>' +
                 '      </div>' +
                 '      <div class="detail-item">' +
                 '        <span class="detail-label">Khóa học</span>' +
-                '        <span class="detail-value">' + (lsv ? App.escapeHtml(lsv.khoa_hoc) : '—') + '</span>' +
+                '        <span class="detail-value" id="kqKhoaHoc">—</span>' +
                 '      </div>' +
                 '    </div>' +
 
@@ -51,7 +52,7 @@
                 '          <label><i class="fa-solid fa-calendar-days"></i> Học kỳ:</label>' +
                 '          <select id="kqHocKy" class="filter-select">' +
                 '            <option value="all">Tất cả học kỳ</option>' +
-                '            <option value="1" selected>Học kỳ 1</option>' +
+                '            <option value="1">Học kỳ 1</option>' +
                 '            <option value="2">Học kỳ 2</option>' +
                 '            <option value="3">Học kỳ Hè</option>' +
                 '          </select>' +
@@ -60,9 +61,6 @@
                 '          <label><i class="fa-regular fa-calendar"></i> Năm học:</label>' +
                 '          <select id="kqNamHoc" class="filter-select">' +
                 '            <option value="all">Tất cả năm học</option>' +
-                '            <option value="2026-2027" selected>Năm học 2026-2027</option>' +
-                '            <option value="2025-2026">Năm học 2025-2026</option>' +
-                '            <option value="2024-2025">Năm học 2024-2025</option>' +
                 '          </select>' +
                 '        </div>' +
                 '      </div>' +
@@ -134,7 +132,18 @@
 
             $('#contentArea').html(html);
             this.bindEvents();
-            this.loadGrades();
+            this.loadProfile();
+            var self = this;
+            App.fillTermSelects('#kqHocKy', '#kqNamHoc', { prefix: 'Năm học ' }, function () { self.loadGrades(); });
+        },
+
+        loadProfile: function () {
+            Api.get('/api/taikhoan/me').done(function (res) {
+                var u = res.data || {};
+                $('#kqLopSinhHoat').text(u.ma_lop ? (u.ma_lop + ' - ' + u.ten_lop) : '—');
+                $('#kqChuongTrinh').text(u.ten_chuong_trinh || '—');
+                $('#kqKhoaHoc').text(u.khoa_hoc || '—');
+            });
         },
 
         bindEvents: function () {
@@ -145,165 +154,70 @@
         },
 
         loadGrades: function () {
-            var currentUser = App.getCurrentUser();
-            var hkFilter = $('#kqHocKy').val();
-            var nhFilter = $('#kqNamHoc').val();
+            var self = this;
+            // RULE-16, 17, 18: điểm, quy đổi, ĐTB học kỳ & tích lũy do backend tính
+            Api.get('/api/ketquahoctap/ket-qua', { hoc_ky: $('#kqHocKy').val(), nam_hoc: $('#kqNamHoc').val() })
+                .done(function (res) { self.renderGrades(res); })
+                .fail(Api.toastError);
+        },
 
-            // Lấy tất cả đăng ký hợp lệ (chưa hủy) của sinh viên
-            var allDks = MockDB.dang_ky_hoc_phan.getAll({
-                sinh_vien_user_id: currentUser.id
-            }).filter(function (dk) {
-                return dk.trang_thai === 'Đã đăng ký' || dk.trang_thai === 'da_dang_ky';
-            });
+        renderGrades: function (res) {
+            var rows = res.data || [];
+            var hk = res.hoc_ky || {};
+            var tl = res.tich_luy || {};
+            var fmt2 = function (v) { return v != null ? Number(v).toFixed(2) : '0.00'; };
+            var fmt1 = function (v) { return v != null ? Number(v).toFixed(1) : '—'; };
 
-            // 1. Tính toán TÍCH LŨY toàn khóa (xử lý môn học lại / cải thiện)
-            // Nhóm theo mon_hoc_id để chỉ lấy lần học có điểm cao nhất
-            var courseAttempts = {}; // mon_hoc_id -> array of { dk, lhp, mh, diem }
-
-            allDks.forEach(function (dk) {
-                var lhp = MockDB.lop_hoc_phan.getById(dk.lop_hoc_phan_id);
-                if (!lhp) return;
-                var mh = MockDB.mon_hoc.getById(lhp.mon_hoc_id);
-                if (!mh) return;
-
-                var d = MockDB.diem.getAll({ dang_ky_id: dk.id })[0] || null;
-
-                if (!courseAttempts[mh.id]) {
-                    courseAttempts[mh.id] = [];
+            // RULE-18.11: ghi chú học phần học lại (backend xác định lần được tính tích lũy)
+            var retakeNote = function (d) {
+                if (!d.so_lan_hoc || d.so_lan_hoc < 2) return '';
+                var note = 'Lần học ' + d.lan_hoc + '/' + d.so_lan_hoc;
+                if (d.diem_he_10 != null) {
+                    note += d.tinh_tich_luy ? ' · tính tích lũy' : ' · không tính tích lũy';
                 }
-                courseAttempts[mh.id].push({
-                    dk: dk,
-                    lhp: lhp,
-                    mh: mh,
-                    diem: d
-                });
-            });
+                return '<small class="text-muted d-block" style="margin-top:2px;">' + note + '</small>';
+            };
 
-            var totalTcTichLuy = 0;
-            var sumDiemNhanTc10_TL = 0;
-            var sumDiemNhanTc4_TL = 0;
-            var sumTcXetDtb_TL = 0;
+            $('#gsDtbTl10').text(fmt2(tl.dtb_he_10));
+            $('#gsDtbTl4').text(fmt2(tl.dtb_he_4));
+            $('#gsTcTichLuy').text(tl.so_tin_chi_tich_luy || 0);
 
-            // Duyệt từng môn học duy nhất của sinh viên
-            Object.keys(courseAttempts).forEach(function (mhId) {
-                var attempts = courseAttempts[mhId];
-                var mh = attempts[0].mh;
-                var stc = mh.so_tin_chi;
-
-                // Lọc những lần học đã có điểm tổng kết
-                var gradedAttempts = attempts.filter(function (att) {
-                    return att.diem && att.diem.diem_tong_ket != null;
-                });
-
-                if (gradedAttempts.length === 0) return;
-
-                // Tìm lần học có điểm hệ 10 cao nhất (quy chế học lại / cải thiện)
-                gradedAttempts.sort(function (a, b) {
-                    return (b.diem.diem_he_10 || 0) - (a.diem.diem_he_10 || 0);
-                });
-                var bestAttempt = gradedAttempts[0];
-                var bestDiem = bestAttempt.diem;
-
-                // Nếu đạt điểm qua môn (Đạt), cộng tín chỉ tích lũy (chỉ cộng 1 lần duy nhất)
-                if (bestDiem.ket_qua === 'Đạt') {
-                    totalTcTichLuy += stc;
-                }
-
-                // Điểm trung bình tích lũy tính trên lần học cao nhất của mỗi môn
-                sumDiemNhanTc10_TL += (bestDiem.diem_he_10 * stc);
-                sumDiemNhanTc4_TL += (bestDiem.diem_he_4 * stc);
-                sumTcXetDtb_TL += stc;
-            });
-
-            var dtbTl10 = sumTcXetDtb_TL > 0 ? (sumDiemNhanTc10_TL / sumTcXetDtb_TL) : 0;
-            var dtbTl4 = sumTcXetDtb_TL > 0 ? (sumDiemNhanTc4_TL / sumTcXetDtb_TL) : 0;
-
-            $('#gsDtbTl10').text(dtbTl10.toFixed(2));
-            $('#gsDtbTl4').text(dtbTl4.toFixed(2));
-            $('#gsTcTichLuy').text(totalTcTichLuy);
-
-            // 2. Lọc danh sách hiển thị theo Học kỳ & Năm học được chọn
-            var filteredDks = allDks.filter(function (dk) {
-                var lhp = MockDB.lop_hoc_phan.getById(dk.lop_hoc_phan_id);
-                if (!lhp) return false;
-                if (hkFilter !== 'all' && String(lhp.hoc_ky) !== String(hkFilter)) return false;
-                if (nhFilter !== 'all' && lhp.nam_hoc !== nhFilter) return false;
-                return true;
-            });
+            $('#gsDtbHk10').text(fmt2(hk.dtb_he_10));
+            $('#gsDtbHk4').text(fmt2(hk.dtb_he_4));
+            $('#gsTcDatHk').text(hk.so_tin_chi_dat || 0);
+            $('#gsPhanLoaiHk').text(hk.phan_loai || '—');
 
             var tbody = $('#kqTableBody');
             tbody.empty();
 
-            if (filteredDks.length === 0) {
+            if (rows.length === 0) {
                 tbody.html(
                     '<tr><td colspan="12" class="text-center py-4 text-gray">' +
                     '  <i class="fa-solid fa-folder-open" style="font-size:1.6rem; opacity:0.4; display:block; margin-bottom:8px;"></i>' +
                     '  Chưa có dữ liệu điểm cho học kỳ và năm học đã chọn' +
                     '</td></tr>'
                 );
-                $('#gsDtbHk10').text('0.00');
-                $('#gsDtbHk4').text('0.00');
-                $('#gsTcDatHk').text('0');
-                $('#gsPhanLoaiHk').text('—');
                 return;
             }
 
-            var sumDiemNhanTc10_HK = 0;
-            var sumDiemNhanTc4_HK = 0;
-            var sumTcXetDtb_HK = 0;
-            var tcDatHk = 0;
-
-            filteredDks.forEach(function (dk, index) {
-                var lhp = MockDB.lop_hoc_phan.getById(dk.lop_hoc_phan_id);
-                var mh = lhp ? MockDB.mon_hoc.getById(lhp.mon_hoc_id) : null;
-                var d = MockDB.diem.getAll({ dang_ky_id: dk.id })[0] || {};
-
-                var stc = mh ? mh.so_tin_chi : 0;
-
-                var cc = (d.diem_chuyen_can != null) ? Number(d.diem_chuyen_can).toFixed(1) : '—';
-                var gk = (d.diem_giua_ky != null) ? Number(d.diem_giua_ky).toFixed(1) : '—';
-                var ck = (d.diem_cuoi_ky != null) ? Number(d.diem_cuoi_ky).toFixed(1) : '—';
-                var d10 = (d.diem_he_10 != null) ? Number(d.diem_he_10).toFixed(2) : '—';
-                var he4 = (d.diem_he_4 != null) ? Number(d.diem_he_4).toFixed(2) : '—';
-                var chu = d.diem_chu || '—';
-                var kq = d.ket_qua || 'Chưa tổng kết';
-
-                if (d.diem_he_10 != null && mh) {
-                    sumDiemNhanTc10_HK += (d.diem_he_10 * stc);
-                    sumDiemNhanTc4_HK += (d.diem_he_4 * stc);
-                    sumTcXetDtb_HK += stc;
-
-                    if (d.ket_qua === 'Đạt') {
-                        tcDatHk += stc;
-                    }
-                }
-
+            rows.forEach(function (d, index) {
                 var row =
                     '<tr>' +
                     '  <td class="text-center font-bold">' + (index + 1) + '</td>' +
-                    '  <td><strong>' + (mh ? App.escapeHtml(mh.ma_mon_hoc) : '—') + '</strong></td>' +
-                    '  <td><code>' + (lhp ? App.escapeHtml(lhp.ma_lop_hoc_phan) : '—') + '</code></td>' +
-                    '  <td>' + (mh ? App.escapeHtml(mh.ten_mon_hoc) : '—') + '</td>' +
-                    '  <td class="text-center">' + stc + '</td>' +
-                    '  <td class="text-center">' + cc + '</td>' +
-                    '  <td class="text-center">' + gk + '</td>' +
-                    '  <td class="text-center">' + ck + '</td>' +
-                    '  <td class="text-center font-bold" style="color:var(--primary); font-size:0.95rem;">' + d10 + '</td>' +
-                    '  <td class="text-center">' + he4 + '</td>' +
-                    '  <td class="text-center">' + (chu !== '—' ? App.diemChuBadge(chu) : '—') + '</td>' +
-                    '  <td class="text-center">' + (kq !== 'Chưa tổng kết' ? App.ketQuaBadge(kq) : '<span class="text-gray">—</span>') + '</td>' +
+                    '  <td><strong>' + App.escapeHtml(d.ma_mon_hoc) + '</strong></td>' +
+                    '  <td><code>' + App.escapeHtml(d.ma_lop_hoc_phan) + '</code></td>' +
+                    '  <td>' + App.escapeHtml(d.ten_mon_hoc) + '</td>' +
+                    '  <td class="text-center">' + d.so_tin_chi + '</td>' +
+                    '  <td class="text-center">' + fmt1(d.diem_chuyen_can) + '</td>' +
+                    '  <td class="text-center">' + fmt1(d.diem_giua_ky) + '</td>' +
+                    '  <td class="text-center">' + fmt1(d.diem_cuoi_ky) + '</td>' +
+                    '  <td class="text-center font-bold" style="color:var(--primary); font-size:0.95rem;">' + (d.diem_he_10 != null ? Number(d.diem_he_10).toFixed(1) : '—') + '</td>' +
+                    '  <td class="text-center">' + (d.diem_he_4 != null ? Number(d.diem_he_4).toFixed(1) : '—') + '</td>' +
+                    '  <td class="text-center">' + (d.diem_chu ? App.diemChuBadge(d.diem_chu) : '—') + '</td>' +
+                    '  <td class="text-center">' + (d.ket_qua ? App.ketQuaBadge(d.ket_qua) : '<span class="text-gray">Chưa tổng kết</span>') + retakeNote(d) + '</td>' +
                     '</tr>';
                 tbody.append(row);
             });
-
-            var dtbHk10 = sumTcXetDtb_HK > 0 ? (sumDiemNhanTc10_HK / sumTcXetDtb_HK) : 0;
-            var dtbHk4 = sumTcXetDtb_HK > 0 ? (sumDiemNhanTc4_HK / sumTcXetDtb_HK) : 0;
-            var phanLoai = MockDB.tinhPhanLoai(dtbHk10);
-
-            $('#gsDtbHk10').text(dtbHk10.toFixed(2));
-            $('#gsDtbHk4').text(dtbHk4.toFixed(2));
-            $('#gsTcDatHk').text(tcDatHk);
-            $('#gsPhanLoaiHk').text(phanLoai || '—');
         }
     };
 

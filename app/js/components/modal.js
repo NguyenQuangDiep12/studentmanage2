@@ -8,9 +8,10 @@ var ModalComponent = (function ($) {
 
     function show(contentHtml, size) {
         var modal = $('#modalContent');
-        modal.removeClass('modal-lg modal-sm');
+        modal.removeClass('modal-lg modal-sm modal-xl');
         if (size === 'lg') modal.addClass('modal-lg');
         if (size === 'sm') modal.addClass('modal-sm');
+        if (size === 'xl') modal.addClass('modal-xl');
 
         modal.html(contentHtml);
         $('#modalOverlay').addClass('active');

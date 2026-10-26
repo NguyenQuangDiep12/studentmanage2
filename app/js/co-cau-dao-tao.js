@@ -1,7 +1,7 @@
 /* ================================================================
-   CO-CAU-DAO-TAO.JS - Quản lý Cơ cấu đào tạo
-   Quản lý Khoa, Chuyên ngành, Chương trình đào tạo (CTĐT),
-   Nhóm môn tự chọn (A, B, C) và Lớp sinh viên
+   CO-CAU-DAO-TAO.JS - Quản lý Cơ cấu đào tạo (kết nối API)
+   Khoa, Chuyên ngành, Chương trình đào tạo (CTĐT),
+   Nhóm môn tự chọn và Lớp sinh viên
    ================================================================ */
 
 (function ($) {
@@ -9,6 +9,7 @@
 
     var CoCauDaoTaoModule = {
         currentTab: 'ctdt',
+        data: null,
 
         render: function () {
             var currentUser = App.getCurrentUser();
@@ -17,98 +18,55 @@
                 return;
             }
 
+            var card = function (id, icon, title, btnId, btnText, headers, bodyId) {
+                return '<div class="card' + (id === 'khoa' ? ' mb-3' : '') + '">' +
+                    '  <div class="card-header">' +
+                    '    <h3><i class="fa-solid ' + icon + '"></i> ' + title + '</h3>' +
+                    '    <button class="btn btn-primary btn-sm" id="' + btnId + '"><i class="fa-solid fa-plus"></i> ' + btnText + '</button>' +
+                    '  </div>' +
+                    '  <div class="card-body"><div class="table-responsive"><table class="data-table">' +
+                    '    <thead><tr>' + headers.map(function (h) { return '<th' + (h.c ? ' class="text-center"' : '') + '>' + h.t + '</th>'; }).join('') + '</tr></thead>' +
+                    '    <tbody id="' + bodyId + '"></tbody>' +
+                    '  </table></div></div>' +
+                    '</div>';
+            };
+            var H = function (t, c) { return { t: t, c: c }; };
+
             var html =
                 '<div class="tabs">' +
-                '  <button class="tab-btn active" data-tab="ctdt"><i class="fa-solid fa-graduation-cap"></i> Chương trình đào tạo</button>' +
-                '  <button class="tab-btn" data-tab="nhom-tu-chon"><i class="fa-solid fa-layer-group"></i> Nhóm môn tự chọn</button>' +
-                '  <button class="tab-btn" data-tab="khoa"><i class="fa-solid fa-building-columns"></i> Khoa & Chuyên ngành</button>' +
-                '  <button class="tab-btn" data-tab="lop-sv"><i class="fa-solid fa-users-rectangle"></i> Lớp sinh viên</button>' +
+                '  <button class="tab-btn' + (this.currentTab === 'ctdt' ? ' active' : '') + '" data-tab="ctdt"><i class="fa-solid fa-graduation-cap"></i> Chương trình đào tạo</button>' +
+                '  <button class="tab-btn' + (this.currentTab === 'nhom-tu-chon' ? ' active' : '') + '" data-tab="nhom-tu-chon"><i class="fa-solid fa-layer-group"></i> Nhóm môn tự chọn</button>' +
+                '  <button class="tab-btn' + (this.currentTab === 'khoa' ? ' active' : '') + '" data-tab="khoa"><i class="fa-solid fa-building-columns"></i> Khoa & Chuyên ngành</button>' +
+                '  <button class="tab-btn' + (this.currentTab === 'lop-sv' ? ' active' : '') + '" data-tab="lop-sv"><i class="fa-solid fa-users-rectangle"></i> Lớp sinh viên</button>' +
+                '  <button class="tab-btn' + (this.currentTab === 'hoc-ky' ? ' active' : '') + '" data-tab="hoc-ky"><i class="fa-solid fa-calendar-week"></i> Học kỳ</button>' +
                 '</div>' +
 
-                '<!-- TAB 1: CTĐT -->' +
-                '<div class="tab-content active" id="tab-ctdt">' +
-                '  <div class="card">' +
-                '    <div class="card-header">' +
-                '      <h3><i class="fa-solid fa-graduation-cap"></i> Danh sách Chương trình đào tạo</h3>' +
-                '      <button class="btn btn-primary btn-sm" id="btnThemCTDT"><i class="fa-solid fa-plus"></i> Thêm CTĐT mới</button>' +
-                '    </div>' +
-                '    <div class="card-body">' +
-                '      <div class="table-responsive">' +
-                '        <table class="data-table">' +
-                '          <thead><tr><th>STT</th><th>Mã CTĐT</th><th>Tên chương trình</th><th>Chuyên ngành</th><th>Thời gian</th><th class="text-center">Số môn cốt lõi</th><th class="text-center">Thao tác</th></tr></thead>' +
-                '          <tbody id="ctdtTableBody"></tbody>' +
-                '        </table>' +
-                '      </div>' +
-                '    </div>' +
-                '  </div>' +
+                '<div class="tab-content' + (this.currentTab === 'ctdt' ? ' active' : '') + '" id="tab-ctdt">' +
+                card('ctdt', 'fa-graduation-cap', 'Danh sách Chương trình đào tạo', 'btnThemCTDT', 'Thêm CTĐT mới',
+                    [H('STT', 1), H('Mã CTĐT'), H('Tên chương trình'), H('Chuyên ngành / Khoa'), H('Thời gian'), H('Môn bắt buộc', 1), H('Nhóm tự chọn', 1), H('Lớp SV', 1), H('Thao tác', 1)], 'ctdtTableBody') +
                 '</div>' +
 
-                '<!-- TAB 2: NHÓM TỰ CHỌN -->' +
-                '<div class="tab-content" id="tab-nhom-tu-chon">' +
-                '  <div class="card">' +
-                '    <div class="card-header">' +
-                '      <h3><i class="fa-solid fa-layer-group"></i> Nhóm môn tự chọn theo Chương trình đào tạo</h3>' +
-                '      <button class="btn btn-primary btn-sm" id="btnThemNhomTC"><i class="fa-solid fa-plus"></i> Thêm nhóm tự chọn</button>' +
-                '    </div>' +
-                '    <div class="card-body">' +
-                '      <div class="table-responsive">' +
-                '        <table class="data-table">' +
-                '          <thead><tr><th>STT</th><th>Mã nhóm</th><th>Tên nhóm tự chọn</th><th>Thuộc CTĐT</th><th class="text-center">Tín chỉ tối thiểu</th><th>Danh sách môn học thuộc nhóm</th><th class="text-center">Thao tác</th></tr></thead>' +
-                '          <tbody id="nhomTCTableBody"></tbody>' +
-                '        </table>' +
-                '      </div>' +
-                '    </div>' +
-                '  </div>' +
+                '<div class="tab-content' + (this.currentTab === 'nhom-tu-chon' ? ' active' : '') + '" id="tab-nhom-tu-chon">' +
+                card('nhom', 'fa-layer-group', 'Nhóm môn tự chọn theo Chương trình đào tạo', 'btnThemNhomTC', 'Thêm nhóm tự chọn',
+                    [H('STT', 1), H('Mã nhóm'), H('Tên nhóm tự chọn'), H('Thuộc CTĐT'), H('Tín chỉ tối thiểu', 1), H('Danh sách môn học thuộc nhóm'), H('Thao tác', 1)], 'nhomTCTableBody') +
                 '</div>' +
 
-                '<!-- TAB 3: KHOA & CHUYÊN NGÀNH -->' +
-                '<div class="tab-content" id="tab-khoa">' +
-                '  <div class="card mb-3">' +
-                '    <div class="card-header">' +
-                '      <h3><i class="fa-solid fa-building-columns"></i> Danh sách Khoa</h3>' +
-                '      <button class="btn btn-primary btn-sm" id="btnThemKhoa"><i class="fa-solid fa-plus"></i> Thêm Khoa</button>' +
-                '    </div>' +
-                '    <div class="card-body">' +
-                '      <div class="table-responsive">' +
-                '        <table class="data-table">' +
-                '          <thead><tr><th>STT</th><th>Mã Khoa</th><th>Tên Khoa</th><th class="text-center">Số chuyên ngành</th><th class="text-center">Thao tác</th></tr></thead>' +
-                '          <tbody id="khoaTableBody"></tbody>' +
-                '        </table>' +
-                '      </div>' +
-                '    </div>' +
-                '  </div>' +
-                '  <div class="card">' +
-                '    <div class="card-header">' +
-                '      <h3><i class="fa-solid fa-diagram-project"></i> Danh sách Chuyên ngành</h3>' +
-                '      <button class="btn btn-primary btn-sm" id="btnThemChuyenNganh"><i class="fa-solid fa-plus"></i> Thêm Chuyên ngành</button>' +
-                '    </div>' +
-                '    <div class="card-body">' +
-                '      <div class="table-responsive">' +
-                '        <table class="data-table">' +
-                '          <thead><tr><th>STT</th><th>Mã chuyên ngành</th><th>Tên chuyên ngành</th><th>Thuộc Khoa</th><th class="text-center">Thao tác</th></tr></thead>' +
-                '          <tbody id="chuyenNganhTableBody"></tbody>' +
-                '        </table>' +
-                '      </div>' +
-                '    </div>' +
-                '  </div>' +
+                '<div class="tab-content' + (this.currentTab === 'khoa' ? ' active' : '') + '" id="tab-khoa">' +
+                card('khoa', 'fa-building-columns', 'Danh sách Khoa', 'btnThemKhoa', 'Thêm Khoa',
+                    [H('STT', 1), H('Mã Khoa'), H('Tên Khoa'), H('Số chuyên ngành', 1), H('Số giảng viên', 1), H('Thao tác', 1)], 'khoaTableBody') +
+                card('cn', 'fa-diagram-project', 'Danh sách Chuyên ngành', 'btnThemChuyenNganh', 'Thêm Chuyên ngành',
+                    [H('STT', 1), H('Mã chuyên ngành'), H('Tên chuyên ngành'), H('Thuộc Khoa'), H('Số CTĐT', 1), H('Thao tác', 1)], 'chuyenNganhTableBody') +
                 '</div>' +
 
-                '<!-- TAB 4: LỚP SINH VIÊN -->' +
-                '<div class="tab-content" id="tab-lop-sv">' +
-                '  <div class="card">' +
-                '    <div class="card-header">' +
-                '      <h3><i class="fa-solid fa-users-rectangle"></i> Danh sách Lớp sinh viên</h3>' +
-                '      <button class="btn btn-primary btn-sm" id="btnThemLopSV"><i class="fa-solid fa-plus"></i> Tạo lớp sinh viên</button>' +
-                '    </div>' +
-                '    <div class="card-body">' +
-                '      <div class="table-responsive">' +
-                '        <table class="data-table">' +
-                '          <thead><tr><th>STT</th><th>Mã lớp</th><th>Tên lớp</th><th>Khóa học</th><th>Chương trình đào tạo</th><th class="text-center">Sĩ số sinh viên</th><th class="text-center">Thao tác</th></tr></thead>' +
-                '          <tbody id="lopSVTableBody"></tbody>' +
-                '        </table>' +
-                '      </div>' +
-                '    </div>' +
-                '  </div>' +
+                '<div class="tab-content' + (this.currentTab === 'lop-sv' ? ' active' : '') + '" id="tab-lop-sv">' +
+                card('lop', 'fa-users-rectangle', 'Danh sách Lớp sinh viên', 'btnThemLopSV', 'Tạo lớp sinh viên',
+                    [H('STT', 1), H('Mã lớp'), H('Tên lớp'), H('Khóa học'), H('Chương trình đào tạo'), H('Sĩ số sinh viên', 1), H('Thao tác', 1)], 'lopSVTableBody') +
+                '</div>' +
+
+                // RULE-HK-01: học kỳ lưu ngày bắt đầu / kết thúc, lớp học phần xếp lịch trong khoảng này
+                '<div class="tab-content' + (this.currentTab === 'hoc-ky' ? ' active' : '') + '" id="tab-hoc-ky">' +
+                card('hk', 'fa-calendar-week', 'Danh sách Học kỳ', 'btnThemHocKy', 'Khai báo học kỳ',
+                    [H('STT', 1), H('Năm học'), H('Học kỳ', 1), H('Ngày bắt đầu', 1), H('Ngày kết thúc', 1), H('Số tuần', 1), H('Lớp học phần', 1), H('Thao tác', 1)], 'hocKyTableBody') +
                 '</div>';
 
             $('#contentArea').html(html);
@@ -127,206 +85,291 @@
                 self.currentTab = tab;
             });
 
-            // Action triggers
             $('#btnThemKhoa').on('click', function () { self.showKhoaModal(); });
             $('#btnThemChuyenNganh').on('click', function () { self.showChuyenNganhModal(); });
             $('#btnThemCTDT').on('click', function () { self.showCTDTModal(); });
             $('#btnThemNhomTC').on('click', function () { self.showNhomTCModal(); });
             $('#btnThemLopSV').on('click', function () { self.showLopSVModal(); });
+            $('#btnThemHocKy').on('click', function () { self.showHocKyModal(); });
 
-            $(document).off('click', '.btn-del-khoa').on('click', '.btn-del-khoa', function () {
-                var id = $(this).data('id');
-                self.deleteKhoa(id);
+            var on = function (cls, fn) {
+                $(document).off('click', cls).on('click', cls, function () { fn.call(self, parseInt($(this).data('id'), 10)); });
+            };
+            on('.btn-edit-khoa', function (id) { this.showKhoaModal(this.find('khoa', id)); });
+            on('.btn-del-khoa', function (id) { this.remove('khoa', id, 'Khoa'); });
+            on('.btn-edit-cn', function (id) { this.showChuyenNganhModal(this.find('chuyen_nganh', id)); });
+            on('.btn-del-cn', function (id) { this.remove('chuyen-nganh', id, 'Chuyên ngành'); });
+            on('.btn-edit-ctdt', function (id) { this.showCTDTModal(this.find('chuong_trinh_dao_tao', id)); });
+            on('.btn-del-ctdt', function (id) { this.remove('ctdt', id, 'Chương trình đào tạo'); });
+            on('.btn-view-ctdt', function (id) {
+                ChuongTrinhDaoTaoModule.selectedId = id;
+                App.navigate('chuong-trinh-dao-tao');
             });
-            $(document).off('click', '.btn-del-lopsv').on('click', '.btn-del-lopsv', function () {
-                var id = $(this).data('id');
-                self.deleteLopSV(id);
-            });
+            on('.btn-edit-nhom', function (id) { this.showNhomTCModal(this.find('nhom_tu_chon', id)); });
+            on('.btn-del-nhom', function (id) { this.remove('nhom-tu-chon', id, 'Nhóm tự chọn'); });
+            on('.btn-edit-lopsv', function (id) { this.showLopSVModal(this.find('lop_sinh_vien', id)); });
+            on('.btn-del-lopsv', function (id) { this.remove('lop-sinh-vien', id, 'Lớp sinh viên'); });
+            on('.btn-edit-hk', function (id) { this.showHocKyModal(this.find('hoc_ky', id)); });
+            on('.btn-del-hk', function (id) { this.remove('hoc-ky', id, 'Học kỳ'); });
+        },
+
+        find: function (key, id) {
+            return ((this.data || {})[key] || []).find(function (x) { return x.id === id; }) || null;
         },
 
         loadAll: function () {
-            this.loadCTDT();
-            this.loadNhomTC();
-            this.loadKhoa();
-            this.loadLopSV();
+            var self = this;
+            Api.get('/api/cocaudaotao/tong-quan')
+                .done(function (res) {
+                    self.data = res.data;
+                    self.drawCTDT();
+                    self.drawNhomTC();
+                    self.drawKhoa();
+                    self.drawLopSV();
+                    self.drawHocKy();
+                    App.loadTerms(function () {});   // cập nhật danh sách học kỳ dùng ở các trang khác
+                })
+                .fail(Api.toastError);
         },
 
-        loadCTDT: function () {
-            var list = MockDB.chuong_trinh_dao_tao.getAll();
+        actions: function (editCls, delCls, id, extra) {
+            return '<div class="table-actions justify-center' + (extra ? ' table-actions-stack' : '') + '">' + (extra || '') +
+                '<button class="btn btn-sm btn-outline ' + editCls + '" data-id="' + id + '">Sửa</button>' +
+                '<button class="btn btn-sm btn-outline text-danger ' + delCls + '" data-id="' + id + '">Xóa</button></div>';
+        },
+
+        empty: function (tbody, cols, text) {
+            tbody.html('<tr><td colspan="' + cols + '" class="text-center text-muted py-3">' + text + '</td></tr>');
+        },
+
+        drawCTDT: function () {
+            var self = this;
             var tbody = $('#ctdtTableBody').empty();
+            var list = this.data.chuong_trinh_dao_tao;
+            if (!list.length) return this.empty(tbody, 9, 'Chưa có chương trình đào tạo');
             list.forEach(function (c, idx) {
-                var cn = MockDB.chuyen_nganh.getById(c.chuyen_nganh_id);
-                var countMon = MockDB.chi_tiet_chuong_trinh.getAll({ chuong_trinh_id: c.id }).length;
                 tbody.append(
                     '<tr>' +
                     '  <td class="text-center">' + (idx + 1) + '</td>' +
                     '  <td><strong>' + App.escapeHtml(c.ma_chuong_trinh) + '</strong></td>' +
                     '  <td>' + App.escapeHtml(c.ten_chuong_trinh) + '</td>' +
-                    '  <td>' + (cn ? App.escapeHtml(cn.ten_chuyen_nganh) : '—') + '</td>' +
-                    '  <td>' + App.escapeHtml(c.thoi_gian_dao_tao || '4 năm') + '</td>' +
-                    '  <td class="text-center"><span class="badge badge-info">' + countMon + ' môn bắt buộc</span></td>' +
-                    '  <td class="text-center"><button class="btn btn-sm btn-outline"><i class="fa-solid fa-eye"></i> Xem khung</button></td>' +
+                    '  <td>' + App.escapeHtml(c.ten_chuyen_nganh || '—') + '<br><small class="text-muted">' + App.escapeHtml(c.ten_khoa || '') + '</small></td>' +
+                    '  <td>' + App.escapeHtml(c.thoi_gian_dao_tao || '—') + '</td>' +
+                    '  <td class="text-center"><span class="badge badge-info">' + c.so_mon_bat_buoc + ' môn / ' + c.tin_chi_bat_buoc + ' TC</span></td>' +
+                    '  <td class="text-center">' + c.so_nhom_tu_chon + '</td>' +
+                    '  <td class="text-center">' + c.so_lop + '</td>' +
+                    '  <td class="text-center">' + self.actions('btn-edit-ctdt', 'btn-del-ctdt', c.id,
+                        '<button class="btn btn-sm btn-outline-primary btn-view-ctdt" data-id="' + c.id + '">Xem khung</button>') + '</td>' +
                     '</tr>'
                 );
             });
         },
 
-        loadNhomTC: function () {
-            var list = MockDB.nhom_tu_chon.getAll();
+        drawNhomTC: function () {
+            var self = this;
             var tbody = $('#nhomTCTableBody').empty();
+            var list = this.data.nhom_tu_chon;
+            if (!list.length) return this.empty(tbody, 7, 'Chưa có nhóm tự chọn');
             list.forEach(function (n, idx) {
-                var ctdt = MockDB.chuong_trinh_dao_tao.getById(n.chuong_trinh_id);
-                var details = MockDB.chi_tiet_nhom_tu_chon.getAll({ nhom_tu_chon_id: n.id });
-                var monNames = details.map(function (d) {
-                    var m = MockDB.mon_hoc.getById(d.mon_hoc_id);
-                    return m ? m.ma_mon_hoc + ' (' + m.so_tin_chi + 'TC)' : '';
-                }).filter(Boolean).join(', ');
-
+                var mons = n.mon_hoc.map(function (m) { return App.escapeHtml(m.ma_mon_hoc) + ' (' + m.so_tin_chi + 'TC)'; }).join(', ');
                 tbody.append(
                     '<tr>' +
                     '  <td class="text-center">' + (idx + 1) + '</td>' +
                     '  <td><strong>' + App.escapeHtml(n.ma_nhom) + '</strong></td>' +
                     '  <td>' + App.escapeHtml(n.ten_nhom) + '</td>' +
-                    '  <td>' + (ctdt ? App.escapeHtml(ctdt.ten_chuong_trinh) : '—') + '</td>' +
+                    '  <td>' + App.escapeHtml(n.ten_chuong_trinh || '—') + '</td>' +
                     '  <td class="text-center"><span class="badge badge-primary">Tối thiểu ' + n.so_tin_chi_toi_thieu + ' TC</span></td>' +
-                    '  <td><small>' + (monNames || 'Chưa có môn') + '</small></td>' +
-                    '  <td class="text-center"><button class="btn btn-sm btn-outline"><i class="fa-solid fa-pen"></i></button></td>' +
+                    '  <td><small>' + (mons || 'Chưa có môn') + '</small><br><small class="text-muted">Tổng ' + n.tong_tin_chi_nhom + ' TC · thêm/gỡ môn tại "Xem khung" của CTĐT</small></td>' +
+                    '  <td class="text-center">' + self.actions('btn-edit-nhom', 'btn-del-nhom', n.id) + '</td>' +
                     '</tr>'
                 );
             });
         },
 
-        loadKhoa: function () {
-            var khoas = MockDB.khoa.getAll();
+        drawKhoa: function () {
+            var self = this;
             var tbodyKhoa = $('#khoaTableBody').empty();
-            khoas.forEach(function (k, idx) {
-                var countCN = MockDB.chuyen_nganh.getAll({ khoa_id: k.id }).length;
+            this.data.khoa.forEach(function (k, idx) {
                 tbodyKhoa.append(
                     '<tr>' +
                     '  <td class="text-center">' + (idx + 1) + '</td>' +
                     '  <td><strong>' + App.escapeHtml(k.ma_khoa) + '</strong></td>' +
                     '  <td>' + App.escapeHtml(k.ten_khoa) + '</td>' +
-                    '  <td class="text-center">' + countCN + ' chuyên ngành</td>' +
-                    '  <td class="text-center"><button class="btn btn-sm btn-outline btn-del-khoa text-danger" data-id="' + k.id + '"><i class="fa-solid fa-trash"></i></button></td>' +
+                    '  <td class="text-center">' + k.so_chuyen_nganh + ' chuyên ngành</td>' +
+                    '  <td class="text-center">' + k.so_giang_vien + '</td>' +
+                    '  <td class="text-center">' + self.actions('btn-edit-khoa', 'btn-del-khoa', k.id) + '</td>' +
                     '</tr>'
                 );
             });
+            if (!this.data.khoa.length) this.empty(tbodyKhoa, 6, 'Chưa có khoa');
 
-            var cns = MockDB.chuyen_nganh.getAll();
             var tbodyCN = $('#chuyenNganhTableBody').empty();
-            cns.forEach(function (cn, idx) {
-                var k = MockDB.khoa.getById(cn.khoa_id);
+            this.data.chuyen_nganh.forEach(function (cn, idx) {
                 tbodyCN.append(
                     '<tr>' +
                     '  <td class="text-center">' + (idx + 1) + '</td>' +
                     '  <td><strong>' + App.escapeHtml(cn.ma_chuyen_nganh) + '</strong></td>' +
                     '  <td>' + App.escapeHtml(cn.ten_chuyen_nganh) + '</td>' +
-                    '  <td>' + (k ? App.escapeHtml(k.ten_khoa) : '—') + '</td>' +
-                    '  <td class="text-center"><button class="btn btn-sm btn-outline"><i class="fa-solid fa-pen"></i></button></td>' +
+                    '  <td>' + App.escapeHtml(cn.ten_khoa || '—') + '</td>' +
+                    '  <td class="text-center">' + cn.so_ctdt + '</td>' +
+                    '  <td class="text-center">' + self.actions('btn-edit-cn', 'btn-del-cn', cn.id) + '</td>' +
                     '</tr>'
                 );
             });
+            if (!this.data.chuyen_nganh.length) this.empty(tbodyCN, 6, 'Chưa có chuyên ngành');
         },
 
-        loadLopSV: function () {
-            var list = MockDB.lop_sinh_vien.getAll();
+        drawLopSV: function () {
+            var self = this;
             var tbody = $('#lopSVTableBody').empty();
+            var list = this.data.lop_sinh_vien;
+            if (!list.length) return this.empty(tbody, 7, 'Chưa có lớp sinh viên');
             list.forEach(function (l, idx) {
-                var c = MockDB.chuong_trinh_dao_tao.getById(l.chuong_trinh_id);
-                var countSV = MockDB.users.getAll({ lop_sinh_vien_id: l.id }).length;
                 tbody.append(
                     '<tr>' +
                     '  <td class="text-center">' + (idx + 1) + '</td>' +
                     '  <td><strong>' + App.escapeHtml(l.ma_lop) + '</strong></td>' +
                     '  <td>' + App.escapeHtml(l.ten_lop) + '</td>' +
                     '  <td>' + App.escapeHtml(l.khoa_hoc || '—') + '</td>' +
-                    '  <td>' + (c ? App.escapeHtml(c.ten_chuong_trinh) : '—') + '</td>' +
-                    '  <td class="text-center"><span class="badge badge-success">' + countSV + ' sinh viên</span></td>' +
-                    '  <td class="text-center"><button class="btn btn-sm btn-outline btn-del-lopsv text-danger" data-id="' + l.id + '"><i class="fa-solid fa-trash"></i></button></td>' +
+                    '  <td>' + App.escapeHtml(l.ten_chuong_trinh || '—') + '</td>' +
+                    '  <td class="text-center"><span class="badge badge-success">' + l.so_sinh_vien + ' sinh viên</span></td>' +
+                    '  <td class="text-center">' + self.actions('btn-edit-lopsv', 'btn-del-lopsv', l.id) + '</td>' +
                     '</tr>'
                 );
             });
         },
 
-        showKhoaModal: function () {
+        drawHocKy: function () {
             var self = this;
-            var html =
-                '<div class="modal-header"><h3><i class="fa-solid fa-plus"></i> Thêm Khoa đào tạo</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
-                '<div class="modal-body">' +
-                '  <div class="form-group"><label>Mã Khoa <span class="required">*</span></label><input type="text" class="form-control" id="kMa" placeholder="VD: CNTT"></div>' +
-                '  <div class="form-group"><label>Tên Khoa <span class="required">*</span></label><input type="text" class="form-control" id="kTen" placeholder="VD: Công nghệ Thông tin"></div>' +
-                '</div>' +
-                '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button><button class="btn btn-primary" id="btnSaveKhoa">Lưu Khoa</button></div>';
-            App.showModal(html);
-            $(document).off('click', '#btnSaveKhoa').on('click', '#btnSaveKhoa', function () {
-                var ma = $('#kMa').val().trim().toUpperCase();
-                var ten = $('#kTen').val().trim();
-                if (!ma || !ten) { App.showToast('Vui lòng nhập đủ thông tin!', 'error'); return; }
-                MockDB.khoa.create({ ma_khoa: ma, ten_khoa: ten });
-                App.closeModal();
-                App.showToast('Thêm Khoa thành công!', 'success');
-                self.loadKhoa();
+            var tbody = $('#hocKyTableBody').empty();
+            var list = this.data.hoc_ky || [];
+            if (!list.length) return this.empty(tbody, 8, 'Chưa khai báo học kỳ nào - lớp học phần cần học kỳ đã khai báo để xếp lịch');
+            list.forEach(function (h, idx) {
+                var tuan = Math.ceil((new Date(h.ngay_ket_thuc) - new Date(h.ngay_bat_dau)) / 86400000 / 7);
+                tbody.append(
+                    '<tr>' +
+                    '  <td class="text-center">' + (idx + 1) + '</td>' +
+                    '  <td><strong>' + App.escapeHtml(h.nam_hoc) + '</strong></td>' +
+                    '  <td class="text-center">' + (parseInt(h.hoc_ky, 10) === 3 ? 'Học kỳ Hè' : 'Học kỳ ' + h.hoc_ky) + '</td>' +
+                    '  <td class="text-center">' + App.formatDate(h.ngay_bat_dau) + '</td>' +
+                    '  <td class="text-center">' + App.formatDate(h.ngay_ket_thuc) + '</td>' +
+                    '  <td class="text-center">' + tuan + '</td>' +
+                    '  <td class="text-center">' + h.so_lop_hoc_phan + '</td>' +
+                    '  <td class="text-center">' + self.actions('btn-edit-hk', 'btn-del-hk', h.id) + '</td>' +
+                    '</tr>'
+                );
             });
         },
 
-        showLopSVModal: function () {
+        // ---------------- Form dùng chung ----------------
+
+        /** fields: [{id, label, value, type: text|select, options:[{v,t}], ph}] */
+        openForm: function (title, fields, endpoint, item) {
             var self = this;
-            var ctdts = MockDB.chuong_trinh_dao_tao.getAll();
-            var options = ctdts.map(function (c) {
-                return '<option value="' + c.id + '">' + c.ma_chuong_trinh + ' - ' + c.ten_chuong_trinh + '</option>';
+            var body = fields.map(function (f) {
+                var input;
+                if (f.options) {
+                    input = '<select class="form-control" id="' + f.id + '">' + f.options.map(function (o) {
+                        return '<option value="' + o.v + '"' + (String(o.v) === String(f.value) ? ' selected' : '') + '>' + App.escapeHtml(o.t) + '</option>';
+                    }).join('') + '</select>';
+                } else {
+                    input = '<input type="' + (f.type || 'text') + '" class="form-control" id="' + f.id + '" value="' + App.escapeHtml(f.value == null ? '' : f.value) + '" placeholder="' + App.escapeHtml(f.ph || '') + '">';
+                }
+                return '<div class="form-group"><label>' + f.label + ' <span class="required">*</span></label>' + input + '</div>';
             }).join('');
 
-            var html =
-                '<div class="modal-header"><h3><i class="fa-solid fa-plus"></i> Tạo Lớp sinh viên</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
-                '<div class="modal-body">' +
-                '  <div class="form-row">' +
-                '    <div class="form-group"><label>Mã lớp <span class="required">*</span></label><input type="text" class="form-control" id="lMa" placeholder="VD: KTPM2026"></div>' +
-                '    <div class="form-group"><label>Khóa học</label><input type="text" class="form-control" id="lKhoa" placeholder="2026-2030"></div>' +
-                '  </div>' +
-                '  <div class="form-group"><label>Tên lớp sinh viên <span class="required">*</span></label><input type="text" class="form-control" id="lTen" placeholder="VD: Kỹ thuật phần mềm Khóa 2026"></div>' +
-                '  <div class="form-group"><label>Chương trình đào tạo áp dụng <span class="required">*</span></label><select class="form-control" id="lCTDT">' + options + '</select></div>' +
-                '</div>' +
-                '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button><button class="btn btn-primary" id="btnSaveLopSV">Lưu Lớp SV</button></div>';
-            App.showModal(html);
-            $(document).off('click', '#btnSaveLopSV').on('click', '#btnSaveLopSV', function () {
-                var ma = $('#lMa').val().trim().toUpperCase();
-                var ten = $('#lTen').val().trim();
-                var kh = $('#lKhoa').val().trim();
-                var ctdtId = parseInt($('#lCTDT').val(), 10);
-                if (!ma || !ten || !ctdtId) { App.showToast('Vui lòng nhập đủ thông tin!', 'error'); return; }
-                MockDB.lop_sinh_vien.create({ ma_lop: ma, ten_lop: ten, khoa_hoc: kh, chuong_trinh_id: ctdtId });
-                App.closeModal();
-                App.showToast('Tạo lớp sinh viên thành công!', 'success');
-                self.loadLopSV();
+            App.showModal(
+                '<div class="modal-header"><h3>' + title + '</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
+                '<div class="modal-body">' + body + '</div>' +
+                '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
+                '<button class="btn btn-primary" id="btnCocauSave">Lưu</button></div>'
+            );
+
+            $('#btnCocauSave').on('click', function () {
+                var payload = {};
+                fields.forEach(function (f) { payload[f.key] = $('#' + f.id).val(); });
+                var req = item
+                    ? Api.put(endpoint, $.extend({ id: item.id }, payload))
+                    : Api.post(endpoint, payload);
+                req.done(function (res) {
+                    App.showToast(res.message, 'success');
+                    App.closeModal();
+                    self.loadAll();
+                }).fail(Api.toastError);
             });
         },
 
-        deleteKhoa: function (id) {
-            var self = this;
-            var hasGv = MockDB.users.getAll({ khoa_id: id }).length > 0;
-            var hasCn = MockDB.chuyen_nganh.getAll({ khoa_id: id }).length > 0;
-            if (hasGv || hasCn) {
-                App.showToast('Không thể xóa! Khoa đang có giảng viên hoặc chuyên ngành trực thuộc', 'error');
-                return;
-            }
-            App.confirm('Bạn có chắc muốn xóa Khoa này?', function () {
-                MockDB.khoa.remove(id);
-                App.showToast('Đã xóa Khoa thành công!', 'success');
-                self.loadKhoa();
-            });
+        opts: function (list, valKey, textFn) {
+            return list.map(function (x) { return { v: x[valKey], t: textFn(x) }; });
         },
 
-        deleteLopSV: function (id) {
+        showKhoaModal: function (k) {
+            this.openForm(k ? 'Sửa Khoa' : 'Thêm Khoa đào tạo', [
+                { key: 'ma_khoa', id: 'kMa', label: 'Mã Khoa', value: k && k.ma_khoa, ph: 'VD: CNTT' },
+                { key: 'ten_khoa', id: 'kTen', label: 'Tên Khoa', value: k && k.ten_khoa, ph: 'VD: Công nghệ Thông tin' }
+            ], '/api/cocaudaotao/khoa', k);
+        },
+
+        showChuyenNganhModal: function (cn) {
+            this.openForm(cn ? 'Sửa Chuyên ngành' : 'Thêm Chuyên ngành', [
+                { key: 'ma_chuyen_nganh', id: 'cnMa', label: 'Mã chuyên ngành', value: cn && cn.ma_chuyen_nganh, ph: 'VD: KTPM' },
+                { key: 'ten_chuyen_nganh', id: 'cnTen', label: 'Tên chuyên ngành', value: cn && cn.ten_chuyen_nganh },
+                { key: 'khoa_id', id: 'cnKhoa', label: 'Thuộc Khoa', value: cn && cn.khoa_id,
+                    options: this.opts(this.data.khoa, 'id', function (k) { return k.ma_khoa + ' - ' + k.ten_khoa; }) }
+            ], '/api/cocaudaotao/chuyen-nganh', cn);
+        },
+
+        showCTDTModal: function (c) {
+            var years = [1, 2, 3, 4, 5, 6].map(function (y) { return { v: y + ' năm', t: y + ' năm' }; });
+            this.openForm(c ? 'Sửa Chương trình đào tạo' : 'Thêm Chương trình đào tạo', [
+                { key: 'ma_chuong_trinh', id: 'ctMa', label: 'Mã CTĐT', value: c && c.ma_chuong_trinh, ph: 'VD: CTDT-KTPM' },
+                { key: 'ten_chuong_trinh', id: 'ctTen', label: 'Tên chương trình', value: c && c.ten_chuong_trinh },
+                { key: 'thoi_gian_dao_tao', id: 'ctTg', label: 'Thời gian đào tạo', value: (c && c.thoi_gian_dao_tao) || '4 năm', options: years },
+                { key: 'chuyen_nganh_id', id: 'ctCn', label: 'Chuyên ngành', value: c && c.chuyen_nganh_id,
+                    options: this.opts(this.data.chuyen_nganh, 'id', function (x) { return x.ma_chuyen_nganh + ' - ' + x.ten_chuyen_nganh + ' (' + (x.ten_khoa || '') + ')'; }) }
+            ], '/api/cocaudaotao/ctdt', c);
+        },
+
+        showNhomTCModal: function (n) {
+            this.openForm(n ? 'Sửa nhóm tự chọn' : 'Thêm nhóm tự chọn', [
+                { key: 'ma_nhom', id: 'nMa', label: 'Mã nhóm', value: n && n.ma_nhom, ph: 'VD: NTC-A' },
+                { key: 'ten_nhom', id: 'nTen', label: 'Tên nhóm', value: n && n.ten_nhom, ph: 'VD: Tự chọn A' },
+                { key: 'chuong_trinh_id', id: 'nCt', label: 'Thuộc CTĐT', value: n && n.chuong_trinh_id,
+                    options: this.opts(this.data.chuong_trinh_dao_tao, 'id', function (x) { return x.ma_chuong_trinh + ' - ' + x.ten_chuong_trinh; }) },
+                { key: 'so_tin_chi_toi_thieu', id: 'nTc', label: 'Số tín chỉ tối thiểu phải tích lũy', value: n && n.so_tin_chi_toi_thieu, ph: 'VD: 6' }
+            ], '/api/cocaudaotao/nhom-tu-chon', n);
+        },
+
+        showLopSVModal: function (l) {
+            this.openForm(l ? 'Sửa Lớp sinh viên' : 'Tạo Lớp sinh viên', [
+                { key: 'ma_lop', id: 'lMa', label: 'Mã lớp', value: l && l.ma_lop, ph: 'VD: KTPM2026' },
+                { key: 'ten_lop', id: 'lTen', label: 'Tên lớp sinh viên', value: l && l.ten_lop, ph: 'VD: Kỹ thuật phần mềm Khóa 2026' },
+                { key: 'khoa_hoc', id: 'lKhoa', label: 'Khóa học', value: l && l.khoa_hoc, ph: 'VD: 2026-2030' },
+                { key: 'chuong_trinh_id', id: 'lCTDT', label: 'Chương trình đào tạo áp dụng', value: l && l.chuong_trinh_id,
+                    options: this.opts(this.data.chuong_trinh_dao_tao, 'id', function (x) { return x.ma_chuong_trinh + ' - ' + x.ten_chuong_trinh; }) }
+            ], '/api/cocaudaotao/lop-sinh-vien', l);
+        },
+
+        // RULE-HK-02, RULE-HK-06: backend kiểm tra ngày kết thúc > ngày bắt đầu và chặn sửa học kỳ đã có lớp
+        showHocKyModal: function (h) {
+            var y = new Date().getFullYear();
+            var years = [];
+            for (var i = y - 2; i <= y + 2; i++) years.push({ v: i + '-' + (i + 1), t: i + '-' + (i + 1) });
+            if (h && !years.some(function (o) { return o.v === h.nam_hoc; })) years.unshift({ v: h.nam_hoc, t: h.nam_hoc });
+            this.openForm(h ? 'Sửa Học kỳ' : 'Khai báo Học kỳ', [
+                { key: 'nam_hoc', id: 'hkNam', label: 'Năm học', value: (h && h.nam_hoc) || ((App.getTerms() || {}).hien_tai || {}).nam_hoc, options: years },
+                { key: 'hoc_ky', id: 'hkSo', label: 'Học kỳ', value: h && h.hoc_ky, options: [{ v: 1, t: 'Học kỳ 1' }, { v: 2, t: 'Học kỳ 2' }, { v: 3, t: 'Học kỳ Hè' }] },
+                { key: 'ngay_bat_dau', id: 'hkBd', label: 'Ngày bắt đầu', value: h && h.ngay_bat_dau, type: 'date' },
+                { key: 'ngay_ket_thuc', id: 'hkKt', label: 'Ngày kết thúc', value: h && h.ngay_ket_thuc, type: 'date' }
+            ], '/api/cocaudaotao/hoc-ky', h);
+        },
+
+        remove: function (endpoint, id, label) {
             var self = this;
-            var hasSv = MockDB.users.getAll({ lop_sinh_vien_id: id }).length > 0;
-            if (hasSv) {
-                App.showToast('Không thể xóa! Lớp này đang có sinh viên sinh hoạt', 'error');
-                return;
-            }
-            App.confirm('Bạn có chắc muốn xóa Lớp sinh viên này?', function () {
-                MockDB.lop_sinh_vien.remove(id);
-                App.showToast('Đã xóa Lớp sinh viên thành công!', 'success');
-                self.loadLopSV();
+            App.confirm('Bạn có chắc muốn xóa ' + label + ' này?', function () {
+                Api.del('/api/cocaudaotao/' + endpoint, { id: id })
+                    .done(function (res) { App.showToast(res.message, 'success'); self.loadAll(); })
+                    .fail(Api.toastError);
             });
         }
     };

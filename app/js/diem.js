@@ -1,8 +1,8 @@
 /* ================================================================
    DIEM.JS - Quản lý nhập điểm cho Giảng viên
    Đầy đủ khối thông tin lớp (Giảng viên, Học kỳ, Sĩ số, Phòng học)
-   Điểm tổng kết làm tròn 2 chữ số thập phân chuẩn xác, không lệch điểm chữ
-   Lưu vết người sửa và lịch sử cập nhật
+   Thêm / sửa / xóa điểm thành phần qua API
+   Chuyên cần, tổng kết, quy đổi điểm chỉ do backend tính (RULE-14, 15, 17)
    ================================================================ */
 
 (function ($) {
@@ -12,15 +12,19 @@
         currentLhpId: null,
 
         render: function () {
+            var self = this;
             var currentUser = App.getCurrentUser();
             if (!currentUser || (currentUser.vai_tro !== 'giang_vien' && currentUser.vai_tro !== 'admin')) {
                 $('#contentArea').html('<div class="alert alert-danger">Chức năng này chỉ dành cho Giảng viên và Quản trị viên</div>');
                 return;
             }
 
-            var filterLHP = currentUser.vai_tro === 'admin' ? {} : { giang_vien_user_id: currentUser.id };
-            var myClasses = MockDB.lop_hoc_phan.getAll(filterLHP);
+            Api.get('/api/ketquahoctap/lop-giang-day')
+                .done(function (res) { self.renderPage(res.data || []); })
+                .fail(Api.toastError);
+        },
 
+        renderPage: function (myClasses) {
             if (myClasses.length === 0) {
                 $('#contentArea').html(
                     '<div class="card"><div class="card-body empty-state py-5 text-center">' +
@@ -32,8 +36,7 @@
             }
 
             var lhpOptions = myClasses.map(function (l) {
-                var mh = MockDB.mon_hoc.getById(l.mon_hoc_id);
-                return '<option value="' + l.id + '">' + App.escapeHtml(l.ma_lop_hoc_phan) + ' - ' + (mh ? App.escapeHtml(mh.ten_mon_hoc) : '') + ' (HK' + l.hoc_ky + ' ' + App.escapeHtml(l.nam_hoc) + ')</option>';
+                return '<option value="' + l.id + '">' + App.escapeHtml(l.ma_lop_hoc_phan) + ' - ' + App.escapeHtml(l.ten_mon_hoc || '') + ' (HK' + l.hoc_ky + ' ' + App.escapeHtml(l.nam_hoc) + ')</option>';
             }).join('');
 
             var html =
@@ -54,7 +57,8 @@
                 '    <div style="background:#f8fafc; border-left:3px solid var(--primary); padding:10px 14px; border-radius:4px; font-size:0.84rem; color:#334155; margin-top:6px;">' +
                 '      <strong>Quy chế tính điểm tổng kết:</strong> ' +
                 '      Điểm tổng kết = <strong>Cuối kỳ × 0.6 + Giữa kỳ × 0.3 + Chuyên cần × 0.1</strong><br>' +
-                '      Điểm chuyên cần được hệ thống tự động đồng bộ từ kết quả điểm danh sinh viên' +
+                '      Điểm chuyên cần được hệ thống tự động tính từ kết quả điểm danh (mỗi 2% tỷ lệ nghỉ trừ 1 điểm, nghỉ từ 20% bằng 0)<br>' +
+                '      Để trống ô điểm = chưa có điểm thành phần; nhấn biểu tượng thùng rác để xóa điểm thành phần của sinh viên' +
                 '    </div>' +
                 '  </div>' +
                 '</div>' +
@@ -74,7 +78,7 @@
                 '</div>' +
 
                 '<!-- Thống kê phổ điểm -->' +
-                '<div class="stats-grid-modern mb-3" id="diemStatsGrid" style="display:none;">' +
+                '<div class="stats-grid-modern mb-3" id="diemStatsGrid" style="display:none; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">' +
                 '  <div class="stat-modern-card"><div class="stat-label">Tổng sinh viên</div><div class="stat-number" id="statTotalSvDiem">0</div><div class="stat-desc">Đã đăng ký lớp</div></div>' +
                 '  <div class="stat-modern-card"><div class="stat-label">Tỷ lệ đạt môn</div><div class="stat-number text-success" id="statTyLeDat">0%</div><div class="stat-desc">Điểm tổng kết ≥ 4.0</div></div>' +
                 '  <div class="stat-modern-card"><div class="stat-label">Điểm giỏi (A)</div><div class="stat-number text-warning" id="statDiemA">0</div><div class="stat-desc">Từ 8.5 đến 10.0</div></div>' +
@@ -86,8 +90,8 @@
                 '  <div class="card-header">' +
                 '    <h3 id="diemTableTitle">Bảng điểm sinh viên</h3>' +
                 '    <div class="d-flex gap-2">' +
-                '      <button class="btn btn-sm btn-outline" id="btnAutoCalculate">Tính lại toàn bộ</button>' +
-                '      <button class="btn btn-sm btn-primary" id="btnSaveAllDiem">Lưu bảng điểm</button>' +
+                '      <button class="btn btn-sm btn-outline" id="btnAutoCalculate"><i class="fa-solid fa-rotate"></i> Tính lại toàn bộ</button>' +
+                '      <button class="btn btn-sm btn-primary" id="btnSaveAllDiem"><i class="fa-solid fa-floppy-disk"></i> Lưu bảng điểm</button>' +
                 '    </div>' +
                 '  </div>' +
                 '  <div class="card-body p-0">' +
@@ -107,6 +111,7 @@
                 '            <th class="text-center">Điểm chữ</th>' +
                 '            <th class="text-center">Kết quả</th>' +
                 '            <th class="text-center">Cập nhật lần cuối</th>' +
+                '            <th class="text-center">Thao tác</th>' +
                 '          </tr>' +
                 '        </thead>' +
                 '        <tbody id="diemTableBody"></tbody>' +
@@ -131,227 +136,145 @@
                 self.loadClassGrades();
             });
 
+            // Ô điểm đã sửa nhưng chưa lưu: đánh dấu để giảng viên biết cần lưu
             $(document).off('input', '.input-diem').on('input', '.input-diem', function () {
-                var $row = $(this).closest('tr');
-                self.calculateRow($row);
-                self.updateStats();
+                $(this).closest('tr').find('.col-tk, .col-he4, .col-chu, .col-kq').html('<span class="text-muted" title="Lưu bảng điểm để hệ thống tính">…</span>');
             });
 
+            // Backend tính lại chuyên cần theo điểm danh mới nhất mỗi lần tải
             $('#btnAutoCalculate').on('click', function () {
-                $('#diemTableBody tr[data-dk-id]').each(function () {
-                    self.calculateRow($(this));
+                self.loadClassGrades(function () {
+                    App.showToast('Đã tải lại điểm chuyên cần và điểm tổng kết từ hệ thống!', 'info');
                 });
-                self.updateStats();
-                App.showToast('Đã tính toán lại toàn bộ điểm tổng kết!', 'info');
             });
 
             $('#btnSaveAllDiem').on('click', function () {
                 self.saveAllGrades();
             });
+
+            $(document).off('click', '.btn-del-diem').on('click', '.btn-del-diem', function () {
+                self.deleteGrade(parseInt($(this).data('dk-id'), 10), $(this).data('name'));
+            });
         },
 
-        loadClassGrades: function () {
+        loadClassGrades: function (callback) {
+            var self = this;
             var lhpId = parseInt($('#selectDiemLHP').val(), 10);
             this.currentLhpId = lhpId;
             if (!lhpId) return;
 
-            var lhp = MockDB.lop_hoc_phan.getById(lhpId);
-            var mh = lhp ? MockDB.mon_hoc.getById(lhp.mon_hoc_id) : null;
-            var gv = lhp && lhp.giang_vien_user_id ? MockDB.users.getById(lhp.giang_vien_user_id) : null;
+            Api.get('/api/ketquahoctap/bang-diem', { lop_hoc_phan_id: lhpId })
+                .done(function (res) {
+                    self.renderGrades(res);
+                    if (typeof callback === 'function') callback();
+                })
+                .fail(Api.toastError);
+        },
 
-            // Cập nhật khối thông tin lớp học phần
-            if (lhp) {
-                $('#infoMh').text(mh ? (mh.ten_mon_hoc + ' (' + mh.ma_mon_hoc + ' - ' + mh.so_tin_chi + ' TC)') : '—');
-                $('#infoLhp').text(lhp.ma_lop_hoc_phan);
-                $('#infoGv').text(gv ? gv.ho_ten : 'Chưa phân công');
-                $('#infoHkNh').text('Học kỳ ' + lhp.hoc_ky + ' - Năm học ' + lhp.nam_hoc);
-                $('#infoSiSo').text(MockDB.getSiSoHienTai(lhp.id) + ' / ' + lhp.si_so_toi_da + ' sinh viên');
-                $('#infoPhong').text(lhp.phong_hoc || '—');
-                $('#classInfoCard').show();
-            }
+        renderGrades: function (res) {
+            var lhp = res.lop_hoc_phan;
+            var rows = res.data || [];
+            var st = res.thong_ke || {};
 
-            $('#diemTableTitle').text('Bảng điểm: ' + (lhp ? lhp.ma_lop_hoc_phan : '') + ' - ' + (mh ? mh.ten_mon_hoc : ''));
+            $('#infoMh').text(lhp.ten_mon_hoc + ' (' + lhp.ma_mon_hoc + ' - ' + lhp.so_tin_chi + ' TC)');
+            $('#infoLhp').text(lhp.ma_lop_hoc_phan);
+            $('#infoGv').text(lhp.ten_giang_vien || 'Chưa phân công');
+            $('#infoHkNh').text('Học kỳ ' + lhp.hoc_ky + ' - Năm học ' + lhp.nam_hoc);
+            $('#infoSiSo').text((lhp.si_so_hien_tai || 0) + ' / ' + lhp.si_so_toi_da + ' sinh viên');
+            $('#infoPhong').text(lhp.phong_hoc || '—');
+            $('#classInfoCard').show();
 
-            var dks = MockDB.dang_ky_hoc_phan.getAll({
-                lop_hoc_phan_id: lhpId,
-                trang_thai: 'Đã đăng ký'
-            });
+            $('#diemTableTitle').text('Bảng điểm: ' + lhp.ma_lop_hoc_phan + ' - ' + lhp.ten_mon_hoc);
+
+            $('#statTotalSvDiem').text(st.tong || 0);
+            $('#statTyLeDat').text((st.ty_le_dat || 0) + '%');
+            $('#statDiemA').text(st.diem_a || 0);
+            $('#statDiemF').text(st.diem_f || 0);
 
             var tbody = $('#diemTableBody');
             tbody.empty();
 
-            if (dks.length === 0) {
-                tbody.html('<tr><td colspan="12" class="text-center text-muted py-4">Chưa có sinh viên nào đăng ký lớp này</td></tr>');
+            if (rows.length === 0) {
+                tbody.html('<tr><td colspan="13" class="text-center text-muted py-4">Chưa có sinh viên nào đăng ký lớp này</td></tr>');
                 $('#diemStatsGrid, #diemTableCard').show();
-                this.updateStats();
                 return;
             }
 
-            dks.forEach(function (dk, index) {
-                var sv = MockDB.users.getById(dk.sinh_vien_user_id);
-                var lsv = sv && sv.lop_sinh_vien_id ? MockDB.lop_sinh_vien.getById(sv.lop_sinh_vien_id) : null;
-                var d = MockDB.diem.getAll({ dang_ky_id: dk.id })[0] || {};
-
-                var cc = (d.diem_chuyen_can != null) ? Number(d.diem_chuyen_can).toFixed(1) : '10.0';
+            rows.forEach(function (d, index) {
                 var gk = (d.diem_giua_ky != null) ? d.diem_giua_ky : '';
                 var ck = (d.diem_cuoi_ky != null) ? d.diem_cuoi_ky : '';
-
-                // Hiển thị 2 chữ số thập phân chuẩn xác để không làm tròn lệch điểm chữ
                 var tk = (d.diem_tong_ket != null) ? Number(d.diem_tong_ket).toFixed(2) : '—';
                 var he4 = (d.diem_he_4 != null) ? Number(d.diem_he_4).toFixed(1) : '—';
-                var chu = d.diem_chu || '—';
-                var kq = d.ket_qua || '—';
                 var lastUpdate = d.updated_at ? App.formatDateTime(d.updated_at) : '<span class="text-muted">Chưa lưu</span>';
+                var ccTitle = 'Nghỉ ' + d.tiet_nghi + '/' + d.tong_tiet_mon + ' tiết (' + d.ty_le_nghi + '%)';
+                var hasScore = d.diem_giua_ky != null || d.diem_cuoi_ky != null;
 
                 var row =
-                    '<tr data-dk-id="' + dk.id + '">' +
+                    '<tr data-dk-id="' + d.dang_ky_id + '">' +
                     '  <td class="text-center font-bold">' + (index + 1) + '</td>' +
-                    '  <td><strong>' + (sv ? App.escapeHtml(sv.ma_dinh_danh) : '—') + '</strong></td>' +
-                    '  <td>' + (sv ? App.escapeHtml(sv.ho_ten) : '—') + '</td>' +
-                    '  <td>' + (lsv ? App.escapeHtml(lsv.ma_lop) : '—') + '</td>' +
+                    '  <td><strong>' + App.escapeHtml(d.ma_dinh_danh) + '</strong></td>' +
+                    '  <td>' + App.escapeHtml(d.ho_ten) + '</td>' +
+                    '  <td>' + (d.ma_lop ? App.escapeHtml(d.ma_lop) : '—') + '</td>' +
                     '  <td class="text-center">' +
-                    '    <input type="number" step="0.1" min="0" max="10" class="form-control form-control-sm text-center input-cc" value="' + cc + '" readonly title="Tự động tính từ điểm danh">' +
+                    '    <input type="number" class="form-control form-control-sm text-center input-cc" value="' + Number(d.diem_chuyen_can).toFixed(1) + '" readonly title="' + ccTitle + '">' +
+                    '    <small class="text-muted d-block">' + ccTitle + '</small>' +
                     '  </td>' +
                     '  <td class="text-center">' +
-                    '    <input type="number" step="0.1" min="0" max="10" class="form-control form-control-sm text-center input-diem input-gk" value="' + gk + '" placeholder="0.0">' +
+                    '    <input type="number" step="0.1" class="form-control form-control-sm text-center input-diem input-gk" value="' + gk + '" placeholder="—">' +
                     '  </td>' +
                     '  <td class="text-center">' +
-                    '    <input type="number" step="0.1" min="0" max="10" class="form-control form-control-sm text-center input-diem input-ck" value="' + ck + '" placeholder="0.0">' +
+                    '    <input type="number" step="0.1" class="form-control form-control-sm text-center input-diem input-ck" value="' + ck + '" placeholder="—">' +
                     '  </td>' +
                     '  <td class="text-center font-bold col-tk" style="font-size:0.95rem; color:var(--primary);">' + tk + '</td>' +
                     '  <td class="text-center col-he4">' + he4 + '</td>' +
-                    '  <td class="text-center col-chu">' + (chu !== '—' ? App.diemChuBadge(chu) : '—') + '</td>' +
-                    '  <td class="text-center col-kq">' + (kq !== '—' ? App.ketQuaBadge(kq) : '—') + '</td>' +
+                    '  <td class="text-center col-chu">' + (d.diem_chu ? App.diemChuBadge(d.diem_chu) : '—') + '</td>' +
+                    '  <td class="text-center col-kq">' + (d.ket_qua ? App.ketQuaBadge(d.ket_qua) : '—') + '</td>' +
                     '  <td class="text-center"><small>' + lastUpdate + '</small></td>' +
+                    '  <td class="text-center">' +
+                    (hasScore
+                        ? '<button class="btn btn-sm btn-outline text-danger btn-del-diem" data-dk-id="' + d.dang_ky_id + '" data-name="' + App.escapeHtml(d.ho_ten) + '" title="Xóa điểm thành phần">Xóa</button>'
+                        : '<span class="text-muted">—</span>') +
+                    '  </td>' +
                     '</tr>';
                 tbody.append(row);
             });
 
             $('#diemStatsGrid, #diemTableCard').show();
-            this.updateStats();
-        },
-
-        calculateRow: function ($row) {
-            var ccVal = parseFloat($row.find('.input-cc').val());
-            var gkVal = parseFloat($row.find('.input-gk').val());
-            var ckVal = parseFloat($row.find('.input-ck').val());
-
-            var $colTk = $row.find('.col-tk');
-            var $colHe4 = $row.find('.col-he4');
-            var $colChu = $row.find('.col-chu');
-            var $colKq = $row.find('.col-kq');
-
-            if (isNaN(ccVal) || isNaN(gkVal) || isNaN(ckVal)) {
-                $colTk.text('—');
-                $colHe4.text('—');
-                $colChu.text('—');
-                $colKq.text('—');
-                return;
-            }
-
-            // Điểm tổng kết lưu 2 chữ số thập phân
-            var tk = MockDB.tinhDiemTongKet(ckVal, gkVal, ccVal);
-            var chu = MockDB.tinhDiemChu(tk);
-            var he4 = MockDB.tinhDiemHe4(chu);
-            var kq = MockDB.tinhKetQua(chu);
-
-            $colTk.text(tk.toFixed(2));
-            $colHe4.text(he4.toFixed(1));
-            $colChu.html(App.diemChuBadge(chu));
-            $colKq.html(App.ketQuaBadge(kq));
-        },
-
-        updateStats: function () {
-            var total = $('#diemTableBody tr[data-dk-id]').length;
-            if (total === 0) {
-                $('#statTotalSvDiem').text(0);
-                $('#statTyLeDat').text('0%');
-                $('#statDiemA').text(0);
-                $('#statDiemF').text(0);
-                return;
-            }
-
-            var countDat = 0;
-            var countA = 0;
-            var countF = 0;
-            var totalHasScore = 0;
-
-            $('#diemTableBody tr[data-dk-id]').each(function () {
-                var chuText = $(this).find('.col-chu').text().trim();
-                var kqText = $(this).find('.col-kq').text().trim();
-
-                if (kqText === 'Đạt') countDat++;
-                if (chuText === 'A') countA++;
-                if (chuText === 'F') countF++;
-                if (chuText !== '—') totalHasScore++;
-            });
-
-            var rate = totalHasScore > 0 ? Math.round((countDat / totalHasScore) * 100) : 0;
-
-            $('#statTotalSvDiem').text(total);
-            $('#statTyLeDat').text(rate + '%');
-            $('#statDiemA').text(countA);
-            $('#statDiemF').text(countF);
         },
 
         saveAllGrades: function () {
-            var currentUser = App.getCurrentUser();
+            var self = this;
             var lhpId = this.currentLhpId;
             if (!lhpId) return;
 
-            var rows = $('#diemTableBody tr[data-dk-id]');
-            var nowStr = new Date().toISOString();
-            var savedCount = 0;
-
-            rows.each(function () {
-                var dkId = parseInt($(this).data('dk-id'), 10);
-                var cc = parseFloat($(this).find('.input-cc').val());
-                var gk = parseFloat($(this).find('.input-gk').val());
-                var ck = parseFloat($(this).find('.input-ck').val());
-
-                if (!isNaN(gk) && !isNaN(ck) && !isNaN(cc)) {
-                    var tk = MockDB.tinhDiemTongKet(ck, gk, cc);
-                    var chu = MockDB.tinhDiemChu(tk);
-                    var he4 = MockDB.tinhDiemHe4(chu);
-                    var kq = MockDB.tinhKetQua(chu);
-
-                    var existing = MockDB.diem.getAll({ dang_ky_id: dkId })[0];
-                    if (existing) {
-                        MockDB.diem.update(existing.id, {
-                            diem_chuyen_can: cc,
-                            diem_giua_ky: gk,
-                            diem_cuoi_ky: ck,
-                            diem_tong_ket: tk,
-                            diem_he_10: tk,
-                            diem_he_4: he4,
-                            diem_chu: chu,
-                            ket_qua: kq,
-                            nguoi_sua_user_id: currentUser.id,
-                            updated_at: nowStr,
-                            ghi_chu_sua: 'Cập nhật bảng điểm học phần'
-                        });
-                    } else {
-                        MockDB.diem.create({
-                            dang_ky_id: dkId,
-                            diem_chuyen_can: cc,
-                            diem_giua_ky: gk,
-                            diem_cuoi_ky: ck,
-                            diem_tong_ket: tk,
-                            diem_he_10: tk,
-                            diem_he_4: he4,
-                            diem_chu: chu,
-                            ket_qua: kq,
-                            nguoi_sua_user_id: currentUser.id,
-                            updated_at: nowStr,
-                            ghi_chu_sua: 'Khởi tạo bảng điểm học phần'
-                        });
-                    }
-                    savedCount++;
-                }
+            var items = [];
+            $('#diemTableBody tr[data-dk-id]').each(function () {
+                items.push({
+                    dang_ky_id: parseInt($(this).data('dk-id'), 10),
+                    diem_giua_ky: $(this).find('.input-gk').val(),
+                    diem_cuoi_ky: $(this).find('.input-ck').val()
+                });
             });
 
-            App.showToast('Đã lưu thành công bảng điểm cho ' + savedCount + ' sinh viên!', 'success');
-            this.loadClassGrades();
+            // Kiểm tra thang điểm 0-10, tính chuyên cần & tổng kết do backend thực hiện
+            Api.post('/api/ketquahoctap/bang-diem', { lop_hoc_phan_id: lhpId, items: items })
+                .done(function (res) {
+                    App.showToast(res.message, 'success');
+                    self.loadClassGrades();
+                })
+                .fail(Api.toastError);
+        },
+
+        deleteGrade: function (dkId, name) {
+            var self = this;
+            App.confirm('Xóa toàn bộ điểm thành phần (giữa kỳ, cuối kỳ) của sinh viên <strong>' + App.escapeHtml(name) + '</strong>?', function () {
+                Api.del('/api/ketquahoctap/diem-thanh-phan', { dang_ky_id: dkId, loai: 'tat_ca' })
+                    .done(function (res) {
+                        App.showToast(res.message, 'success');
+                        self.loadClassGrades();
+                    })
+                    .fail(Api.toastError);
+            });
         }
     };
 

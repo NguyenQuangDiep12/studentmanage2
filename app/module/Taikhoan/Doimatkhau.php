@@ -2,108 +2,91 @@
 
 require_once dirname(__DIR__, 2) . '/config/database.php';
 require_once dirname(__DIR__, 2) . '/core/Response.php';
+require_once dirname(__DIR__, 2) . '/core/Request.php';
+require_once dirname(__DIR__, 2) . '/core/AuthService.php';
 
 class Doimatkhau
 {
+    /**
+     * POST /api/taikhoan/doi-mat-khau
+     * Header: Authorization: Bearer <token>
+     * Body: { old_password, new_password }
+     * RULE-23: Phải đăng nhập, đúng mật khẩu hiện tại, mật khẩu mới hợp lệ.
+     */
     public function handle(): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Allow: POST');
+        Request::requireMethod('POST');
 
-            Response::json([
-                'message' => 'Phương thức không được hỗ trợ.'
-            ], 405);
-        }
+        $db = Database::connect();
+        $user = AuthService::requireUser($db);
 
-        $input = json_decode(
-            file_get_contents('php://input'),
-            true
-        );
-
-        if (!is_array($input)) {
-            Response::json([
-                'message' => 'Dữ liệu JSON không hợp lệ.'
-            ], 400);
-        }
-
-        $maDinhDanh = trim($input['ma_dinh_danh'] ?? '');
-        $oldPassword = $input['old_password'] ?? '';
-        $newPassword = $input['new_password'] ?? '';
+        $oldPassword = Request::input('old_password', '');
+        $newPassword = Request::input('new_password', '');
 
         if (
-            $maDinhDanh === '' ||
             !is_string($oldPassword) ||
             !is_string($newPassword) ||
             $oldPassword === '' ||
             $newPassword === ''
         ) {
             Response::json([
-                'message' => 'Vui lòng nhập đầy đủ thông tin.'
+                'success' => false,
+                'message' => 'Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.'
             ], 422);
         }
 
-        if (strlen($newPassword) < 6) {
-            Response::json([
-                'message' => 'Mật khẩu mới phải có ít nhất 6 ký tự.'
-            ], 422);
+        $confirm = Request::input('confirm_password');
+        if ($confirm !== null && $confirm !== $newPassword) {
+            Response::json(['success' => false, 'message' => 'Xác nhận mật khẩu mới không khớp.'], 422);
+        }
+
+        $error = self::validateNewPassword($newPassword);
+        if ($error !== null) {
+            Response::json(['success' => false, 'message' => $error], 422);
         }
 
         if ($oldPassword === $newPassword) {
             Response::json([
+                'success' => false,
                 'message' => 'Mật khẩu mới không được trùng mật khẩu cũ.'
             ], 422);
         }
 
-        try {
-            $db = Database::connect();
+        $stmt = $db->prepare('SELECT password FROM users WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $user['id']]);
+        $current = $stmt->fetchColumn();
 
-            $stmt = $db->prepare(
-                'SELECT id, password
-                 FROM users
-                 WHERE ma_dinh_danh = :ma_dinh_danh
-                 LIMIT 1'
-            );
-
-            $stmt->execute([
-                ':ma_dinh_danh' => $maDinhDanh
-            ]);
-
-            $user = $stmt->fetch();
-
-            if (
-                !$user ||
-                !password_verify($oldPassword, $user['password'])
-            ) {
-                Response::json([
-                    'message' => 'Mã định danh hoặc mật khẩu cũ không đúng.'
-                ], 400);
-            }
-
-            $newHash = password_hash(
-                $newPassword,
-                PASSWORD_DEFAULT
-            );
-
-            $update = $db->prepare(
-                'UPDATE users
-                 SET password = :password
-                 WHERE id = :id'
-            );
-
-            $update->execute([
-                ':password' => $newHash,
-                ':id' => $user['id']
-            ]);
-
+        if ($current === false || $oldPassword !== $current) {
             Response::json([
-                'message' => 'Đổi mật khẩu thành công.'
-            ]);
-        } catch (Throwable $e) {
-            error_log((string) $e);
-
-            Response::json([
-                'message' => 'Đã xảy ra lỗi máy chủ.'
-            ], 500);
+                'success' => false,
+                'message' => 'Mật khẩu hiện tại không đúng.'
+            ], 400);
         }
+
+        $db->prepare('UPDATE users SET password = :password WHERE id = :id')
+            ->execute([':password' => $newPassword, ':id' => $user['id']]);
+
+        Response::json([
+            'success' => true,
+            'message' => 'Đổi mật khẩu thành công.'
+        ]);
+    }
+
+    /** Điều kiện hợp lệ của mật khẩu mới (dùng chung cho quên mật khẩu) */
+    public static function validateNewPassword(string $password): ?string
+    {
+        if (mb_strlen($password) < 6) {
+            return 'Mật khẩu mới phải có ít nhất 6 ký tự.';
+        }
+
+        if (mb_strlen($password) > 64) {
+            return 'Mật khẩu mới không được vượt quá 64 ký tự.';
+        }
+
+        if (preg_match('/\s/', $password)) {
+            return 'Mật khẩu mới không được chứa khoảng trắng.';
+        }
+
+        return null;
     }
 }

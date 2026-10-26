@@ -1,70 +1,50 @@
 /* ================================================================
    TKB.JS - Thời khóa biểu tuần cho Sinh viên & Giảng viên
-   Lưới 7 ngày (Thứ 2 -> Chủ nhật), 12 tiết học chuẩn (Ca học 1-12)
-   Tự động xác định tuần hiện tại theo thời gian thực (26/10/2026 = Tuần 8)
+   Lưới 7 ngày (Thứ 2 -> Chủ nhật), 13 tiết học cố định (Tiết 1-13)
+   Tuần học tính từ lịch học thực tế của học kỳ (API), tự mở tuần hiện tại
    Hỗ trợ rowspan theo tiết học giống wireframe & Font Awesome CDN
    ================================================================ */
 
 (function ($) {
     'use strict';
 
-    var tietGioBatDau = {
-        1: '06:45',
-        2: '07:45',
-        3: '08:45',
-        4: '09:45',
-        5: '10:45',
-        6: '12:30',
-        7: '13:30',
-        8: '14:30',
-        9: '15:30',
-        10: '16:30',
-        11: '17:30',
-        12: '18:30'
-    };
-
-    var tietGioKetThuc = {
-        1: '07:30',
-        2: '08:30',
-        3: '09:30',
-        4: '10:30',
-        5: '11:30',
-        6: '13:15',
-        7: '14:15',
-        8: '15:15',
-        9: '16:15',
-        10: '17:15',
-        11: '18:15',
-        12: '19:15'
-    };
-
-    function getFirstMonday(year, month) {
-        var d = new Date(year, month, 1);
-        var day = d.getDay(); // 0 is Sunday, 1 is Monday
-        var diff = (day === 0 ? 1 : (day === 1 ? 0 : 8 - day));
-        return new Date(year, month, 1 + diff);
-    }
+    // RULE-TKB-01: bảng giờ 13 tiết cố định khai báo một lần tại App.TIET_GIO (app.js), không lưu DB.
+    // RULE-TKB-04:
+    // Giờ bắt đầu lấy theo tiết bắt đầu, giờ kết thúc lấy theo tiết kết thúc - không cộng phút.
+    var SO_TIET = App.SO_TIET_NGAY;
+    var tietGioBatDau = {}, tietGioKetThuc = {};
+    Object.keys(App.TIET_GIO).forEach(function (k) {
+        tietGioBatDau[k] = App.TIET_GIO[k][0];
+        tietGioKetThuc[k] = App.TIET_GIO[k][1];
+    });
 
     var TKBModule = {
         currentWeek: 1,
 
-        // Xác định chính xác ngày Thứ Hai bắt đầu của học kỳ theo năm học
-        getSemesterStartDate: function (hk, namHoc) {
-            var parts = (namHoc || '2026-2027').split('-');
-            var startYear = parseInt(parts[0], 10) || 2026;
+        // Ngày bắt đầu / kết thúc học kỳ lấy từ lịch học thực tế (API /api/lophocphan/nam-hoc)
+        getTermRange: function (hk, namHoc) {
+            var term = ((App.getTerms() || {}).hoc_ky || []).find(function (x) {
+                return parseInt(x.hoc_ky, 10) === hk && x.nam_hoc === namHoc;
+            });
+            return term ? { start: new Date(term.bat_dau + 'T00:00:00'), end: new Date(term.ket_thuc + 'T00:00:00') } : null;
+        },
 
-            if (hk === 1) {
-                // HK1: Bắt đầu Thứ Hai đầu tiên của tháng 9
-                return getFirstMonday(startYear, 8); // Tháng 9 (index 8)
-            } else if (hk === 2) {
-                // HK2: Bắt đầu Thứ Hai tuần thứ 2 của tháng 1 năm sau
-                var mon1 = getFirstMonday(startYear + 1, 0); // Tháng 1 (index 0)
-                mon1.setDate(mon1.getDate() + 7);
-                return mon1;
-            } else {
-                // HK Hè: Bắt đầu Thứ Hai đầu tiên của tháng 6 năm sau
-                return getFirstMonday(startYear + 1, 5); // Tháng 6 (index 5)
-            }
+        // Thứ Hai của tuần đầu tiên học kỳ; học kỳ chưa có lịch thì lấy tuần hiện tại
+        getSemesterStartDate: function (hk, namHoc) {
+            var range = this.getTermRange(hk, namHoc);
+            var d = range ? new Date(range.start) : new Date();
+            d.setHours(0, 0, 0, 0);
+            var day = d.getDay(); // 0 = CN
+            d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+            return d;
+        },
+
+        // Số tuần của học kỳ theo lịch học (tối thiểu 1)
+        getMaxWeek: function (hk, namHoc) {
+            var range = this.getTermRange(hk, namHoc);
+            if (!range) return 1;
+            var start = this.getSemesterStartDate(hk, namHoc);
+            return Math.max(1, Math.floor((range.end - start) / (7 * 86400000)) + 1);
         },
 
         render: function () {
@@ -92,7 +72,7 @@
                 '        <div class="d-flex align-center gap-2">' +
                 '          <label><i class="fa-solid fa-calendar-days"></i> Học kỳ:</label>' +
                 '          <select id="tkbHocKy" class="filter-select">' +
-                '            <option value="1" selected>Học kỳ 1</option>' +
+                '            <option value="1">Học kỳ 1</option>' +
                 '            <option value="2">Học kỳ 2</option>' +
                 '            <option value="3">Học kỳ Hè</option>' +
                 '          </select>' +
@@ -100,9 +80,6 @@
                 '        <div class="d-flex align-center gap-2">' +
                 '          <label><i class="fa-regular fa-calendar"></i> Năm học:</label>' +
                 '          <select id="tkbNamHoc" class="filter-select">' +
-                '            <option value="2026-2027" selected>Năm học 2026-2027</option>' +
-                '            <option value="2025-2026">Năm học 2025-2026</option>' +
-                '            <option value="2024-2025">Năm học 2024-2025</option>' +
                 '          </select>' +
                 '        </div>' +
                 '      </div>' +
@@ -134,7 +111,7 @@
                 '      </div>' +
                 '    </div>' +
 
-                '    <!-- Timetable Grid 12 Tiết -->' +
+                '    <!-- Timetable Grid 13 Tiết -->' +
                 '    <div class="timetable-wrapper">' +
                 '      <table class="timetable" id="mainTimetable">' +
                 '        <thead>' +
@@ -158,8 +135,11 @@
 
             $('#contentArea').html(html);
             this.bindEvents();
-            this.autoDetectCurrentWeek();
-            this.renderTimetable();
+            var self = this;
+            App.fillTermSelects('#tkbHocKy', '#tkbNamHoc', { prefix: 'Năm học ' }, function () {
+                self.autoDetectCurrentWeek();
+                self.renderTimetable();
+            });
         },
 
         bindEvents: function () {
@@ -170,6 +150,13 @@
                 self.renderTimetable();
             });
 
+            $(document).off('click', '.tkb-diem-danh-btn').on('click', '.tkb-diem-danh-btn', function () {
+                if (window.DiemDanhModule) {
+                    DiemDanhModule.preset = { lop_hoc_phan_id: $(this).data('lhp'), buoi_hoc_id: $(this).data('buoi') };
+                }
+                App.navigate('diem-danh');
+            });
+
             $('#btnPrevWeek').on('click', function () {
                 if (self.currentWeek > 1) {
                     self.currentWeek--;
@@ -178,26 +165,27 @@
             });
 
             $('#btnNextWeek').on('click', function () {
-                if (self.currentWeek < 20) {
+                var hk = parseInt($('#tkbHocKy').val(), 10) || 1;
+                if (self.currentWeek < self.getMaxWeek(hk, $('#tkbNamHoc').val())) {
                     self.currentWeek++;
                     self.renderTimetable();
                 }
             });
         },
 
-        // Tự động xác định số tuần theo thời gian thực tế (Ngày 26/10/2026 là Tuần 8 của HK1)
+        // Tự động xác định tuần hiện tại theo ngày hôm nay
         autoDetectCurrentWeek: function () {
             var hk = parseInt($('#tkbHocKy').val(), 10) || 1;
-            var namHoc = $('#tkbNamHoc').val() || '2026-2027';
+            var namHoc = $('#tkbNamHoc').val() || '';
             var startDate = this.getSemesterStartDate(hk, namHoc);
-            var today = new Date(); // 2026-10-26
+            var today = new Date();
 
             var diffMs = today.getTime() - startDate.getTime();
             var diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
             var weekNum = Math.floor(diffDays / 7) + 1;
 
-            // Nếu học kỳ được chọn đang là học kỳ thực tế và nằm trong 20 tuần học
-            if (weekNum >= 1 && weekNum <= 20) {
+            // Nếu hôm nay nằm trong học kỳ được chọn thì mở đúng tuần hiện tại
+            if (weekNum >= 1 && weekNum <= this.getMaxWeek(hk, namHoc)) {
                 this.currentWeek = weekNum;
             } else {
                 // Nếu học kỳ chưa tới hoặc đã qua: mặc định hiển thị Tuần 1
@@ -207,7 +195,7 @@
 
         getWeekRange: function (weekNum) {
             var hk = parseInt($('#tkbHocKy').val(), 10) || 1;
-            var namHoc = $('#tkbNamHoc').val() || '2026-2027';
+            var namHoc = $('#tkbNamHoc').val() || '';
             var start = this.getSemesterStartDate(hk, namHoc);
 
             start.setDate(start.getDate() + (weekNum - 1) * 7);
@@ -239,95 +227,45 @@
                 $('#date-' + dayKeys[d]).text(App.formatDate(curDay));
             }
 
-            var targetLhpList = [];
+            var self = this;
+            var y = weekRange.start.getFullYear();
+            var m = ('0' + (weekRange.start.getMonth() + 1)).slice(-2);
+            var dd = ('0' + weekRange.start.getDate()).slice(-2);
 
-            if (currentUser.vai_tro === 'sinh_vien') {
-                var myDks = MockDB.dang_ky_hoc_phan.getAll({
-                    sinh_vien_user_id: currentUser.id,
-                    trang_thai: 'Đã đăng ký'
-                });
-                myDks.forEach(function (dk) {
-                    var l = MockDB.lop_hoc_phan.getById(dk.lop_hoc_phan_id);
-                    if (l && l.hoc_ky === hk && l.nam_hoc === namHoc) {
-                        targetLhpList.push(l);
-                    }
-                });
-            } else if (currentUser.vai_tro === 'giang_vien') {
-                targetLhpList = MockDB.lop_hoc_phan.getAll({
-                    giang_vien_user_id: currentUser.id,
-                    hoc_ky: hk,
-                    nam_hoc: namHoc
-                });
-            } else {
-                targetLhpList = MockDB.lop_hoc_phan.getAll({
-                    hoc_ky: hk,
-                    nam_hoc: namHoc
-                });
-            }
+            // RULE-09, RULE-11: lọc buổi học và tính số tiết do backend xử lý
+            Api.get('/api/dangkyhocphan/thoi-khoa-bieu', { hoc_ky: hk, nam_hoc: namHoc, tu_ngay: y + '-' + m + '-' + dd })
+                .done(function (res) { self.drawGrid(res.data || {}); })
+                .fail(Api.toastError);
+        },
 
-            $('#statTongMon').text(targetLhpList.length + ' môn');
+        drawGrid: function (data) {
+            var user = App.getCurrentUser();
+            // Giảng viên (và quản trị viên) điểm danh trực tiếp từ ô buổi học
+            var canDiemDanh = user && (user.vai_tro === 'giang_vien' || user.vai_tro === 'admin');
 
-            var tietTrongTuan = 0;
-            var tietTichLuy = 0;
+            $('#statTongMon').text((data.so_mon || 0) + ' môn');
+            $('#statTietTrongTuan').text((data.so_tiet_trong_tuan || 0) + ' tiết');
+            $('#statTietTichLuy').text((data.tong_tiet_du_kien_da_hoc || 0) + ' tiết');
 
-            // Xây dựng bản đồ các buổi học trong tuần theo Thứ & Tiết
-            // daySchedules[thu][tiet] = { lhp, mh, gv, lh, span, isStart }
+            // daySchedules[thu][tiet] = { isStart, span, b }
             var daySchedules = {};
             for (var thuIdx = 2; thuIdx <= 8; thuIdx++) {
                 daySchedules[thuIdx] = {};
             }
 
-            targetLhpList.forEach(function (lhp) {
-                var mh = MockDB.mon_hoc.getById(lhp.mon_hoc_id);
-                var gv = lhp.giang_vien_user_id ? MockDB.users.getById(lhp.giang_vien_user_id) : null;
-                var lichList = MockDB.lich_hoc.getAll({ lop_hoc_phan_id: lhp.id });
-
-                lichList.forEach(function (lh) {
-                    var nbd = new Date(lh.ngay_bat_dau);
-                    var nkt = new Date(lh.ngay_ket_thuc);
-                    nkt.setHours(23, 59, 59, 999);
-
-                    var soTietMoiBuoi = (lh.tiet_ket_thuc - lh.tiet_bat_dau + 1);
-
-                    // Buổi học diễn ra trong tuần đang chọn
-                    if (nbd <= weekRange.end && nkt >= weekRange.start) {
-                        tietTrongTuan += soTietMoiBuoi;
-
-                        var tStart = Math.max(1, lh.tiet_bat_dau);
-                        var tEnd = Math.min(12, lh.tiet_ket_thuc);
-                        var span = (tEnd - tStart + 1);
-
-                        for (var t = tStart; t <= tEnd; t++) {
-                            daySchedules[lh.thu][t] = {
-                                isStart: (t === tStart),
-                                span: span,
-                                lhp: lhp,
-                                mh: mh,
-                                gv: gv,
-                                lh: lh
-                            };
-                        }
-                    }
-
-                    // Tính tiết tích lũy
-                    var allBuois = MockDB.buoi_hoc.getAll({ lich_hoc_id: lh.id });
-                    allBuois.forEach(function (b) {
-                        var bDate = new Date(b.ngay_hoc);
-                        if (bDate <= weekRange.end) {
-                            tietTichLuy += (b.tiet_ket_thuc - b.tiet_bat_dau + 1);
-                        }
-                    });
-                });
+            (data.buoi_hoc || []).forEach(function (b) {
+                var tStart = Math.max(1, b.tiet_bat_dau);
+                var tEnd = Math.min(SO_TIET, b.tiet_ket_thuc);
+                for (var t = tStart; t <= tEnd; t++) {
+                    daySchedules[b.thu][t] = { isStart: (t === tStart), span: (tEnd - tStart + 1), b: b };
+                }
             });
-
-            $('#statTietTrongTuan').text(tietTrongTuan + ' tiết');
-            $('#statTietTichLuy').text(tietTichLuy + ' tiết');
 
             var tbody = $('#timetableBody');
             tbody.empty();
 
-            // Vẽ đúng 12 Tiết học (Tiết 1 -> Tiết 12) theo wireframe
-            for (var tiet = 1; tiet <= 12; tiet++) {
+            // Vẽ đủ 13 tiết học (Tiết 1 -> Tiết 13)
+            for (var tiet = 1; tiet <= SO_TIET; tiet++) {
                 var timeStart = tietGioBatDau[tiet] || '';
                 var rowHtml = '<tr>';
 
@@ -335,7 +273,7 @@
                 rowHtml +=
                     '<td class="tiet-col">' +
                     '  <div style="font-weight:700;">Tiết ' + tiet + '</div>' +
-                    '  <div style="font-size:0.75rem; color:#64748b;">' + timeStart + '</div>' +
+                    '  <div style="font-size:0.75rem; color:#64748b;">' + timeStart + ' - ' + (tietGioKetThuc[tiet] || '') + '</div>' +
                     '</td>';
 
                 // 7 ngày trong tuần: Thứ 2 (2) -> Chủ nhật (8)
@@ -344,10 +282,11 @@
 
                     if (slotInfo) {
                         if (slotInfo.isStart) {
-                            var mh = slotInfo.mh;
-                            var lhp = slotInfo.lhp;
-                            var gv = slotInfo.gv;
-                            var lh = slotInfo.lh;
+                            var b = slotInfo.b;
+                            var mh = { ten_mon_hoc: b.ten_mon_hoc, ma_mon_hoc: b.ma_mon_hoc };
+                            var lhp = { ma_lop_hoc_phan: b.ma_lop_hoc_phan, phong_hoc: b.phong_hoc };
+                            var gv = b.ten_giang_vien ? { ho_ten: b.ten_giang_vien } : null;
+                            var lh = b;
 
                             var timeRangeStr = (tietGioBatDau[lh.tiet_bat_dau] || '') + ' - ' + (tietGioKetThuc[lh.tiet_ket_thuc] || '');
 
@@ -360,6 +299,9 @@
                                 '    <div style="font-size:0.76rem; color:#334155;"><strong>Phòng:</strong> ' + App.escapeHtml(lhp.phong_hoc || '—') + '</div>' +
                                 (gv ? '    <div style="font-size:0.76rem; color:#334155;"><strong>GV:</strong> ' + App.escapeHtml(gv.ho_ten) + '</div>' : '') +
                                 '    <div style="font-size:0.74rem; color:#64748b; margin-top:2px;"><i class="fa-regular fa-clock"></i> ' + timeRangeStr + '</div>' +
+                                (canDiemDanh && b.buoi_hoc_id
+                                    ? '    <button type="button" class="btn btn-sm btn-primary tkb-diem-danh-btn" data-lhp="' + b.lop_hoc_phan_id + '" data-buoi="' + b.buoi_hoc_id + '">Điểm danh</button>'
+                                    : '') +
                                 '  </div>' +
                                 '</td>';
                         }

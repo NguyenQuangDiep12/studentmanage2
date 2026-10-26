@@ -20,7 +20,7 @@
                 '<div class="card">' +
                 '  <div class="card-header">' +
                 '    <h3><i class="fa-solid fa-school" style="color:var(--primary);"></i> ' + pageHeading + '</h3>' +
-                (isAdmin ? '    <button class="btn btn-primary" id="btnThemLHP"><i class="fa-solid fa-plus"></i> Tạo lớp học phần mới</button>' : '') +
+                ((isAdmin || isGV) ? '    <button class="btn btn-primary" id="btnThemLHP"><i class="fa-solid fa-plus"></i> Tạo lớp học phần mới</button>' : '') +
                 '  </div>' +
                 '  <div class="card-body">' +
                 '    <div class="toolbar">' +
@@ -31,15 +31,12 @@
                 '        </div>' +
                 '        <select id="filterHocKyLHP" class="filter-select">' +
                 '          <option value="">-- Tất cả học kỳ --</option>' +
-                '          <option value="1" selected>Học kỳ 1</option>' +
+                '          <option value="1">Học kỳ 1</option>' +
                 '          <option value="2">Học kỳ 2</option>' +
                 '          <option value="3">Học kỳ Hè</option>' +
                 '        </select>' +
                 '        <select id="filterNamHocLHP" class="filter-select">' +
                 '          <option value="">-- Tất cả năm học --</option>' +
-                '          <option value="2026-2027" selected>2026-2027</option>' +
-                '          <option value="2025-2026">2025-2026</option>' +
-                '          <option value="2024-2025">2024-2025</option>' +
                 '        </select>' +
                 '        <select id="filterTrangThaiLHP" class="filter-select">' +
                 '          <option value="">-- Trạng thái --</option>' +
@@ -78,7 +75,8 @@
 
             $('#contentArea').html(html);
             this.bindEvents();
-            this.loadData();
+            var self = this;
+            App.fillTermSelects('#filterHocKyLHP', '#filterNamHocLHP', {}, function () { self.loadData(); });
         },
 
         bindEvents: function () {
@@ -111,6 +109,17 @@
                 self.saveLHP();
             });
 
+            // Tạo lớp học phần khi chưa có môn: chuyển sang trang Môn học để tạo trước
+            $(document).off('click', '#lnkTaoMonHoc').on('click', '#lnkTaoMonHoc', function () {
+                App.closeModal();
+                App.navigate('mon-hoc');
+                setTimeout(function () { $('#btnThemMonHoc').trigger('click'); }, 400);
+            });
+
+            $(document).off('click', '#btnPreviewLHP').on('click', '#btnPreviewLHP', function () {
+                self.previewLHP();
+            });
+
             $(document).off('click', '#btnAddScheduleRow').on('click', '#btnAddScheduleRow', function () {
                 self.addScheduleRow();
             });
@@ -125,50 +134,24 @@
             var isAdmin = currentUser && currentUser.vai_tro === 'admin';
             var isGV = currentUser && currentUser.vai_tro === 'giang_vien';
 
-            var keyword = ($('#searchLHP').val() || '').toLowerCase().trim();
-            var hkFilter = $('#filterHocKyLHP').val();
-            var nhFilter = $('#filterNamHocLHP').val();
-            var ttFilter = $('#filterTrangThaiLHP').val();
+            var self = this;
+            var params = {
+                search: ($('#searchLHP').val() || '').trim(),
+                hoc_ky: $('#filterHocKyLHP').val(),
+                nam_hoc: $('#filterNamHocLHP').val(),
+                trang_thai: $('#filterTrangThaiLHP').val()
+            };
 
-            $.ajax({
-                url: '/api/lophocphan',
-                method: 'GET',
-                dataType: 'json',
-                success: function (response) {
-                    console.log('Dữ liệu lớp học phần:', response);
-                },
-                error: function (xhr) {
-                    console.error('Lỗi lấy danh sách lớp học phần:', xhr.responseText);
-                }
-            });
+            // Lọc, tìm kiếm và phân quyền (GV chỉ thấy lớp phụ trách) do backend xử lý
+            Api.get('/api/lophocphan', params)
+                .done(function (res) {
+                    self.cache = res.data || [];
+                    self.renderRows(self.cache, currentUser, isAdmin, isGV);
+                })
+                .fail(Api.toastError);
+        },
 
-            // Giảng viên chỉ xem lớp do mình phụ trách
-            if (isGV) {
-                list = list.filter(function (l) {
-                    return l.giang_vien_user_id === currentUser.id;
-                });
-            }
-
-            if (hkFilter) {
-                list = list.filter(function (l) { return l.hoc_ky == hkFilter; });
-            }
-            if (nhFilter) {
-                list = list.filter(function (l) { return l.nam_hoc === nhFilter; });
-            }
-            if (ttFilter) {
-                list = list.filter(function (l) { return l.trang_thai === ttFilter; });
-            }
-
-            if (keyword) {
-                list = list.filter(function (l) {
-                    var mh = MockDB.mon_hoc.getById(l.mon_hoc_id);
-                    var gv = l.giang_vien_user_id ? MockDB.users.getById(l.giang_vien_user_id) : null;
-                    return (l.ma_lop_hoc_phan && l.ma_lop_hoc_phan.toLowerCase().indexOf(keyword) !== -1) ||
-                           (mh && mh.ten_mon_hoc.toLowerCase().indexOf(keyword) !== -1) ||
-                           (gv && gv.ho_ten.toLowerCase().indexOf(keyword) !== -1);
-                });
-            }
-
+        renderRows: function (list, currentUser, isAdmin, isGV) {
             $('#totalLHPCount').text('Tổng số: ' + list.length + ' lớp học phần');
 
             var tbody = $('#lhpTableBody');
@@ -180,10 +163,10 @@
             }
 
             list.forEach(function (l, idx) {
-                var mh = MockDB.mon_hoc.getById(l.mon_hoc_id);
-                var gv = l.giang_vien_user_id ? MockDB.users.getById(l.giang_vien_user_id) : null;
-                var siSoHienTai = MockDB.getSiSoHienTai(l.id);
-                var lichList = MockDB.lich_hoc.getAll({ lop_hoc_phan_id: l.id });
+                var mh = { ten_mon_hoc: l.ten_mon_hoc, so_tin_chi: l.so_tin_chi };
+                var gv = l.ten_giang_vien ? { ho_ten: l.ten_giang_vien } : null;
+                var siSoHienTai = l.si_so_hien_tai || 0;
+                var lichList = l.lich_hoc || [];
 
                 var lichSummary = lichList.map(function (lh) {
                     return App.thuLabel(lh.thu) + ' (T' + lh.tiet_bat_dau + '-' + lh.tiet_ket_thuc + ')';
@@ -212,11 +195,11 @@
                     '  <td>' + hanDK + '</td>' +
                     '  <td class="text-center">' + App.trangThaiLHPBadge(l.trang_thai) + '</td>' +
                     '  <td class="text-center">' +
-                    '    <div class="table-actions">' +
-                    '      <button class="btn btn-sm btn-outline btn-view-lhp" data-id="' + l.id + '" title="Xem chi tiết"><i class="fa-solid fa-eye"></i></button>' +
+                    '    <div class="table-actions table-actions-stack">' +
+                    '      <button class="btn btn-sm btn-outline btn-view-lhp" data-id="' + l.id + '" title="Xem chi tiết">Xem</button>' +
                     (canEditThis ?
-                    '      <button class="btn btn-sm btn-outline btn-edit-lhp" data-id="' + l.id + '" title="Sửa"><i class="fa-solid fa-pen"></i></button>' +
-                    '      <button class="btn btn-sm btn-outline btn-del-lhp text-danger" data-id="' + l.id + '" title="Hủy/Xóa lớp"><i class="fa-solid fa-trash"></i></button>' : '') +
+                    '      <button class="btn btn-sm btn-outline btn-edit-lhp" data-id="' + l.id + '" title="Sửa">Sửa</button>' +
+                    '      <button class="btn btn-sm btn-outline btn-del-lhp text-danger" data-id="' + l.id + '" title="Hủy/Xóa lớp">Xóa</button>' : '') +
                     '    </div>' +
                     '  </td>' +
                     '</tr>';
@@ -225,25 +208,55 @@
         },
 
         showFormModal: function (id) {
-            var lhp = id ? MockDB.lop_hoc_phan.getById(id) : null;
-            var isEdit = !!lhp;
+            var self = this;
+            var reqs = [Api.get('/api/lophocphan/form-data')];
+            if (id) reqs.push(Api.get('/api/lophocphan/chi-tiet', { id: id }));
 
-            var allMonHoc = MockDB.mon_hoc.getAll({ trang_thai: 'Hoạt động' });
-            var allGiangVien = MockDB.users.getAll({ vai_tro: 'giang_vien', trang_thai: 'Hoạt động' });
-            var existingLich = isEdit ? MockDB.lich_hoc.getAll({ lop_hoc_phan_id: lhp.id }) : [];
+            $.when.apply($, reqs)
+                .done(function (formRes, detailRes) {
+                    // $.when trả về [data, status, xhr] cho từng request khi có nhiều request
+                    var fd = id ? formRes[0].data : formRes.data;
+                    var lhp = id ? detailRes[0].data : null;
+                    self.renderFormModal(lhp, fd.mon_hoc || [], fd.giang_vien || []);
+                })
+                .fail(Api.toastError);
+        },
+
+        renderFormModal: function (lhp, allMonHoc, allGiangVien) {
+            var isEdit = !!lhp;
+            var existingLich = isEdit ? (lhp.lich_hoc || []) : [];
+
+            // Lớp đang dạy môn đã tạm ngưng vẫn hiện môn hiện tại trong danh sách
+            if (isEdit && !allMonHoc.some(function (m) { return m.id === lhp.mon_hoc_id; })) {
+                allMonHoc = [{ id: lhp.mon_hoc_id, ma_mon_hoc: lhp.ma_mon_hoc, ten_mon_hoc: lhp.ten_mon_hoc, so_tin_chi: lhp.so_tin_chi }].concat(allMonHoc);
+            }
 
             var mhOptions = allMonHoc.map(function (m) {
                 var sel = lhp && lhp.mon_hoc_id === m.id ? 'selected' : '';
                 return '<option value="' + m.id + '" ' + sel + '>' + App.escapeHtml(m.ma_mon_hoc) + ' - ' + App.escapeHtml(m.ten_mon_hoc) + ' (' + m.so_tin_chi + ' TC)</option>';
             }).join('');
 
-            var gvOptions = '<option value="">-- Chưa chỉ định --</option>' + allGiangVien.map(function (g) {
-                var sel = lhp && lhp.giang_vien_user_id === g.id ? 'selected' : '';
+            // Giảng viên: chỉ có chính mình trong danh sách và ô bị khóa (backend cũng ép phụ trách = chính mình)
+            var currentUser = App.getCurrentUser();
+            var isGV = currentUser && currentUser.vai_tro === 'giang_vien';
+            var gvOptions = (isGV ? '' : '<option value="">-- Chưa chỉ định --</option>') + allGiangVien.map(function (g) {
+                var sel = (lhp && lhp.giang_vien_user_id === g.id) || (isGV && g.id === currentUser.id) ? 'selected' : '';
                 return '<option value="' + g.id + '" ' + sel + '>' + App.escapeHtml(g.ma_dinh_danh) + ' - ' + App.escapeHtml(g.ho_ten) + '</option>';
             }).join('');
 
-            var moDK = lhp ? (lhp.thoi_gian_mo_dang_ky ? lhp.thoi_gian_mo_dang_ky.split('T')[0] : '2026-08-15') : '2026-08-15';
-            var dongDK = lhp ? (lhp.thoi_gian_dong_dang_ky ? lhp.thoi_gian_dong_dang_ky.split('T')[0] : '2026-11-30') : '2026-11-30';
+            // Thời gian đăng ký do quản trị viên nhập (RULE-08), không gán sẵn ngày cố định
+            var moDK = lhp && lhp.thoi_gian_mo_dang_ky ? lhp.thoi_gian_mo_dang_ky.substring(0, 10) : '';
+            var dongDK = lhp && lhp.thoi_gian_dong_dang_ky ? lhp.thoi_gian_dong_dang_ky.substring(0, 10) : '';
+
+            // Năm học lấy từ API; giữ năm học hiện có của lớp khi sửa
+            var terms = App.getTerms() || { nam_hoc: [], hien_tai: {} };
+            var years = terms.nam_hoc.slice();
+            if (lhp && years.indexOf(lhp.nam_hoc) === -1) years.push(lhp.nam_hoc);
+            var selectedYear = lhp ? lhp.nam_hoc : (terms.hien_tai && terms.hien_tai.nam_hoc);
+            var namHocOptions = years.map(function (y) {
+                return '<option value="' + App.escapeHtml(y) + '" ' + (y === selectedYear ? 'selected' : '') + '>' + App.escapeHtml(y) + '</option>';
+            }).join('');
+            this.defaultTerm = terms.hien_tai || {};
 
             var html =
                 '<div class="modal-header">' +
@@ -258,14 +271,18 @@
                 '      <input type="text" class="form-control" id="lhpMa" value="' + (lhp ? App.escapeHtml(lhp.ma_lop_hoc_phan) : '') + '" placeholder="VD: CS101-HK1-2026" ' + (isEdit ? 'readonly' : '') + '>' +
                 '    </div>' +
                 '    <div class="form-group">' +
-                '      <label>Môn học <span class="required">*</span></label>' +
-                '      <select class="form-control" id="lhpMonHoc">' + mhOptions + '</select>' +
+                '      <label>Môn học <span class="required">*</span>' +
+                (isEdit ? '' : ' <a href="javascript:void(0)" id="lnkTaoMonHoc" style="font-weight:500; font-size:0.8rem; margin-left:6px;">Chưa có môn? Tạo môn học</a>') +
+                '</label>' +
+                (mhOptions
+                    ? '      <select class="form-control" id="lhpMonHoc">' + mhOptions + '</select>'
+                    : '      <select class="form-control" id="lhpMonHoc"><option value="">Chưa có môn học đang hoạt động - hãy tạo môn học trước</option></select>') +
                 '    </div>' +
                 '  </div>' +
                 '  <div class="form-row">' +
                 '    <div class="form-group">' +
                 '      <label>Giảng viên phụ trách</label>' +
-                '      <select class="form-control" id="lhpGiangVien">' + gvOptions + '</select>' +
+                '      <select class="form-control" id="lhpGiangVien"' + (isGV ? ' disabled' : '') + '>' + gvOptions + '</select>' +
                 '    </div>' +
                 '    <div class="form-group">' +
                 '      <label>Phòng học <span class="required">*</span></label>' +
@@ -276,17 +293,15 @@
                 '    <div class="form-group">' +
                 '      <label>Học kỳ <span class="required">*</span></label>' +
                 '      <select class="form-control" id="lhpHocKy">' +
-                '        <option value="1" ' + (lhp && lhp.hoc_ky === 1 ? 'selected' : '') + '>Học kỳ 1</option>' +
-                '        <option value="2" ' + (lhp && lhp.hoc_ky === 2 ? 'selected' : '') + '>Học kỳ 2</option>' +
-                '        <option value="3" ' + (lhp && lhp.hoc_ky === 3 ? 'selected' : '') + '>Học kỳ Hè</option>' +
+                '        <option value="1" ' + ((lhp ? lhp.hoc_ky : parseInt(this.defaultTerm.hoc_ky, 10)) === 1 ? 'selected' : '') + '>Học kỳ 1</option>' +
+                '        <option value="2" ' + ((lhp ? lhp.hoc_ky : parseInt(this.defaultTerm.hoc_ky, 10)) === 2 ? 'selected' : '') + '>Học kỳ 2</option>' +
+                '        <option value="3" ' + ((lhp ? lhp.hoc_ky : parseInt(this.defaultTerm.hoc_ky, 10)) === 3 ? 'selected' : '') + '>Học kỳ Hè</option>' +
                 '      </select>' +
                 '    </div>' +
                 '    <div class="form-group">' +
                 '      <label>Năm học <span class="required">*</span></label>' +
                 '      <select class="form-control" id="lhpNamHoc">' +
-                '        <option value="2026-2027" ' + (lhp && lhp.nam_hoc === '2026-2027' ? 'selected' : '') + '>2026-2027</option>' +
-                '        <option value="2025-2026" ' + (lhp && lhp.nam_hoc === '2025-2026' ? 'selected' : '') + '>2025-2026</option>' +
-                '        <option value="2024-2025" ' + (lhp && lhp.nam_hoc === '2024-2025' ? 'selected' : '') + '>2024-2025</option>' +
+                namHocOptions +
                 '      </select>' +
                 '    </div>' +
                 '    <div class="form-group">' +
@@ -303,6 +318,8 @@
                 '    </div>' +
                 '  </div>' +
 
+                // RULE-HK-01, RULE-HK-03: ngày học lấy từ học kỳ đã khai báo
+                '  <div id="lhpTermInfo" class="mb-3" style="font-size:0.82rem;"></div>' +
                 '  <!-- Thời hạn mở/đóng đăng ký -->' +
                 '  <div class="form-row">' +
                 '    <div class="form-group">' +
@@ -321,40 +338,44 @@
                 '    <h4 style="font-size:0.95rem; font-weight:800;"><i class="fa-solid fa-calendar-days" style="color:var(--primary);"></i> Lịch học trong tuần</h4>' +
                 '    <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddScheduleRow"><i class="fa-solid fa-plus"></i> Thêm buổi học trong tuần</button>' +
                 '  </div>' +
+                '  <p class="text-muted mb-2" style="font-size:0.8rem;">Chọn thứ học và khung tiết. Hệ thống lấy tổng số tiết của môn, xếp lần lượt vào các ngày của thứ đã chọn trong học kỳ, bỏ qua ngày trùng lịch giảng viên / phòng học và dừng khi đủ tiết; buổi cuối chỉ lấy đúng số tiết còn thiếu. Chỉ lưu được khi xếp đủ tiết. Bấm "Xem trước lịch" để kiểm tra trước khi lưu.</p>' +
                 '  <div id="scheduleContainer">' +
                 '  </div>' +
+                '  <div id="lhpPreview" class="mt-3"></div>' +
                 '</div>' +
                 '<div class="modal-footer">' +
                 '  <button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
+                '  <button class="btn btn-outline-primary" id="btnPreviewLHP"><i class="fa-solid fa-eye"></i> Xem trước lịch</button>' +
                 '  <button class="btn btn-primary" id="btnSaveLHP"><i class="fa-solid fa-floppy-disk"></i> Lưu lớp học phần</button>' +
                 '</div>';
 
             App.showModal(html, 'xl');
 
             var self = this;
+            var showTerm = function () {
+                // RULE-HK-04: dùng đúng ngày bắt đầu / kết thúc đã khai báo, không mặc định độ dài học kỳ
+                var hk = parseInt($('#lhpHocKy').val(), 10), nh = $('#lhpNamHoc').val();
+                var term = ((App.getTerms() || {}).hoc_ky || []).find(function (x) {
+                    return parseInt(x.hoc_ky, 10) === hk && x.nam_hoc === nh && parseInt(x.da_khai_bao, 10) === 1;
+                });
+                $('#lhpTermInfo').html(term
+                    ? '<span class="text-muted"><i class="fa-solid fa-calendar-check"></i> Học kỳ ' + hk + ' (' + nh + '): ' + App.formatDate(term.bat_dau) + ' → ' + App.formatDate(term.ket_thuc) + '. Mọi buổi học được xếp trong khoảng này.</span>'
+                    : '<span class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Học kỳ ' + hk + ' năm học ' + nh + ' chưa được khai báo ngày bắt đầu / kết thúc (Cơ cấu đào tạo > Học kỳ).</span>');
+            };
+            $('#lhpHocKy, #lhpNamHoc').on('change', showTerm);
+            showTerm();
             if (existingLich.length > 0) {
                 existingLich.forEach(function (lh) {
                     self.addScheduleRow(lh);
                 });
             } else {
-                self.addScheduleRow({
-                    thu: 2,
-                    tiet_bat_dau: 1,
-                    tiet_ket_thuc: 3,
-                    ngay_bat_dau: '2026-09-07',
-                    ngay_ket_thuc: '2026-12-25'
-                });
+                self.addScheduleRow();
             }
         },
 
         addScheduleRow: function (data) {
-            data = data || {
-                thu: 2,
-                tiet_bat_dau: 1,
-                tiet_ket_thuc: 3,
-                ngay_bat_dau: '2026-09-07',
-                ngay_ket_thuc: '2026-12-25'
-            };
+            // RULE-LHP-01: mỗi dòng là một thứ học với tiết bắt đầu / kết thúc (ngày lấy theo học kỳ)
+            data = data || { thu: 2, tiet_bat_dau: 1, tiet_ket_thuc: 3 };
 
             var rowHtml =
                 '<div class="schedule-item-row p-3 mb-2" style="background:#f8fafc; border:1px solid var(--border-color); border-radius:10px;">' +
@@ -372,22 +393,14 @@
                 '    </div>' +
                 '    <div class="form-group mb-0" style="flex:0.8;">' +
                 '      <label style="font-size:0.8rem;">Tiết BĐ</label>' +
-                '      <input type="number" min="1" max="12" class="form-control sch-tbd" value="' + data.tiet_bat_dau + '">' +
+                '      <input type="number" min="1" max="13" class="form-control sch-tbd" value="' + data.tiet_bat_dau + '">' +
                 '    </div>' +
                 '    <div class="form-group mb-0" style="flex:0.8;">' +
                 '      <label style="font-size:0.8rem;">Tiết KT</label>' +
-                '      <input type="number" min="1" max="12" class="form-control sch-tkt" value="' + data.tiet_ket_thuc + '">' +
-                '    </div>' +
-                '    <div class="form-group mb-0" style="flex:1.2;">' +
-                '      <label style="font-size:0.8rem;">Ngày bắt đầu</label>' +
-                '      <input type="date" class="form-control sch-nbd" value="' + data.ngay_bat_dau + '">' +
-                '    </div>' +
-                '    <div class="form-group mb-0" style="flex:1.2;">' +
-                '      <label style="font-size:0.8rem;">Ngày kết thúc</label>' +
-                '      <input type="date" class="form-control sch-nkt" value="' + data.ngay_ket_thuc + '">' +
+                '      <input type="number" min="1" max="13" class="form-control sch-tkt" value="' + data.tiet_ket_thuc + '">' +
                 '    </div>' +
                 '    <div class="form-group mb-0" style="flex:0.3; text-align:center; padding-top:20px;">' +
-                '      <button type="button" class="btn btn-sm btn-danger btn-remove-schedule" title="Xóa lịch"><i class="fa-solid fa-xmark"></i></button>' +
+                '      <button type="button" class="btn btn-sm btn-danger btn-remove-schedule" title="Xóa lịch">Xóa lịch</button>' +
                 '    </div>' +
                 '  </div>' +
                 '</div>';
@@ -395,250 +408,126 @@
             $('#scheduleContainer').append(rowHtml);
         },
 
-        saveLHP: function () {
+        /** RULE-THIEU-06: xem trước các buổi sẽ được xếp (chưa lưu); RULE-XL-06: hiện ngày bị bỏ qua do xung đột */
+        previewLHP: function () {
             var id = $('#lhpId').val();
-            var ma = $('#lhpMa').val().trim().toUpperCase();
-            var monHocId = parseInt($('#lhpMonHoc').val(), 10);
-            var gvId = $('#lhpGiangVien').val() ? parseInt($('#lhpGiangVien').val(), 10) : null;
-            var phong = $('#lhpPhong').val().trim().toUpperCase();
-            var hocKy = parseInt($('#lhpHocKy').val(), 10);
-            var namHoc = $('#lhpNamHoc').val().trim();
-            var siSo = parseInt($('#lhpSiSo').val(), 10);
-            var trangThai = $('#lhpTrangThai').val();
-            var ngayMoDK = $('#lhpNgayMoDK').val();
-            var ngayDongDK = $('#lhpNgayDongDK').val();
+            var payload = this.collectPayload();
+            if (id) payload.id = parseInt(id, 10);
 
-            if (!ma || isNaN(monHocId) || isNaN(hocKy) || !namHoc || isNaN(siSo) || siSo <= 0 || !phong || !ngayMoDK || !ngayDongDK) {
-                App.showToast('Vui lòng điền đầy đủ các thông tin bắt buộc!', 'error');
-                return;
-            }
-
-            if (ngayMoDK > ngayDongDK) {
-                App.showToast('Ngày mở đăng ký phải trước hoặc bằng ngày đóng đăng ký!', 'error');
-                return;
-            }
-
-            var currentLhpIdNum = id ? parseInt(id, 10) : null;
-
-            // Ràng buộc 1: Không cho phép giảm sĩ số tối đa xuống thấp hơn số lượng SV đã đăng ký
-            if (currentLhpIdNum) {
-                var currentRegisteredCount = MockDB.getSiSoHienTai(currentLhpIdNum);
-                if (siSo < currentRegisteredCount) {
-                    App.showToast('Không thể giảm sĩ số xuống ' + siSo + ' vì lớp hiện đã có ' + currentRegisteredCount + ' sinh viên đăng ký!', 'error');
-                    return;
+            Api.post('/api/lophocphan/xem-truoc-lich', payload).done(function (res) {
+                var d = res.data;
+                // RULE-HL-01: chỉ hợp lệ khi tổng số tiết đã xếp bằng tổng số tiết yêu cầu
+                var html = '<div class="alert ' + (d.hop_le ? 'alert-info' : 'alert-danger') + '" style="font-size:0.85rem;">' +
+                    '<strong>' + App.escapeHtml(d.mon_hoc.ma_mon_hoc + ' - ' + d.mon_hoc.ten_mon_hoc) + '</strong>: cần ' + d.tong_tiet_mon + ' tiết. ' +
+                    App.escapeHtml(res.message) + (d.hop_le ? ' <strong>Lịch hợp lệ, có thể lưu.</strong>' : ' <strong>Chưa thể lưu.</strong>') + '</div>';
+                // RULE-XL-06: ngày bị bỏ qua do xung đột giảng viên / phòng học
+                if (d.bo_qua.length) {
+                    html += '<details class="mb-2" style="font-size:0.82rem;"><summary class="text-warning">' + d.bo_qua.length + ' ngày bị bỏ qua do xung đột (bấm để xem)</summary><ul class="mt-1">' +
+                        d.bo_qua.map(function (x) {
+                            return '<li>' + App.thuLabel(x.thu) + ' ' + App.formatDate(x.ngay_hoc) + ' (tiết ' + x.tiet_bat_dau + '-' + x.tiet_ket_thuc + '): ' + App.escapeHtml(x.ly_do) + '</li>';
+                        }).join('') + '</ul></details>';
                 }
-            }
+                var luyKe = 0;
+                html += '<div style="max-height:280px; overflow:auto;"><table class="data-table"><thead><tr>' +
+                    '<th class="text-center">Buổi</th><th>Ngày học</th><th>Thứ</th><th class="text-center">Tiết</th><th>Giờ học</th><th class="text-center">Số tiết</th><th class="text-center">Lũy kế</th></tr></thead><tbody>';
+                d.buoi.forEach(function (b, i) {
+                    luyKe += b.so_tiet;
+                    html += '<tr><td class="text-center">' + (i + 1) + '</td><td>' + App.formatDate(b.ngay_hoc) + '</td><td>' + App.thuLabel(b.thu) + '</td>' +
+                        '<td class="text-center">' + b.tiet_bat_dau + ' - ' + b.tiet_ket_thuc + '</td><td>' + App.gioHoc(b.tiet_bat_dau, b.tiet_ket_thuc) + '</td>' +
+                        '<td class="text-center">' + b.so_tiet + (b.co_dinh ? ' <small class="text-muted">(đã điểm danh)</small>' : '') + '</td>' +
+                        '<td class="text-center">' + luyKe + '/' + d.tong_tiet_mon + '</td></tr>';
+                });
+                html += '</tbody></table></div>';
+                $('#lhpPreview').html(html);
+            }).fail(function (xhr) {
+                $('#lhpPreview').empty();
+                Api.toastError(xhr);
+            });
+        },
 
-            // Thu thập và kiểm tra danh sách lịch học
+        collectPayload: function () {
             var schedules = [];
-            var scheduleValid = true;
-
             $('.schedule-item-row').each(function () {
                 var $row = $(this);
-                var thu = parseInt($row.find('.sch-thu').val(), 10);
-                var tbd = parseInt($row.find('.sch-tbd').val(), 10);
-                var tkt = parseInt($row.find('.sch-tkt').val(), 10);
-                var nbd = $row.find('.sch-nbd').val();
-                var nkt = $row.find('.sch-nkt').val();
-
-                if (isNaN(thu) || isNaN(tbd) || isNaN(tkt) || tbd > tkt || !nbd || !nkt || nbd > nkt) {
-                    scheduleValid = false;
-                    return false;
-                }
-
                 schedules.push({
-                    thu: thu,
-                    tiet_bat_dau: tbd,
-                    tiet_ket_thuc: tkt,
-                    ngay_bat_dau: nbd,
-                    ngay_ket_thuc: nkt
+                    thu: $row.find('.sch-thu').val(),
+                    tiet_bat_dau: $row.find('.sch-tbd').val(),
+                    tiet_ket_thuc: $row.find('.sch-tkt').val()
                 });
             });
 
-            if (!scheduleValid || schedules.length === 0) {
-                App.showToast('Lịch học không hợp lệ! Vui lòng kiểm tra lại khung tiết và ngày bắt đầu/kết thúc', 'error');
-                return;
-            }
+            var payload = {
+                ma_lop_hoc_phan: $('#lhpMa').val(),
+                mon_hoc_id: $('#lhpMonHoc').val(),
+                giang_vien_user_id: $('#lhpGiangVien').val(),
+                phong_hoc: $('#lhpPhong').val(),
+                hoc_ky: $('#lhpHocKy').val(),
+                nam_hoc: $('#lhpNamHoc').val(),
+                si_so_toi_da: $('#lhpSiSo').val(),
+                trang_thai: $('#lhpTrangThai').val(),
+                thoi_gian_mo_dang_ky: $('#lhpNgayMoDK').val(),
+                thoi_gian_dong_dang_ky: $('#lhpNgayDongDK').val(),
+                lich_hoc: schedules
+            };
+            return payload;
+        },
 
-            // Ràng buộc 2 & 3: Kiểm tra TRÙNG PHÒNG HỌC và TRÙNG LỊCH GIẢNG VIÊN với các lớp khác
-            var otherLHPs = MockDB.lop_hoc_phan.getAll({ trang_thai: 'Đang mở' });
-            if (currentLhpIdNum) {
-                otherLHPs = otherLHPs.filter(function (l) { return l.id !== currentLhpIdNum; });
-            }
+        saveLHP: function () {
+            var self = this;
+            var id = $('#lhpId').val();
+            var payload = this.collectPayload();
 
-            var conflictFound = false;
-            var conflictMsg = '';
+            // Sĩ số, lịch học, trùng phòng / trùng lịch giảng viên... do backend kiểm tra
+            var req = id
+                ? Api.put('/api/lophocphan', $.extend({ id: parseInt(id, 10) }, payload))
+                : Api.post('/api/lophocphan', payload);
 
-            for (var i = 0; i < otherLHPs.length; i++) {
-                var otherL = otherLHPs[i];
-                var otherSchedules = MockDB.lich_hoc.getAll({ lop_hoc_phan_id: otherL.id });
-
-                schedules.forEach(function (sNew) {
-                    otherSchedules.forEach(function (sOld) {
-                        if (sNew.thu === sOld.thu) {
-                            var periodOverlap = (sNew.tiet_bat_dau <= sOld.tiet_ket_thuc) && (sNew.tiet_ket_thuc >= sOld.tiet_bat_dau);
-                            var dateOverlap = (sNew.ngay_bat_dau <= sOld.ngay_ket_thuc) && (sNew.ngay_ket_thuc >= sOld.ngay_bat_dau);
-
-                            if (periodOverlap && dateOverlap) {
-                                // Kiểm tra trùng phòng
-                                if (phong === otherL.phong_hoc) {
-                                    conflictFound = true;
-                                    conflictMsg = 'Phòng học "' + phong + '" đã có lớp ' + otherL.ma_lop_hoc_phan + ' học vào ' + App.thuLabel(sNew.thu) + ' (Tiết ' + sOld.tiet_bat_dau + '-' + sOld.tiet_ket_thuc + ')!';
-                                }
-                                // Kiểm tra trùng giảng viên
-                                if (gvId && gvId === otherL.giang_vien_user_id) {
-                                    conflictFound = true;
-                                    conflictMsg = 'Giảng viên đã có lịch dạy lớp ' + otherL.ma_lop_hoc_phan + ' vào ' + App.thuLabel(sNew.thu) + ' (Tiết ' + sOld.tiet_bat_dau + '-' + sOld.tiet_ket_thuc + ')!';
-                                }
-                            }
-                        }
-                    });
-                });
-
-                if (conflictFound) break;
-            }
-
-            if (conflictFound) {
-                App.showToast('Xung đột lịch: ' + conflictMsg, 'error');
-                return;
-            }
-
-            var allLHP = MockDB.lop_hoc_phan.getAll();
-
-            if (currentLhpIdNum) {
-                // UPDATE AN TOÀN: Không xóa các buổi học đã có điểm danh!
-                MockDB.lop_hoc_phan.update(currentLhpIdNum, {
-                    mon_hoc_id: monHocId,
-                    giang_vien_user_id: gvId,
-                    hoc_ky: hocKy,
-                    nam_hoc: namHoc,
-                    si_so_toi_da: siSo,
-                    phong_hoc: phong,
-                    thoi_gian_mo_dang_ky: ngayMoDK + 'T00:00:00',
-                    thoi_gian_dong_dang_ky: ngayDongDK + 'T23:59:59',
-                    trang_thai: trangThai
-                });
-
-                // Xử lý lịch học & buổi học an toàn:
-                // Lấy tất cả buoi_hoc hiện tại của lớp
-                var existingLichList = MockDB.lich_hoc.getAll({ lop_hoc_phan_id: currentLhpIdNum });
-                var buoiHocsToKeep = [];
-
-                existingLichList.forEach(function (el) {
-                    var buois = MockDB.buoi_hoc.getAll({ lich_hoc_id: el.id });
-                    buois.forEach(function (b) {
-                        // Nếu buổi học đã có điểm danh -> BẮT BUỘC GIỮ LẠI
-                        var hasAttendance = MockDB.diem_danh.getAll({ buoi_hoc_id: b.id }).length > 0;
-                        if (hasAttendance) {
-                            buoiHocsToKeep.push(b);
-                        } else {
-                            MockDB.buoi_hoc.remove(b.id);
-                        }
-                    });
-                    MockDB.lich_hoc.remove(el.id);
-                });
-
-                // Tạo lịch mới
-                var createdLichList = [];
-                schedules.forEach(function (s) {
-                    s.lop_hoc_phan_id = currentLhpIdNum;
-                    var nl = MockDB.lich_hoc.create(s);
-                    createdLichList.push(nl);
-                });
-
-                // Sinh thêm các buổi học mới cho những ngày chưa diễn ra
-                var newGeneratedBuoi = MockDB.generateBuoiHoc(createdLichList);
-                newGeneratedBuoi.forEach(function (nb) {
-                    // Tránh tạo trùng ngày đã có buổi học giữ lại
-                    var exists = buoiHocsToKeep.some(function (kb) { return kb.ngay_hoc === nb.ngay_hoc; });
-                    if (!exists) {
-                        MockDB.buoi_hoc.create(nb);
-                    }
-                });
-
-                App.showToast('Cập nhật lớp học phần thành công! Dữ liệu điểm danh cũ được bảo toàn', 'success');
-            } else {
-                // TẠO MỚI
-                var dup = allLHP.some(function (l) { return l.ma_lop_hoc_phan.toUpperCase() === ma; });
-                if (dup) {
-                    App.showToast('Mã lớp học phần "' + ma + '" đã tồn tại!', 'error');
-                    return;
-                }
-
-                var newLHP = MockDB.lop_hoc_phan.create({
-                    ma_lop_hoc_phan: ma,
-                    mon_hoc_id: monHocId,
-                    giang_vien_user_id: gvId,
-                    hoc_ky: hocKy,
-                    nam_hoc: namHoc,
-                    si_so_toi_da: siSo,
-                    phong_hoc: phong,
-                    thoi_gian_mo_dang_ky: ngayMoDK + 'T00:00:00',
-                    thoi_gian_dong_dang_ky: ngayDongDK + 'T23:59:59',
-                    trang_thai: trangThai
-                });
-
-                var createdLich = [];
-                schedules.forEach(function (s) {
-                    s.lop_hoc_phan_id = newLHP.id;
-                    createdLich.push(MockDB.lich_hoc.create(s));
-                });
-
-                var buoiHocs = MockDB.generateBuoiHoc(createdLich);
-                buoiHocs.forEach(function (b) { MockDB.buoi_hoc.create(b); });
-
-                App.showToast('Tạo mới lớp học phần thành công!', 'success');
-            }
-
-            App.closeModal();
-            this.loadData();
+            req.done(function (res) {
+                App.showToast(res.message, 'success');
+                App.closeModal();
+                self.loadData();
+            }).fail(function (xhr) {
+                Api.toastError(xhr);
+                // RULE-THIEU-04, RULE-THIEU-06: chưa đủ tiết -> hiện lịch dự kiến để điều chỉnh
+                if (xhr.responseJSON && xhr.responseJSON.xep_lich) self.previewLHP();
+            });
         },
 
         deleteLHP: function (id) {
             var self = this;
-            var lhp = MockDB.lop_hoc_phan.getById(id);
+            var lhp = (this.cache || []).find(function (l) { return l.id === parseInt(id, 10); });
             if (!lhp) return;
 
-            // Ràng buộc toàn diện: Kiểm tra đăng ký, điểm số và điểm danh
-            var allDks = MockDB.dang_ky_hoc_phan.getAll({ lop_hoc_phan_id: id });
-            if (allDks.length > 0) {
-                App.showToast('Không thể xóa! Đã có ' + allDks.length + ' sinh viên từng đăng ký lớp này (kể cả đã hủy). Vui lòng chuyển trạng thái lớp sang "Đã hủy"!', 'error');
-                return;
-            }
-
             App.confirm('Bạn có chắc chắn muốn xóa vĩnh viễn lớp học phần <strong>' + App.escapeHtml(lhp.ma_lop_hoc_phan) + '</strong>?', function () {
-                var lichList = MockDB.lich_hoc.getAll({ lop_hoc_phan_id: id });
-                lichList.forEach(function (lh) {
-                    var buoiList = MockDB.buoi_hoc.getAll({ lich_hoc_id: lh.id });
-                    buoiList.forEach(function (b) { MockDB.buoi_hoc.remove(b.id); });
-                    MockDB.lich_hoc.remove(lh.id);
-                });
-                MockDB.lop_hoc_phan.remove(id);
-                App.showToast('Đã xóa lớp học phần thành công!', 'success');
-                self.loadData();
+                Api.del('/api/lophocphan', { id: lhp.id })
+                    .done(function (res) {
+                        App.showToast(res.message, 'success');
+                        self.loadData();
+                    })
+                    .fail(Api.toastError);
             });
         },
 
         showDetailModal: function (id) {
-            var lhp = MockDB.lop_hoc_phan.getById(id);
-            if (!lhp) return;
+            var self = this;
+            Api.get('/api/lophocphan/chi-tiet', { id: id })
+                .done(function (res) { self.renderDetailModal(res.data); })
+                .fail(Api.toastError);
+        },
 
-            var mh = MockDB.mon_hoc.getById(lhp.mon_hoc_id);
-            var gv = lhp.giang_vien_user_id ? MockDB.users.getById(lhp.giang_vien_user_id) : null;
-            var lichList = MockDB.lich_hoc.getAll({ lop_hoc_phan_id: id });
-            var dks = MockDB.dang_ky_hoc_phan.getAll({ lop_hoc_phan_id: id });
-
-            var totalBuoi = 0;
-            lichList.forEach(function (lh) {
-                totalBuoi += MockDB.buoi_hoc.getAll({ lich_hoc_id: lh.id }).length;
-            });
+        renderDetailModal: function (lhp) {
+            var mh = { ten_mon_hoc: lhp.ten_mon_hoc, so_tin_chi: lhp.so_tin_chi };
+            var gv = lhp.ten_giang_vien ? { ho_ten: lhp.ten_giang_vien } : null;
+            var lichList = lhp.lich_hoc || [];
+            var dks = lhp.sinh_vien || [];
+            var totalBuoi = lhp.tong_buoi || 0;
 
             var svRows = '';
             var activeCount = 0;
             dks.forEach(function (dk, index) {
-                var sv = MockDB.users.getById(dk.sinh_vien_user_id);
-                var lsv = sv && sv.lop_sinh_vien_id ? MockDB.lop_sinh_vien.getById(sv.lop_sinh_vien_id) : null;
-                if (dk.trang_thai === 'Đã đăng ký') activeCount++;
+                var sv = { ma_dinh_danh: dk.ma_dinh_danh, ho_ten: dk.ho_ten };
+                var lsv = dk.ma_lop ? { ma_lop: dk.ma_lop } : null;
+                if (dk.trang_thai === 'Đã đăng ký' || dk.trang_thai === 'da_dang_ky') activeCount++;
 
                 svRows +=
                     '<tr>' +
@@ -657,7 +546,7 @@
 
             var lichRows = lichList.map(function (lh) {
                 var soTiet = (lh.tiet_ket_thuc - lh.tiet_bat_dau + 1);
-                var buoiCount = MockDB.buoi_hoc.getAll({ lich_hoc_id: lh.id }).length;
+                var buoiCount = lh.so_buoi || 0;
                 return '<tr>' +
                     '  <td><strong>' + App.thuLabel(lh.thu) + '</strong></td>' +
                     '  <td class="text-center">Tiết ' + lh.tiet_bat_dau + ' - ' + lh.tiet_ket_thuc + ' (' + soTiet + ' tiết)</td>' +

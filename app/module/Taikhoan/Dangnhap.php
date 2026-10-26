@@ -11,6 +11,7 @@ class Dangnhap
             header('Allow: POST');
 
             Response::json([
+                'success' => false,
                 'message' => 'Phương thức không được hỗ trợ.'
             ], 405);
         }
@@ -22,6 +23,7 @@ class Dangnhap
 
         if (!is_array($input)) {
             Response::json([
+                'success' => false,
                 'message' => 'Dữ liệu JSON không hợp lệ.'
             ], 400);
         }
@@ -31,7 +33,8 @@ class Dangnhap
 
         if ($maDinhDanh === '' || !is_string($password) || $password === '') {
             Response::json([
-                'message' => 'Vui lòng nhập mã định danh và mật khẩu.'
+                'success' => false,
+                'message' => 'Vui lòng nhập mã sinh viên / mã giảng viên và mật khẩu.'
             ], 422);
         }
 
@@ -46,22 +49,26 @@ class Dangnhap
 
             if ($result === null) {
                 Response::json([
-                    'message' => 'Mã định danh hoặc mật khẩu không đúng.'
+                    'success' => false,
+                    'message' => 'Mã sinh viên / mã giảng viên hoặc mật khẩu không đúng.'
                 ], 401);
             }
 
             Response::json([
+                'success' => true,
                 'message' => 'Đăng nhập thành công.',
                 'data' => $result
             ]);
         } catch (DomainException $e) {
             Response::json([
+                'success' => false,
                 'message' => $e->getMessage()
             ], 403);
         } catch (Throwable $e) {
             error_log((string) $e);
 
             Response::json([
+                'success' => false,
                 'message' => 'Đã xảy ra lỗi máy chủ.'
             ], 500);
         }

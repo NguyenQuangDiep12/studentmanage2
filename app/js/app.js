@@ -60,6 +60,12 @@ var App = (function ($) {
             desc: 'Quản lý Khoa, Chuyên ngành, Chương trình đào tạo và Nhóm tự chọn',
             roles: ['admin']
         },
+        'chuong-trinh-dao-tao': {
+            category: 'ĐÀO TẠO & MÔN HỌC',
+            title: 'Chương trình đào tạo',
+            desc: 'Khung môn học theo học kỳ - năm học và các nhóm tự chọn',
+            roles: ['admin', 'giang_vien', 'sinh_vien']
+        },
         'diem-danh': {
             category: 'CÔNG TÁC GIẢNG DẠY',
             title: 'Điểm danh',
@@ -110,6 +116,38 @@ var App = (function ($) {
         }
     };
 
+    // ---- Học kỳ / năm học lấy từ API (không gán cứng) ----
+    var termsData = null;
+
+    function loadTerms(cb) {
+        Api.get('/api/lophocphan/nam-hoc')
+            .done(function (res) { termsData = res.data; cb(termsData); })
+            .fail(function (xhr) {
+                Api.toastError(xhr);
+                termsData = { nam_hoc: [], hoc_ky: [], hien_tai: { hoc_ky: 1, nam_hoc: '' } };
+                cb(termsData);
+            });
+    }
+
+    /**
+     * Điền danh sách năm học vào ô chọn và chọn sẵn học kỳ hiện hành.
+     * Giữ nguyên các option sẵn có (VD "Tất cả năm học"). opts.prefix: nhãn đứng trước năm.
+     */
+    function fillTermSelects(hkSel, nhSel, opts, cb) {
+        opts = opts || {};
+        loadTerms(function (d) {
+            var $nh = $(nhSel);
+            d.nam_hoc.forEach(function (nh) {
+                $nh.append('<option value="' + nh + '">' + (opts.prefix || '') + nh + '</option>');
+            });
+            if (d.hien_tai) {
+                if (d.hien_tai.nam_hoc) $nh.val(d.hien_tai.nam_hoc);
+                if (hkSel) $(hkSel).val(String(d.hien_tai.hoc_ky));
+            }
+            if (typeof cb === 'function') cb(d);
+        });
+    }
+
     // Chống mã độc XSS
     function escapeHtml(str) {
         if (str == null) return '';
@@ -122,7 +160,7 @@ var App = (function ($) {
     }
 
     function checkAuth() {
-        var stored = localStorage.getItem('sms_current_user');
+        var stored = localStorage.getItem('sms_current_user') || sessionStorage.getItem('sms_current_user');
         if (!stored) {
             window.location.href = 'index.html';
             return false;
@@ -135,6 +173,9 @@ var App = (function ($) {
 
     function logout() {
         localStorage.removeItem('sms_current_user');
+        localStorage.removeItem('sms_access_token');
+        sessionStorage.removeItem('sms_current_user');
+        sessionStorage.removeItem('sms_access_token');
         window.location.href = 'index.html';
     }
 
@@ -215,6 +256,20 @@ var App = (function ($) {
         return labels[thu] || ('Thứ ' + thu);
     }
 
+    // RULE-TKB-01, RULE-TKB-04: bảng giờ 13 tiết cố định của trường (khai báo trong mã nguồn, không lưu DB).
+    // Giờ bắt đầu theo tiết bắt đầu, giờ kết thúc theo tiết kết thúc - không cộng phút.
+    var TIET_GIO = {
+        1: ['06:45', '07:35'], 2: ['07:45', '08:35'], 3: ['08:45', '09:35'], 4: ['09:45', '10:35'],
+        5: ['10:45', '11:35'], 6: ['12:30', '13:20'], 7: ['13:30', '14:20'], 8: ['14:30', '15:20'],
+        9: ['15:30', '16:20'], 10: ['16:30', '17:20'], 11: ['17:30', '18:20'], 12: ['18:30', '19:20'],
+        13: ['19:30', '20:20']
+    };
+
+    function gioHoc(tietBatDau, tietKetThuc) {
+        var a = TIET_GIO[tietBatDau], b = TIET_GIO[tietKetThuc];
+        return a && b ? a[0] + ' - ' + b[1] : '';
+    }
+
     // Badge trạng thái chuẩn
     function trangThaiUserBadge(tt) {
         if (tt === 'Hoạt động' || tt === 'active') {
@@ -259,6 +314,11 @@ var App = (function ($) {
 
     // Khởi chạy ứng dụng
     function init() {
+        // Nút "Hướng dẫn" trên tiêu đề trang: thao tác nghiệp vụ + quy tắc của trang hiện tại
+        $('#btnPageHelp').off('click').on('click', function () {
+            HelpComponent.show(currentPage);
+        });
+
         if (!checkAuth()) return;
 
         // Render Header & Sidebar Components
@@ -283,6 +343,12 @@ var App = (function ($) {
         formatDate: formatDate,
         formatDateTime: formatDateTime,
         thuLabel: thuLabel,
+        TIET_GIO: TIET_GIO,
+        SO_TIET_NGAY: 13,
+        gioHoc: gioHoc,
+        loadTerms: loadTerms,
+        fillTermSelects: fillTermSelects,
+        getTerms: function () { return termsData; },
         showToast: function (msg, type) { ToastComponent.show(msg, type); },
         showModal: function (html, size) { ModalComponent.show(html, size); },
         closeModal: function () { ModalComponent.close(); },
