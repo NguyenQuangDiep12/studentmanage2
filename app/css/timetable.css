@@ -1,0 +1,52 @@
+/* ================================================================
+   TIMETABLE.CSS - Thành phần Thời khóa biểu
+   Khớp 100% ảnh media_1792964682779_2a86a549
+   Lưới 12 Ca học (Tiết 1 -> Tiết 12) và 7 ngày (Thứ 2 -> Chủ nhật)
+   ================================================================ */
+
+.timetable-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: #ffffff;
+}
+
+.timetable {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 860px;
+}
+
+.timetable th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    font-size: 0.84rem;
+}
+
+.timetable td {
+    border: 1px solid var(--border-color);
+    padding: 4px;
+    text-align: center;
+    font-size: 0.82rem;
+    vertical-align: top;
+    height: 48px;
+}
+
+.timetable .tiet-col {
+    background: #f8fafc;
+    width: 85px;
+    min-width: 85px;
+    vertical-align: middle;
+}
+
+.timetable .slot {
+    background: #e0edff !important;
+    border: 1px solid #bfdbfe !important;
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    text-align: left;
+}

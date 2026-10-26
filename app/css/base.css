@@ -1,0 +1,99 @@
+/* ================================================================
+   BASE.CSS - Biến giao diện, Reset, Font Arial & Bố cục chung
+   ================================================================ */
+
+:root {
+    --bg-page: #eaf0f9;
+    --card-bg: #ffffff;
+    --primary: #3b5bfd;
+    --primary-hover: #2947e3;
+    --primary-light: #eef3ff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --text-sub: #94a3b8;
+    --border-color: #e2e8f0;
+    --border-card: #dce5f0;
+    --danger: #e11d48;
+    --danger-hover: #be123c;
+    --success: #10b981;
+    --success-bg: #ecfdf5;
+    --warning: #f59e0b;
+    --warning-bg: #fffbeb;
+    --info: #0ea5e9;
+    --info-bg: #f0f9ff;
+    --sidebar-width: 280px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+}
+
+body {
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 16px 20px;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+.app-container {
+    max-width: 1560px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.app-body-wrapper {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.main-content-pane {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Tiện ích Flex & Grid */
+.d-flex { display: flex; }
+.align-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.p-0 { padding: 0 !important; }
+.font-bold { font-weight: 700; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-primary { color: var(--primary) !important; }
+.text-success { color: var(--success) !important; }
+.text-danger { color: var(--danger) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-gray { color: var(--text-muted) !important; }
+
+@media (max-width: 768px) {
+    .app-body-wrapper { flex-direction: column; }
+}

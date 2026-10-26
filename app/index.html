@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Hệ thống quản lý sinh viên</title>
+    <!-- Font Awesome 6.5.1 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eaf0f9;
+            padding: 20px;
+        }
+
+        /* ---- Main Container ---- */
+        .login-container {
+            display: flex;
+            max-width: 980px;
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #dce5f0;
+        }
+
+        /* ---- Left Panel ---- */
+        .login-left {
+            flex: 1.15;
+            background: linear-gradient(145deg, #3b5bfd 0%, #2563eb 100%);
+            color: #ffffff;
+            padding: 44px 38px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .badge-label {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            align-self: flex-start;
+        }
+
+        .login-left h1 {
+            font-size: 1.95rem;
+            font-weight: 700;
+            line-height: 1.35;
+            margin-bottom: 14px;
+        }
+
+        .login-left .desc {
+            font-size: 0.86rem;
+            color: rgba(255, 255, 255, 0.88);
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .feature-card h4 {
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .feature-card p {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.4;
+        }
+
+        /* ---- Right Panel ---- */
+        .login-right {
+            flex: 0.95;
+            background: #ffffff;
+            padding: 40px 36px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .login-header h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .sms-icon {
+            width: 42px;
+            height: 42px;
+            background: #3b5bfd;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.76rem;
+            letter-spacing: 0.5px;
+        }
+
+        .login-subtitle {
+            color: #64748b;
+            font-size: 0.84rem;
+            margin-bottom: 20px;
+        }
+
+        /* ---- Form ---- */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #334155;
+            font-size: 0.86rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            color: #1e293b;
+            outline: none;
+            transition: all 0.15s;
+            background: #ffffff;
+        }
+
+        .form-control:focus {
+            border-color: #3b5bfd;
+            box-shadow: 0 0 0 2px rgba(59, 91, 253, 0.15);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 11px;
+            background: #3b5bfd;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-top: 4px;
+        }
+
+        .btn-login:hover {
+            background: #2563eb;
+        }
+
+        /* ---- Demo Accounts (3 tài khoản test demo theo yêu cầu) ---- */
+        .test-accounts {
+            margin-top: 20px;
+            border: 1px dashed #bfdbfe;
+            background: #f8fbff;
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+
+        .test-accounts h5 {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .test-account-item {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.15s;
+        }
+
+        .test-account-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .test-account-item:hover {
+            border-color: #3b5bfd;
+            color: #3b5bfd;
+            background: #eff6ff;
+        }
+
+        /* ---- Error Message ---- */
+        .login-error {
+            background: #fff5f5;
+            color: #dc2626;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            margin-bottom: 12px;
+            display: none;
+            border-left: 3px solid #dc2626;
+        }
+
+        .login-error.show {
+            display: block;
+        }
+
+        /* Modal Quên mật khẩu */
+        .modal-fp {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .modal-fp.active {
+            display: flex;
+        }
+
+        .modal-fp-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px 26px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            .login-container { flex-direction: column; max-width: 480px; }
+            .login-left { padding: 32px 24px; }
+            .login-right { padding: 32px 24px; }
+            .features-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Left Panel -->
+        <div class="login-left">
+            <span class="badge-label">Student Management System</span>
+            <h1>Nền tảng quản lí sinh viên hiện đại, trực quan và chuyên nghiệp</h1>
+            <p class="desc">Hỗ trợ quản trị viên, giảng viên và sinh viên quản lí hồ sơ, đăng ký môn học, lịch học, bảng điểm và phản hồi trên cùng một hệ thống</p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4>Quản lí tập trung</h4>
+                    <p>Thông tin sinh viên, giảng viên, môn học và lớp học phần</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Theo dõi học tập</h4>
+                    <p>Bảng điểm, lịch học, thời khóa biểu tuần và xuất dữ liệu nhanh</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Phân quyền rõ ràng</h4>
+                    <p>Admin, lecturer, student với giao diện và chức năng riêng biệt</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Vận hành tiện lợi</h4>
+                    <p>Thiết kế gọn gàng, hiện đại, phù hợp hệ thống quản lí trường học</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="login-right">
+            <div class="login-header">
+                <h2>Đăng nhập</h2>
+                <div class="sms-icon">SMS</div>
+            </div>
+            <p class="login-subtitle">Chào mừng bạn quay lại hệ thống quản lí sinh viên</p>
+
+            <div class="login-error" id="loginError">
+                <span id="loginErrorText">Tên đăng nhập hoặc mật khẩu không chính xác</span>
+            </div>
+
+            <form id="loginForm" autocomplete="off">
+                <label for="username">Mã định danh</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="username"
+                    placeholder="Nhập mã định danh"
+                    autocomplete="username"
+                    required
+                >
+                <div class="form-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                        <label for="password" style="margin-bottom:0;">Mật khẩu</label>
+                        <a href="javascript:void(0)" id="btnOpenForgotPass" style="font-size:0.8rem; color:#2563eb; font-weight:600; text-decoration:none;">
+                            Quên mật khẩu?
+                        </a>
+                    </div>
+                    <input type="password" class="form-control" id="password" placeholder="Nhập password" required>
+                </div>
+                <button type="submit" class="btn-login">
+                    Đăng nhập hệ thống
+                </button>
+            </form>
+
+            <!-- 3 Tài khoản demo hệ thống theo yêu cầu người dùng -->
+            <div class="test-accounts">
+                <h5>Tài khoản demo hệ thống</h5>
+                <div class="test-account-item" data-user="adminaccount1" data-pass="admin123">
+                    <span>adminaccount1 / admin123</span>
+                    <span style="font-size:0.75rem; color:#dc2626; font-weight:700;">Admin</span>
+                </div>
+                <div class="test-account-item" data-user="lectureraccount1" data-pass="lecturer123">
+                    <span>lectureraccount1 / lecturer123</span>
+                    <span style="font-size:0.75rem; color:#d97706; font-weight:700;">Giảng viên</span>
+                </div>
+                <div class="test-account-item" data-user="studentaccount1" data-pass="student123">
+                    <span>studentaccount1 / student123</span>
+                    <span style="font-size:0.75rem; color:#16a34a; font-weight:700;">Sinh viên</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Quên mật khẩu: 3 cột gồm password cũ, password mới và xác nhận password -->
+    <div class="modal-fp" id="forgotPassModal">
+        <div class="modal-fp-card">
+            <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:6px; color:#1e293b;">
+                Đổi mật khẩu / Quên mật khẩu
+            </h3>
+            <p style="font-size:0.82rem; color:#64748b; margin-bottom:14px;">
+                Nhập tên đăng nhập, mật khẩu cũ cùng mật khẩu mới để cập nhật mật khẩu
+            </p>
+            <div class="form-group">
+                <label>Tên đăng nhập hoặc Mã định danh <span style="color:#dc2626;">*</span></label>
+                <input type="text" class="form-control" id="fpUsername" placeholder="VD: adminaccount1 hoặc SV001">
+            </div>
+            <!-- Cột 1: Password cũ -->
+            <div class="form-group">
+                <label>Mật khẩu cũ (hiện tại) <span style="color:#dc2626;">*</span></label>
+                <input type="password" class="form-control" id="fpOldPassword" placeholder="Nhập mật khẩu hiện tại">
+            </div>
+            <!-- Cột 2: Password mới -->
+            <div class="form-group">
+                <label>Mật khẩu mới <span style="color:#dc2626;">*</span></label>
+                <input type="password" class="form-control" id="fpNewPassword" placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)">
+            </div>
+            <!-- Cột 3: Xác nhận password mới -->
+            <div class="form-group">
+                <label>Xác nhận mật khẩu mới <span style="color:#dc2626;">*</span></label>
+                <input type="password" class="form-control" id="fpConfirmPassword" placeholder="Nhập lại mật khẩu mới">
+            </div>
+
+            <div id="fpAlert" style="display:none; padding:8px 12px; border-radius:6px; font-size:0.82rem; margin-bottom:12px;"></div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+                <button type="button" class="btn" style="background:#f1f5f9; color:#475569;" id="btnCloseForgotPass">Hủy</button>
+                <button type="button" class="btn btn-primary" id="btnSubmitForgotPass">Cập nhật mật khẩu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    $(function () {
+        const LOGIN_API = '/api/taikhoan/dang-nhap';
+        const CHANGE_PASSWORD_API = '/api/taikhoan/doi-mat-khau';
+
+        const $loginForm = $('#loginForm');
+        const $username = $('#username');
+        const $password = $('#password');
+        const $loginError = $('#loginError');
+        const $loginErrorText = $('#loginErrorText');
+        const $loginButton = $loginForm.find('[type="submit"]');
+
+        const $fpModal = $('#forgotPassModal');
+        const $fpAlert = $('#fpAlert');
+        const $fpSubmit = $('#btnSubmitForgotPass');
+
+        // Đọc dữ liệu từ API theo cấu trúc:
+        // { success: true, data: {...} }
+        // hoặc dữ liệu trực tiếp nếu backend chưa bọc trong data.
+        function getPayload(response) {
+            return response && response.data
+                ? response.data
+                : response;
+        }
+
+        function getErrorMessage(xhr, fallback) {
+            const body = xhr.responseJSON;
+
+            if (body && body.message) {
+                return body.message;
+            }
+
+            if (body && body.data && body.data.message) {
+                return body.data.message;
+            }
+
+            return fallback;
+        }
+
+        function showLoginError(message) {
+            $loginErrorText.text(message);
+            $loginError.addClass('show');
+        }
+
+        function clearLoginError() {
+            $loginError.removeClass('show');
+        }
+
+        function showPasswordAlert(message, isError) {
+            $fpAlert
+                .text(message)
+                .css({
+                    display: 'block',
+                    background: isError ? '#fee2e2' : '#ecfdf5',
+                    color: isError ? '#dc2626' : '#16a34a'
+                });
+        }
+
+        function clearPasswordAlert() {
+            $fpAlert.hide().text('');
+        }
+
+        // Nếu đã có phiên đăng nhập, chuyển đến dashboard.
+        // Token được lưu trong sessionStorage thay vì chỉ lưu thông tin user.
+        if (sessionStorage.getItem('sms_access_token')) {
+            window.location.replace('dashboard.html');
+            return;
+        }
+
+        // Nhấn tài khoản demo để điền thông tin.
+        // Không tự gửi yêu cầu đăng nhập, tránh gửi nhầm khi dữ liệu demo chưa có trong DB.
+        $('.test-account-item').on('click', function () {
+            $username.val($(this).data('user'));
+            $password.val($(this).data('pass'));
+
+            clearLoginError();
+        });
+
+        // Đăng nhập qua PHP API.
+        $loginForm.on('submit', function (e) {
+            e.preventDefault();
+
+            const maDinhDanh = $username.val().trim();
+            const password = $password.val();
+
+            if (!maDinhDanh || !password) {
+                showLoginError('Vui lòng nhập đầy đủ mã định danh và mật khẩu.');
+                return;
+            }
+
+            clearLoginError();
+
+            $loginButton.prop('disabled', true).text('Đang đăng nhập...');
+
+            $.ajax({
+                url: LOGIN_API,
+                method: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                data: JSON.stringify({
+                    ma_dinh_danh: maDinhDanh,
+                    password: password
+                })
+            })
+            .done(function (response) {
+                if (response.success === false) {
+                    showLoginError(
+                        response.message || 'Đăng nhập không thành công.'
+                    );
+                    return;
+                }
+
+                const data = getPayload(response);
+
+                if (!data || !data.access_token || !data.user) {
+                    showLoginError(
+                        'Dữ liệu trả về từ máy chủ không đúng định dạng.'
+                    );
+                    return;
+                }
+
+                // Lưu token và thông tin người dùng.
+                sessionStorage.setItem(
+                    'sms_access_token',
+                    data.access_token
+                );
+
+                sessionStorage.setItem(
+                    'sms_current_user',
+                    JSON.stringify(data.user)
+                );
+
+                // Có thể thay đường dẫn theo dashboard từng vai trò.
+                const rolePages = {
+                    admin: 'dashboard.html',
+                    lecturer: 'dashboard.html',
+                    giang_vien: 'dashboard.html',
+                    student: 'dashboard.html',
+                    sinh_vien: 'dashboard.html'
+                };
+
+                const role = String(data.user.vai_tro || '').toLowerCase();
+                const destination = rolePages[role];
+
+                if (!destination) {
+                    sessionStorage.removeItem('sms_access_token');
+                    sessionStorage.removeItem('sms_current_user');
+
+                    showLoginError(
+                        'Vai trò tài khoản không hợp lệ hoặc chưa được hỗ trợ.'
+                    );
+                    return;
+                }
+
+                window.location.href = destination;
+            })
+            .fail(function (xhr) {
+                showLoginError(
+                    getErrorMessage(
+                        xhr,
+                        'Không thể kết nối máy chủ PHP. Vui lòng kiểm tra backend.'
+                    )
+                );
+            })
+            .always(function () {
+                $loginButton
+                    .prop('disabled', false)
+                    .text('Đăng nhập hệ thống');
+            });
+        });
+
+        // Mở modal đổi mật khẩu.
+        $('#btnOpenForgotPass').on('click', function () {
+            clearPasswordAlert();
+
+            $('#fpUsername').val($username.val().trim());
+            $('#fpOldPassword, #fpNewPassword, #fpConfirmPassword').val('');
+
+            $fpModal.addClass('active');
+        });
+
+        // Đóng modal.
+        $('#btnCloseForgotPass').on('click', function () {
+            $fpModal.removeClass('active');
+            clearPasswordAlert();
+        });
+
+        // Đóng modal khi nhấn ra ngoài khung.
+        $fpModal.on('click', function (e) {
+            if (e.target === this) {
+                $fpModal.removeClass('active');
+            }
+        });
+
+        // Gửi yêu cầu đổi mật khẩu đến PHP.
+        $('#btnSubmitForgotPass').on('click', function () {
+            const maDinhDanh = $('#fpUsername').val().trim();
+            const oldPassword = $('#fpOldPassword').val();
+            const newPassword = $('#fpNewPassword').val();
+            const confirmPassword = $('#fpConfirmPassword').val();
+
+            if (!maDinhDanh || !oldPassword || !newPassword || !confirmPassword) {
+                showPasswordAlert('Vui lòng nhập đầy đủ các trường thông tin.', true);
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showPasswordAlert('Mật khẩu mới phải có ít nhất 6 ký tự.', true);
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showPasswordAlert('Xác nhận mật khẩu mới không khớp.', true);
+                return;
+            }
+
+            if (newPassword === oldPassword) {
+                showPasswordAlert(
+                    'Mật khẩu mới không được trùng với mật khẩu cũ.',
+                    true
+                );
+                return;
+            }
+
+            $fpSubmit.prop('disabled', true).text('Đang cập nhật...');
+
+            $.ajax({
+                url: CHANGE_PASSWORD_API,
+                method: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                data: JSON.stringify({
+                    ma_dinh_danh: maDinhDanh,
+                    old_password: oldPassword,
+                    new_password: newPassword
+                })
+            })
+            .done(function (response) {
+                if (response.success === false) {
+                    showPasswordAlert(
+                        response.message || 'Không thể đổi mật khẩu.',
+                        true
+                    );
+                    return;
+                }
+
+                showPasswordAlert('Đổi mật khẩu thành công.', false);
+
+                // Điền thông tin vào form đăng nhập.
+                $username.val(maDinhDanh);
+                $password.val('');
+                clearLoginError();
+
+                // Xóa mật khẩu cũ và mới khỏi modal sau khi thành công.
+                $('#fpOldPassword, #fpNewPassword, #fpConfirmPassword').val('');
+
+                // Không tự đăng nhập hoặc giả định mật khẩu mới đã được lưu
+                // cho đến khi API xác nhận thành công.
+                setTimeout(function () {
+                    $fpModal.removeClass('active');
+                    clearPasswordAlert();
+                }, 1200);
+            })
+            .fail(function (xhr) {
+                showPasswordAlert(
+                    getErrorMessage(xhr, 'Không thể kết nối máy chủ PHP.'),
+                    true
+                );
+            })
+            .always(function () {
+                $fpSubmit
+                    .prop('disabled', false)
+                    .text('Cập nhật mật khẩu');
+            });
+        });
+    });
+    </script>
+</body>
+</html>

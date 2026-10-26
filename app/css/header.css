@@ -1,0 +1,138 @@
+/* ================================================================
+   HEADER.CSS - Thành phần Header trên cùng (Top Header Card)
+   Khớp 100% ảnh media_1792964722887_c602455d
+   ================================================================ */
+
+.top-header-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--border-card);
+}
+
+.header-brand-info .app-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #2563eb;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.header-brand-info h1 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.25;
+}
+
+.header-brand-info p {
+    font-size: 0.84rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-icon-square {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-muted);
+}
+
+.btn-icon-square:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.user-profile-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    padding: 4px 12px 4px 5px;
+    border-radius: var(--radius-sm);
+}
+
+.user-profile-pill .pill-avatar {
+    width: 30px;
+    height: 30px;
+    background: var(--primary);
+    color: #ffffff;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.user-profile-pill .pill-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #1e293b;
+}
+
+.user-profile-pill .pill-role {
+    font-size: 0.78rem;
+    color: #2563eb;
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+.btn-pill {
+    padding: 7px 15px;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-pill-light {
+    background: #f1f5f9;
+    border: 1px solid var(--border-color);
+    color: #334155;
+}
+.btn-pill-light:hover {
+    background: #e2e8f0;
+}
+
+.btn-pill-danger {
+    background: var(--danger);
+    color: #ffffff;
+}
+.btn-pill-danger:hover {
+    background: var(--danger-hover);
+}
+
+@media (max-width: 768px) {
+    .top-header-card {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+}

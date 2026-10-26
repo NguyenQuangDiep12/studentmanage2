@@ -1,0 +1,9 @@
+/* ================================================================
+   STYLE.CSS - Master Stylesheet (Modular Components Architecture)
+   ================================================================ */
+
+@import url('base.css');
+@import url('header.css');
+@import url('sidebar.css');
+@import url('components.css');
+@import url('timetable.css');
