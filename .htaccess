@@ -16,3 +16,12 @@ RewriteRule ^$ /app/index.html [R=302,L]
 # Toàn bộ /api/* -> public/index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^api/ /public/index.php [QSA,L]
+
+# Không cho trình duyệt dùng bản JS/CSS/HTML cũ đã lưu (cache): mỗi lần tải trang phải hỏi lại server,
+# file không đổi thì server trả 304 (nhanh), file đã sửa thì tải bản mới ngay - không cần Ctrl+F5.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|html)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+        Header unset Expires
+    </FilesMatch>
+</IfModule>

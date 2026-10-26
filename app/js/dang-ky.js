@@ -12,9 +12,9 @@
     var DangKyModule = {
         currentTab: 'available',
 
+        // Dùng chung header Bearer của Api (một nơi duy nhất tạo "Authorization: Bearer <token>")
         getAuthHeaders: function () {
-            var token = Api.getToken();
-            return token ? { 'Authorization': 'Bearer ' + token } : {};
+            return Api.authHeaders();
         },
 
         render: function () {
@@ -135,29 +135,13 @@
                 '  <div class="card">' +
                 '    <div class="card-header"><h3><i class="fa-solid fa-book-open"></i> Quy định môn học & Quy chế tích lũy tín chỉ</h3></div>' +
                 '    <div class="card-body">' +
-                '      <div class="detail-grid mb-3">' +
-                '        <div class="card p-3" style="border:1.5px solid #bfdbfe; background:#eff6ff;">' +
-                '          <h4 style="color:#1d4ed8; font-weight:800; margin-bottom:4px;"><i class="fa-solid fa-layer-group"></i> Nhóm tự chọn A</h4>' +
-                '          <p style="font-size:0.9rem;">Yêu cầu hoàn thành tối thiểu: <strong>6 tín chỉ</strong></p>' +
-                '          <small class="text-muted">Các môn: Trí tuệ nhân tạo (CS303), An toàn thông tin (CS304)</small>' +
-                '        </div>' +
-                '        <div class="card p-3" style="border:1.5px solid #fde68a; background:#fffbeb;">' +
-                '          <h4 style="color:#b45309; font-weight:800; margin-bottom:4px;"><i class="fa-solid fa-layer-group"></i> Nhóm tự chọn B</h4>' +
-                '          <p style="font-size:0.9rem;">Yêu cầu hoàn thành tối thiểu: <strong>9 tín chỉ</strong></p>' +
-                '          <small class="text-muted">Điều kiện: Phải tích lũy đạt đủ 6 TC Nhóm A trước khi đăng ký Nhóm B</small>' +
-                '        </div>' +
-                '        <div class="card p-3" style="border:1.5px solid #bbf7d0; background:#f0fdf4;">' +
-                '          <h4 style="color:#15803d; font-weight:800; margin-bottom:4px;"><i class="fa-solid fa-layer-group"></i> Nhóm tự chọn C</h4>' +
-                '          <p style="font-size:0.9rem;">Yêu cầu hoàn thành tối thiểu: <strong>9 tín chỉ</strong></p>' +
-                '          <small class="text-muted">Điều kiện: Phải hoàn thành xong cả Nhóm A và Nhóm B trước khi đăng ký Nhóm C</small>' +
-                '        </div>' +
-                '      </div>' +
+                '      <div class="detail-grid mb-3" id="dkNhomTuChon"><p class="text-muted">Đang tải nhóm tự chọn...</p></div>' +
                 '      <div class="card p-3" style="background:#f8fafc; border:1px solid var(--border-color);">' +
                 '        <h4 style="font-size:0.95rem; font-weight:800; margin-bottom:6px;"><i class="fa-solid fa-circle-exclamation" style="color:var(--primary);"></i> Giới hạn đăng ký & Điều kiện tốt nghiệp:</h4>' +
                 '        <ul style="padding-left:20px; font-size:0.88rem; color:var(--text-main); line-height:1.7;">' +
                 '          <li>Số tín chỉ tối đa cho phép đăng ký trong một học kỳ là <strong>24 tín chỉ</strong></li>' +
                 '          <li>Sinh viên chỉ được đăng ký các môn học thuộc chương trình đào tạo của khóa/chuyên ngành mình đang học</li>' +
-                '          <li>Sinh viên chỉ có thể hủy đăng ký trong thời gian mở đăng ký và khi lớp học chưa diễn ra điểm danh hoặc nhập điểm</li>' +
+                '          <li>Lớp <strong>Đang mở đăng ký</strong> thì sinh viên được hủy đăng ký; lớp <strong>Đóng đăng ký</strong> thì không hủy được</li>' +
                 '        </ul>' +
                 '      </div>' +
                 '    </div>' +
@@ -167,6 +151,7 @@
             $('#contentArea').html(html);
             this.bindEvents();
             this.loadProfile();
+            this.loadNhomTuChon();
             var self = this;
             // Năm học, học kỳ hiện hành lấy từ dữ liệu lớp học phần
             App.fillTermSelects('#selectHocKyDK', '#selectNamHocDK', { prefix: 'Năm học ' }, function () {
@@ -180,6 +165,30 @@
                 var u = res.data || {};
                 $('#dkLopSinhHoat').text(u.ma_lop ? (u.ma_lop + ' - ' + u.ten_lop) : 'Chưa phân lớp');
                 $('#dkChuongTrinh').text(u.ten_chuong_trinh || '—');
+            });
+        },
+
+        // Nhóm tự chọn lấy từ CTĐT của sinh viên trong DB (không dùng dữ liệu cố định)
+        loadNhomTuChon: function () {
+            var box = $('#dkNhomTuChon');
+            Api.get('/api/cocaudaotao/khung-chuong-trinh').done(function (res) {
+                var ds = (res.data && res.data.nhom_tu_chon) || [];
+                if (!ds.length) {
+                    box.html('<p class="text-muted">Chương trình đào tạo của bạn chưa có nhóm môn tự chọn.</p>');
+                    return;
+                }
+                box.html(ds.map(function (n) {
+                    var mons = (n.mon_hoc || []).map(function (m) {
+                        return App.escapeHtml(m.ten_mon_hoc) + ' (' + App.escapeHtml(m.ma_mon_hoc) + ')';
+                    }).join(', ') || 'Chưa có môn';
+                    return '<div class="card p-3" style="border:1.5px solid #bfdbfe; background:#eff6ff;">' +
+                        '<h4 style="color:#1d4ed8; font-weight:800; margin-bottom:4px;"><i class="fa-solid fa-layer-group"></i> ' + App.escapeHtml(n.ten_nhom || n.ma_nhom) + '</h4>' +
+                        '<p style="font-size:0.9rem;">Yêu cầu tối thiểu: <strong>' + (parseInt(n.so_tin_chi_toi_thieu, 10) || 0) + ' tín chỉ</strong> · Đã đạt: <strong>' + (parseInt(n.tin_chi_da_dat, 10) || 0) + ' TC</strong></p>' +
+                        '<small class="text-muted">Các môn: ' + mons + '</small>' +
+                        '</div>';
+                }).join(''));
+            }).fail(function () {
+                box.html('<p class="text-muted">Không tải được nhóm tự chọn.</p>');
             });
         },
 
@@ -259,10 +268,9 @@
                     var actionBtn = '';
                     if (isRegistered) {
                         actionBtn = '<span class="badge badge-success"><i class="fa-solid fa-check"></i> Đã đăng ký</span>';
-                    } else if (l.da_thiet_lap_thoi_gian === false) {
-                        actionBtn = '<span class="badge badge-secondary"><i class="fa-solid fa-clock"></i> Chưa mở ĐK</span>';
                     } else if (!isOpenTime) {
-                        actionBtn = '<span class="badge badge-secondary"><i class="fa-solid fa-clock"></i> Ngoài hạn ĐK</span>';
+                        // RULE-08: chỉ 2 trạng thái - ngoài thời gian mở (kể cả chưa thiết lập / đã hết hạn) là Đóng đăng ký
+                        actionBtn = '<span class="badge badge-secondary"><i class="fa-solid fa-lock"></i> Đóng đăng ký</span>';
                     } else if (isFull) {
                         actionBtn = '<span class="badge badge-danger"><i class="fa-solid fa-user-xmark"></i> Lớp đã đầy</span>';
                     } else {
@@ -271,7 +279,7 @@
 
                     var hanStr = (l.thoi_gian_mo_dang_ky && l.thoi_gian_dong_dang_ky)
                         ? '<small>' + App.formatDate(l.thoi_gian_mo_dang_ky) + ' → ' + App.formatDate(l.thoi_gian_dong_dang_ky) + '</small>'
-                        : '<span class="text-muted">Chưa thiết lập</span>';
+                        : '<span class="text-muted">—</span>';
 
                     var row =
                         '<tr>' +
@@ -329,8 +337,12 @@
 
                     var isRegistered = (dk.trang_thai_dk === 'Đã đăng ký' || dk.trang_thai_dk === 'da_dang_ky');
                     var actionBtn = '';
-                    if (isRegistered) {
+                    if (isRegistered && dk.co_the_huy !== false) {
                         actionBtn = '<button class="btn btn-sm btn-outline btn-huy-dang-ky text-danger" data-id="' + dk.dang_ky_id + '"><i class="fa-solid fa-xmark"></i> Hủy ĐK</button>';
+                    } else if (isRegistered) {
+                        // RULE-08: không hủy được -> nêu rõ lý do thay vì để nút bấm rồi mới báo lỗi
+                        actionBtn = '<span class="badge badge-secondary" title="' + App.escapeHtml(dk.ly_do_khong_huy || '') + '"><i class="fa-solid fa-lock"></i> Không thể hủy</span>' +
+                            '<br><small class="text-muted">' + App.escapeHtml(dk.ly_do_khong_huy || '') + '</small>';
                     } else {
                         actionBtn = '<span class="text-muted">—</span>';
                     }

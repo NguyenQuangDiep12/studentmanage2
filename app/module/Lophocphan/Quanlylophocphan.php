@@ -49,10 +49,11 @@ class Quanlylophocphan
             $params[':nh'] = $nh;
         }
 
+        // RULE-08: lọc theo 2 trạng thái đăng ký (mo | dong), tính theo thời gian mở/đóng
         $tt = Request::str(Request::query('trang_thai', ''));
-        if ($tt !== '') {
-            $sql .= ' AND lhp.trang_thai = :tt';
-            $params[':tt'] = $tt;
+        if ($tt === 'mo' || $tt === 'dong') {
+            $sql .= ($tt === 'mo' ? ' AND ' : ' AND NOT ') . Academic::dangMoDkSql('lhp');
+            $params[':now_dk'] = $params[':now_dk2'] = date('Y-m-d H:i:s');
         }
 
         $mh = Request::int(Request::query('mon_hoc_id'));
@@ -466,6 +467,7 @@ class Quanlylophocphan
 
     private function present(array $l): array
     {
+        $l = Academic::ganTrangThaiDangKy($l);
         $l['id'] = (int) $l['id'];
         $l['hoc_ky'] = (int) $l['hoc_ky'];
         $l['si_so_toi_da'] = (int) $l['si_so_toi_da'];
@@ -521,7 +523,9 @@ class Quanlylophocphan
         $nh = Request::str($in['nam_hoc'] ?? '');
         $siSo = $in['si_so_toi_da'] ?? null;
         $phong = strtoupper(Request::str($in['phong_hoc'] ?? ''));
-        $tt = Request::str($in['trang_thai'] ?? 'Đang mở');
+        // Trạng thái lớp không còn nhập tay (RULE-08: chỉ còn trạng thái đăng ký tính theo thời gian) - giữ giá trị cũ
+        $tt = $existing['trang_thai'] ?? 'Đang mở';
+        if ($tt === 'Đã đóng') { $tt = 'Đang mở'; }
         $mo = Request::str($in['thoi_gian_mo_dang_ky'] ?? '');
         $dong = Request::str($in['thoi_gian_dong_dang_ky'] ?? '');
 

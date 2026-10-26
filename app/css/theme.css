@@ -123,10 +123,7 @@ body {
     box-shadow: var(--shadow-card);
     border: 1px solid rgba(255, 255, 255, 0.8);
     gap: 18px;
-    position: sticky;
-    top: 20px;
-    max-height: calc(100vh - 40px);
-    overflow-y: auto;
+    /* Không cố định / không cuộn riêng: menu dài vẫn xem đủ khi cuộn trang */
 }
 .sidebar-profile-card { background: transparent; border: none; box-shadow: none; padding: 4px 2px 6px; gap: 16px; }
 .sidebar-profile-avatar {
@@ -193,8 +190,8 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.85);
     box-shadow: var(--shadow-card);
     background: rgba(255, 255, 255, 0.96);
-    overflow: hidden;
 }
+.card > .card-header { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
 .card-header { padding: 20px 26px; border-bottom-color: var(--border-color); }
 .card-header h3 { font-size: 1.15rem; font-weight: 800; }
 .card-body { padding: 22px 26px; }
@@ -221,13 +218,33 @@ body {
 .tab-btn { border-radius: 12px 12px 0 0; font-weight: 700; }
 .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-.modal { border-radius: var(--radius-lg); overflow: hidden; }
+/* Hộp thoại: tiêu đề và nút cố định, phần thân cuộn - không che nội dung phía dưới */
+.modal { border-radius: var(--radius-lg); display: flex; flex-direction: column; overflow-y: auto; max-height: calc(100vh - 40px); }
+.modal > .modal-header, .modal > .modal-footer { flex-shrink: 0; }
+.modal > .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .modal-header h3 { font-weight: 800; }
 .alert { border-radius: 14px; }
 details { background: #fbfcff; }
 
+/* Bảng gọn hơn trên màn hình laptop để hiện đủ cột, không phải cuộn ngang */
+@media (max-width: 1700px) {
+    .data-table { font-size: 0.82rem; }
+    .data-table th, .data-table td { padding: 9px 10px; }
+    .data-table th { white-space: normal; line-height: 1.3; }
+    .data-table th[style*="width"] { width: auto !important; }
+    .data-table .form-control-sm { min-width: 58px; padding-left: 6px; padding-right: 6px; }
+    .data-table .table-actions .btn-sm { padding: 5px 9px; }
+    .card-body { padding: 18px 20px; }
+    .card-header { padding: 16px 20px; }
+    /* Bảng nhập điểm (13 cột): cho chữ phụ xuống dòng trong ô thay vì kéo dài bảng */
+    #diemTableBody td, #diemTableBody td.text-center { white-space: normal; }
+    #diemTableBody td > strong { white-space: nowrap; }
+    #diemTableBody td small { font-size: 0.72rem; line-height: 1.25; }
+    #diemTableBody .input-cc, #diemTableBody .input-diem { width: 58px; margin: 0 auto; }
+    #diemTableCard .data-table th, #diemTableCard .data-table td { padding-left: 7px; padding-right: 7px; }
+}
 @media (max-width: 1500px) {
-    :root { --sidebar-width: 270px; }
+    :root { --sidebar-width: 250px; }
     body { padding: 22px 22px; }
     .app-container, .app-body-wrapper { gap: 22px; }
     .app-sidebar { padding: 20px 18px; }
@@ -243,6 +260,24 @@ details { background: #fbfcff; }
     .btn-icon-square { width: 48px; height: 48px; }
     .btn-pill { padding: 11px 16px; font-size: 0.95rem; }
 }
+@media (max-width: 1300px) {
+    .data-table th, .data-table td { padding-left: 8px; padding-right: 8px; }
+    /* Đầu trang xếp dọc: tên hệ thống ở trên, các nút xuống hàng dưới (không bóp chữ tiêu đề) */
+    .top-header-card { flex-direction: column; align-items: flex-start; gap: 18px; }
+    .header-actions { flex-wrap: wrap; flex-shrink: 1; }
+}
+/* Màn hình hẹp (≤ 1200px): menu chuyển lên trên thành lưới, nội dung dùng toàn bộ bề ngang */
+@media (max-width: 1200px) {
+    .app-body-wrapper { flex-direction: column; align-items: stretch; }
+    .app-sidebar { width: 100%; }
+    .sidebar-menu-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+    .nav-section-header { grid-column: 1 / -1; padding-top: 6px; }
+    .main-content-pane { width: 100%; }
+}
+/* Không để nội dung tràn ra ngoài mép phải màn hình (bảng rộng cuộn trong khung của nó) */
+.main-content-pane, #contentArea, .card, .card-body { min-width: 0; max-width: 100%; }
+.table-responsive, .timetable-wrapper { max-width: 100%; overflow-x: auto; }
+
 @media (max-width: 1100px) {
     :root { --sidebar-width: 280px; }
     .header-brand-info h1 { font-size: 1.7rem; }

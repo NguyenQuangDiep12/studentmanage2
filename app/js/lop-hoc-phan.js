@@ -40,9 +40,8 @@
                 '        </select>' +
                 '        <select id="filterTrangThaiLHP" class="filter-select">' +
                 '          <option value="">-- Trạng thái --</option>' +
-                '          <option value="Đang mở">Đang mở</option>' +
-                '          <option value="Đã đóng">Đã đóng</option>' +
-                '          <option value="Đã hủy">Đã hủy</option>' +
+                '          <option value="mo">Đang mở đăng ký</option>' +
+                '          <option value="dong">Đóng đăng ký</option>' +
                 '        </select>' +
                 '      </div>' +
                 '      <div class="toolbar-right">' +
@@ -175,9 +174,10 @@
 
                 var siSoClass = siSoHienTai >= l.si_so_toi_da ? 'text-danger text-bold' : '';
 
+                // RULE-08: cột Thời gian ĐK chỉ hiển thị khoảng ngày; trạng thái (2 loại) nằm ở cột Trạng thái
                 var hanDK = (l.thoi_gian_mo_dang_ky && l.thoi_gian_dong_dang_ky)
                     ? '<small>' + App.formatDate(l.thoi_gian_mo_dang_ky) + ' → ' + App.formatDate(l.thoi_gian_dong_dang_ky) + '</small>'
-                    : '<span class="text-muted">—</span>';
+                    : '<span class="text-muted">Chưa nhập</span>';
 
                 // Chỉ admin hoặc chính giảng viên phụ trách mới sửa được lớp của mình
                 var canEditThis = isAdmin || (isGV && l.giang_vien_user_id === currentUser.id);
@@ -193,7 +193,7 @@
                     '  <td>' + App.escapeHtml(l.phong_hoc || '—') + '</td>' +
                     '  <td><small>' + lichSummary + '</small></td>' +
                     '  <td>' + hanDK + '</td>' +
-                    '  <td class="text-center">' + App.trangThaiLHPBadge(l.trang_thai) + '</td>' +
+                    '  <td class="text-center">' + App.trangThaiLopBadge(l) + '</td>' +
                     '  <td class="text-center">' +
                     '    <div class="table-actions table-actions-stack">' +
                     '      <button class="btn btn-sm btn-outline btn-view-lhp" data-id="' + l.id + '" title="Xem chi tiết">Xem</button>' +
@@ -308,14 +308,6 @@
                 '      <label>Sĩ số tối đa <span class="required">*</span></label>' +
                 '      <input type="number" min="5" max="150" class="form-control" id="lhpSiSo" value="' + (lhp ? lhp.si_so_toi_da : '40') + '">' +
                 '    </div>' +
-                '    <div class="form-group">' +
-                '      <label>Trạng thái</label>' +
-                '      <select class="form-control" id="lhpTrangThai">' +
-                '        <option value="Đang mở" ' + (lhp && lhp.trang_thai === 'Đang mở' ? 'selected' : '') + '>Đang mở</option>' +
-                '        <option value="Đã đóng" ' + (lhp && lhp.trang_thai === 'Đã đóng' ? 'selected' : '') + '>Đã đóng</option>' +
-                '        <option value="Đã hủy" ' + (lhp && lhp.trang_thai === 'Đã hủy' ? 'selected' : '') + '>Đã hủy</option>' +
-                '      </select>' +
-                '    </div>' +
                 '  </div>' +
 
                 // RULE-HK-01, RULE-HK-03: ngày học lấy từ học kỳ đã khai báo
@@ -331,6 +323,8 @@
                 '      <input type="date" class="form-control" id="lhpNgayDongDK" value="' + dongDK + '">' +
                 '    </div>' +
                 '  </div>' +
+                // Ô chọn ngày hiển thị theo định dạng của trình duyệt (có máy là tháng/ngày/năm) -> ghi rõ lại theo dd/mm/yyyy
+                '  <div id="lhpDKPreview" class="mb-2" style="font-size:0.85rem;"></div>' +
 
                 '  <hr style="border:0; border-top:1px dashed var(--border-color); margin:18px 0;">' +
 
@@ -363,6 +357,24 @@
                     : '<span class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Học kỳ ' + hk + ' năm học ' + nh + ' chưa được khai báo ngày bắt đầu / kết thúc (Cơ cấu đào tạo > Học kỳ).</span>');
             };
             $('#lhpHocKy, #lhpNamHoc').on('change', showTerm);
+
+            // RULE-08: xem trước trạng thái đăng ký theo ngày đã chọn (chỉ 2 trạng thái, hết hạn tự đóng)
+            function showDK() {
+                var mo = $('#lhpNgayMoDK').val(), dong = $('#lhpNgayDongDK').val(), box = $('#lhpDKPreview');
+                if (!mo || !dong) { box.html('<span class="text-muted">Chưa nhập đủ ngày mở và ngày đóng → lớp ở trạng thái <strong>Đóng đăng ký</strong>.</span>'); return; }
+                var dmy = function (d) { var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; };
+                var homNay = new Date(), y = homNay.getFullYear(), m = ('0' + (homNay.getMonth() + 1)).slice(-2), d = ('0' + homNay.getDate()).slice(-2);
+                var today = y + '-' + m + '-' + d;
+                var range = 'Mở từ <strong>' + dmy(mo) + ' 00:00</strong> đến hết <strong>' + dmy(dong) + ' 23:59</strong> (ngày/tháng/năm). ';
+                var tt;
+                if (mo > dong) tt = '<span class="text-danger">Ngày mở đang sau ngày đóng - hãy kiểm tra lại.</span>';
+                else if (today < mo) tt = '<span class="badge badge-secondary">Đóng đăng ký</span> - chưa tới ngày mở, sẽ tự mở vào ' + dmy(mo) + '.';
+                else if (today > dong) tt = '<span class="badge badge-secondary">Đóng đăng ký</span> <span class="text-danger">- ngày đóng đã qua (hôm nay ' + dmy(today) + '). Muốn mở đăng ký thì chọn ngày đóng từ hôm nay trở đi.</span>';
+                else tt = '<span class="badge badge-success">Đang mở đăng ký</span> - sinh viên đăng ký được ngay sau khi lưu.';
+                box.html(range + tt);
+            }
+            $('#lhpNgayMoDK, #lhpNgayDongDK').on('change input', showDK);
+            showDK();
             showTerm();
             if (existingLich.length > 0) {
                 existingLich.forEach(function (lh) {
@@ -464,7 +476,6 @@
                 hoc_ky: $('#lhpHocKy').val(),
                 nam_hoc: $('#lhpNamHoc').val(),
                 si_so_toi_da: $('#lhpSiSo').val(),
-                trang_thai: $('#lhpTrangThai').val(),
                 thoi_gian_mo_dang_ky: $('#lhpNgayMoDK').val(),
                 thoi_gian_dong_dang_ky: $('#lhpNgayDongDK').val(),
                 lich_hoc: schedules

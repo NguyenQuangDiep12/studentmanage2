@@ -124,7 +124,7 @@
                         '<td class="text-center">' + App.escapeHtml(l.phong_hoc || '—') + '</td><td class="text-center">' + l.si_so_hien_tai + '/' + l.si_so_toi_da + '</td>' +
                         '<td class="text-center">' + l.so_buoi + ' buổi · ' + l.tong_tiet_da_xep + '/' + l.so_tiet + ' tiết</td>' +
                         '<td class="text-center' + (ngoai ? ' text-danger' : '') + '">' + (l.buoi_dau ? App.formatDate(l.buoi_dau) + ' → ' + App.formatDate(l.buoi_cuoi) : '—') + (ngoai ? ' ⚠' : '') + '</td>' +
-                        '<td class="text-center">' + App.trangThaiLHPBadge(l.trang_thai) + '</td>' +
+                        '<td class="text-center">' + App.trangThaiLopBadge(l) + '</td>' +
                         '<td class="text-center"><button class="btn btn-sm btn-outline-primary btn-hk-lhp" data-id="' + l.id + '">Xem lớp</button></td></tr>';
                 }).join('');
                 App.showModal(

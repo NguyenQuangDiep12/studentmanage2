@@ -178,12 +178,14 @@ var App = (function ($) {
     }
 
     function checkAuth() {
-        var stored = localStorage.getItem('sms_current_user') || sessionStorage.getItem('sms_current_user');
-        if (!stored) {
+        // Người dùng hiển thị phải khớp với Bearer token gửi lên API (cùng một nơi lưu)
+        var session = Api.getSession();
+        if (!session) {
+            Api.clearSession();
             window.location.href = 'index.html';
             return false;
         }
-        currentUser = JSON.parse(stored);
+        currentUser = session.user;
         return true;
     }
 
@@ -302,6 +304,22 @@ var App = (function ($) {
         return '<span class="badge badge-danger">Đã hủy</span>';
     }
 
+    // RULE-08: lớp học phần chỉ có 2 trạng thái - Đang mở đăng ký / Đóng đăng ký (hết hạn tự đóng).
+    // Ưu tiên giá trị server tính sẵn (dang_mo_dang_ky), nếu không có thì tính theo thời gian mở/đóng.
+    function dangMoDangKy(l) {
+        if (!l) return false;
+        if (typeof l.dang_mo_dang_ky === 'boolean') return l.dang_mo_dang_ky;
+        if (!l.thoi_gian_mo_dang_ky || !l.thoi_gian_dong_dang_ky) return false;
+        var now = new Date();
+        return now >= new Date(String(l.thoi_gian_mo_dang_ky).replace(' ', 'T')) &&
+            now <= new Date(String(l.thoi_gian_dong_dang_ky).replace(' ', 'T'));
+    }
+    function trangThaiLopBadge(l) {
+        return dangMoDangKy(l)
+            ? '<span class="badge badge-success"><i class="fa-solid fa-lock-open"></i> Đang mở đăng ký</span>'
+            : '<span class="badge badge-secondary"><i class="fa-solid fa-lock"></i> Đóng đăng ký</span>';
+    }
+
     function trangThaiDKBadge(tt) {
         if (tt === 'Đã đăng ký' || tt === 'da_dang_ky') return '<span class="badge badge-success">Đã đăng ký</span>';
         return '<span class="badge badge-danger">Đã hủy</span>';
@@ -376,6 +394,8 @@ var App = (function ($) {
         confirm: function (msg, cb) { ModalComponent.confirm(msg, cb); },
         trangThaiUserBadge: trangThaiUserBadge,
         trangThaiLHPBadge: trangThaiLHPBadge,
+        dangMoDangKy: dangMoDangKy,
+        trangThaiLopBadge: trangThaiLopBadge,
         trangThaiDKBadge: trangThaiDKBadge,
         trangThaiTinTucBadge: trangThaiTinTucBadge,
         ketQuaBadge: ketQuaBadge,

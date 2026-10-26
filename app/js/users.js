@@ -407,7 +407,7 @@
                     existingUser.trang_thai === 'Hoạt động' && existingUser.so_lop_dang_mo > 0) {
                     App.confirm(
                         '<strong>CẢNH BÁO AN TOÀN:</strong><br>' +
-                        'Giảng viên <strong>' + App.escapeHtml(existingUser.ho_ten) + '</strong> hiện đang phụ trách <strong>' + existingUser.so_lop_dang_mo + ' lớp học phần đang mở</strong>.<br>' +
+                        'Giảng viên <strong>' + App.escapeHtml(existingUser.ho_ten) + '</strong> hiện đang phụ trách <strong>' + existingUser.so_lop_dang_mo + ' lớp học phần đang phụ trách</strong>.<br>' +
                         'Khóa tài khoản sẽ ảnh hưởng đến việc vào điểm và điểm danh của các lớp này. Bạn vẫn muốn tiếp tục khóa?',
                         function () { self.sendSave(id, payload); }
                     );
@@ -443,7 +443,7 @@
             var confirmMsg;
             if (!isCurrentlyLocked && u.vai_tro === 'giang_vien' && u.so_lop_dang_mo > 0) {
                 confirmMsg = '<strong>CẢNH BÁO AN TOÀN:</strong><br>' +
-                    'Giảng viên <strong>' + App.escapeHtml(u.ho_ten) + '</strong> đang phụ trách <strong>' + u.so_lop_dang_mo + ' lớp học phần đang mở</strong>.<br>' +
+                    'Giảng viên <strong>' + App.escapeHtml(u.ho_ten) + '</strong> đang phụ trách <strong>' + u.so_lop_dang_mo + ' lớp học phần đang phụ trách</strong>.<br>' +
                     'Bạn có chắc chắn muốn khóa tài khoản này?';
             } else {
                 confirmMsg = (isCurrentlyLocked ? 'Bạn có chắc chắn muốn mở khóa cho tài khoản <strong>' : 'Bạn có chắc chắn muốn khóa tài khoản <strong>') +

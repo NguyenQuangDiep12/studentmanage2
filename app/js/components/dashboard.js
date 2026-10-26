@@ -103,7 +103,7 @@ var DashboardComponent = (function ($) {
                 '  <td><strong>' + App.escapeHtml(l.ma_lop_hoc_phan) + '</strong></td>' +
                 '  <td>' + App.escapeHtml(l.ten_mon_hoc || '—') + '</td>' +
                 '  <td>' + (l.si_so_hien_tai || 0) + ' / ' + l.si_so_toi_da + '</td>' +
-                '  <td class="text-center">' + App.trangThaiLHPBadge(l.trang_thai) + '</td>' +
+                '  <td class="text-center">' + App.trangThaiLopBadge(l) + '</td>' +
                 '</tr>';
         }).join('');
     }

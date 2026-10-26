@@ -95,23 +95,33 @@ class AuthService
         return self::isActive($trangThai) ? 'Hoạt động' : 'Đã khóa';
     }
 
-    /** Lấy chuỗi token từ header Authorization: Bearer ... */
+    /**
+     * RULE-26.3: Lấy access token từ header "Authorization: Bearer <token>" (RFC 6750).
+     * - Lấy giá trị header đầu tiên KHÁC RỖNG (Apache có thể đặt HTTP_AUTHORIZATION = "" rồi để giá trị thật
+     *   ở REDIRECT_HTTP_AUTHORIZATION sau khi rewrite qua .htaccess; toán tử ?? không bỏ qua chuỗi rỗng).
+     * - Header phải bắt đầu đúng bằng "Bearer " và chỉ chứa một token dạng JWT (3 phần base64url) - không chấp nhận
+     *   "Basic ...", "xBearer ...", hay token kèm chuỗi thừa phía sau.
+     */
     public static function bearerToken(): ?string
     {
-        $header = $_SERVER['HTTP_AUTHORIZATION']
-            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
-            ?? '';
+        $header = '';
+        foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $key) {
+            if (!empty($_SERVER[$key])) {
+                $header = (string) $_SERVER[$key];
+                break;
+            }
+        }
 
         if ($header === '' && function_exists('getallheaders')) {
             foreach (getallheaders() as $name => $value) {
-                if (strtolower($name) === 'authorization') {
-                    $header = $value;
+                if (strtolower($name) === 'authorization' && $value !== '') {
+                    $header = (string) $value;
                     break;
                 }
             }
         }
 
-        if (preg_match('/Bearer\s+(\S+)/i', $header, $m)) {
+        if (preg_match('/^\s*Bearer[ \t]+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)\s*$/i', $header, $m)) {
             return $m[1];
         }
 
@@ -145,6 +155,10 @@ class AuthService
         $payload = self::tokenPayload($db);
 
         if ($payload === null) {
+            // RFC 6750: phản hồi 401 kèm WWW-Authenticate cho biết cần Bearer token / token không hợp lệ
+            header(self::bearerToken() === null
+                ? 'WWW-Authenticate: Bearer realm="api"'
+                : 'WWW-Authenticate: Bearer realm="api", error="invalid_token"');
             Response::json([
                 'success' => false,
                 'message' => 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.'
@@ -156,6 +170,7 @@ class AuthService
         $user = $stmt->fetch();
 
         if (!$user) {
+            header('WWW-Authenticate: Bearer realm="api", error="invalid_token"');
             Response::json([
                 'success' => false,
                 'message' => 'Tài khoản không tồn tại.'

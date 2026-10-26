@@ -269,7 +269,7 @@ class Quanlytaikhoan
         unset($s);
 
         $classes = $this->db->query("
-            SELECT lhp.id, lhp.ma_lop_hoc_phan, lhp.si_so_toi_da, lhp.trang_thai, mh.ten_mon_hoc,
+            SELECT lhp.id, lhp.ma_lop_hoc_phan, lhp.si_so_toi_da, lhp.trang_thai, lhp.thoi_gian_mo_dang_ky, lhp.thoi_gian_dong_dang_ky, mh.ten_mon_hoc,
                    (SELECT COUNT(*) FROM dang_ky_hoc_phan dk
                      WHERE dk.lop_hoc_phan_id = lhp.id AND " . Academic::activeDkSql('dk.trang_thai') . ") AS si_so_hien_tai
             FROM lop_hoc_phan lhp
@@ -277,6 +277,7 @@ class Quanlytaikhoan
             ORDER BY si_so_hien_tai DESC, lhp.id DESC
             LIMIT 5
         ")->fetchAll();
+        $classes = array_map([Academic::class, 'ganTrangThaiDangKy'], $classes);
 
         Response::json([
             'success' => true,
@@ -306,7 +307,7 @@ class Quanlytaikhoan
                    l.ma_lop, l.ten_lop, l.khoa_hoc, ct.id AS chuong_trinh_id, ct.ten_chuong_trinh,
                    k.ma_khoa, k.ten_khoa,
                    (SELECT COUNT(*) FROM lop_hoc_phan lhp
-                     WHERE lhp.giang_vien_user_id = u.id AND lhp.trang_thai = \'Đang mở\') AS so_lop_dang_mo
+                     WHERE lhp.giang_vien_user_id = u.id AND lhp.trang_thai != \'Đã hủy\') AS so_lop_dang_mo
             FROM users u
             LEFT JOIN lop_sinh_vien l ON l.id = u.lop_sinh_vien_id
             LEFT JOIN chuong_trinh_dao_tao ct ON ct.id = l.chuong_trinh_id

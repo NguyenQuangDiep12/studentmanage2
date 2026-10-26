@@ -101,7 +101,7 @@ class Quanlydangky
                 LEFT JOIN users u ON lhp.giang_vien_user_id = u.id
                 WHERE lhp.hoc_ky = :hoc_ky
                   AND lhp.nam_hoc = :nam_hoc
-                  AND lhp.trang_thai = 'Đang mở'
+                  AND lhp.trang_thai != 'Đã hủy'
                   AND " . $this->monHocCuaKhoaSql('lhp.mon_hoc_id', ':khoa') . "
             ";
 
@@ -209,7 +209,7 @@ class Quanlydangky
             $sql = "
                 SELECT dk.id AS dang_ky_id, dk.ngay_dang_ky, dk.trang_thai AS trang_thai_dk,
                        lhp.id AS lop_hoc_phan_id, lhp.ma_lop_hoc_phan, lhp.hoc_ky, lhp.nam_hoc,
-                       lhp.phong_hoc, lhp.si_so_toi_da,
+                       lhp.phong_hoc, lhp.si_so_toi_da, lhp.thoi_gian_mo_dang_ky, lhp.thoi_gian_dong_dang_ky,
                        mh.id AS mon_hoc_id, mh.ma_mon_hoc, mh.ten_mon_hoc, mh.so_tin_chi,
                        u.ho_ten AS ten_giang_vien
                 FROM dang_ky_hoc_phan dk
@@ -245,6 +245,12 @@ class Quanlydangky
                 ");
                 $lhStmt->execute([':lhp_id' => $item['lop_hoc_phan_id']]);
                 $item['lich_hoc'] = $lhStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // RULE-08: cho giao diện biết có được hủy không và lý do (cùng điều kiện với API hủy)
+                $lyDo = in_array($item['trang_thai_dk'], ['Đã đăng ký', 'da_dang_ky'], true)
+                    ? $this->lyDoKhongTheHuy((int) $item['dang_ky_id'], $item) : 'Đã hủy';
+                $item['co_the_huy'] = $lyDo === null;
+                $item['ly_do_khong_huy'] = $lyDo;
             }
             unset($item);
 
@@ -311,9 +317,9 @@ class Quanlydangky
                 Response::json(['success' => false, 'message' => 'Lớp học phần không tồn tại.'], 404);
             }
 
-            // 1. Kiểm tra trạng thái lớp và môn học
-            if ($targetLHP['trang_thai'] !== 'Đang mở') {
-                Response::json(['success' => false, 'message' => 'Lớp học phần này hiện không mở đăng ký.'], 400);
+            // 1. Kiểm tra môn học. Trạng thái đăng ký của lớp chỉ tính theo thời gian mở/đóng (RULE-08, bước 2)
+            if ($targetLHP['trang_thai'] === 'Đã hủy') {
+                Response::json(['success' => false, 'message' => 'Lớp học phần đang đóng đăng ký.'], 400);
             }
             if ($targetLHP['trang_thai_mon_hoc'] === 'Tạm ngưng') {
                 Response::json(['success' => false, 'message' => 'Môn học này đang trong trạng thái Tạm ngưng đào tạo!'], 400);
@@ -326,14 +332,14 @@ class Quanlydangky
             if (empty($moDK) || empty($dongDK)) {
                 Response::json([
                     'success' => false,
-                    'message' => 'Lớp học phần chưa được nhà trường thiết lập thời gian đăng ký.'
+                    'message' => 'Lớp học phần đang đóng đăng ký.'
                 ], 400);
             }
 
             if ($now < $moDK || $now > $dongDK) {
                 Response::json([
                     'success' => false,
-                    'message' => 'Đăng ký không hợp lệ do ngoài thời gian cho phép. Thời gian đăng ký: ' . $moDK . ' đến ' . $dongDK
+                    'message' => 'Lớp học phần đang đóng đăng ký (thời gian đăng ký: ' . $moDK . ' đến ' . $dongDK . ').'
                 ], 400);
             }
 
@@ -632,36 +638,10 @@ class Quanlydangky
             $lhpStmt->execute([':id' => $dk['lop_hoc_phan_id']]);
             $lhp = $lhpStmt->fetch(PDO::FETCH_ASSOC);
 
-            // 1. Kiểm tra thời hạn hủy đăng ký (RULE-08)
-            $now = date('Y-m-d H:i:s');
-            $dongDK = ($lhp['thoi_gian_dong_dang_ky'] ?? null) ?: ($dk['thoi_gian_dong_dang_ky'] ?? null);
-            if (empty($dongDK)) {
-                Response::json([
-                    'success' => false,
-                    'message' => 'Lớp học phần chưa được thiết lập thời gian đăng ký/hủy, vui lòng liên hệ phòng đào tạo.'
-                ], 400);
-            }
-            if ($now > $dongDK) {
-                Response::json([
-                    'success' => false,
-                    'message' => 'Không thể hủy đăng ký vì đã quá hạn cho phép đăng ký/hủy học phần!'
-                ], 400);
-            }
-
-            // 2. Kiểm tra lớp đã diễn ra điểm danh hoặc có điểm chưa
-            $ddCheck = $this->db->prepare('SELECT COUNT(*) FROM diem_danh WHERE dang_ky_id = :dk_id');
-            $ddCheck->execute([':dk_id' => $dkId]);
-            $hasAttendance = (int)$ddCheck->fetchColumn() > 0;
-
-            $dCheck = $this->db->prepare('SELECT COUNT(*) FROM diem WHERE dang_ky_id = :dk_id');
-            $dCheck->execute([':dk_id' => $dkId]);
-            $hasGrades = (int)$dCheck->fetchColumn() > 0;
-
-            if ($hasAttendance || $hasGrades) {
-                Response::json([
-                    'success' => false,
-                    'message' => 'Không thể hủy đăng ký! Môn học này đã có dữ liệu điểm danh hoặc đã vào điểm.'
-                ], 400);
+            // RULE-08: lớp đang mở đăng ký thì hủy được, lớp đóng đăng ký thì không
+            $lyDo = $this->lyDoKhongTheHuy($dkId, $lhp ?: []);
+            if ($lyDo !== null) {
+                Response::json(['success' => false, 'message' => 'Không thể hủy đăng ký: ' . $lyDo], 400);
             }
 
             // Cập nhật trạng thái 'Đã hủy'
@@ -801,5 +781,19 @@ class Quanlydangky
                 'buoi_hoc' => $buoiHoc,
             ]
         ]);
+    }
+
+    /**
+     * RULE-08 (hủy đăng ký): chỉ phụ thuộc trạng thái đăng ký của lớp.
+     *  - Lớp "Đang mở đăng ký"  -> sinh viên hủy được.
+     *  - Lớp "Đóng đăng ký"     -> không hủy được (chưa nhập thời gian, chưa tới ngày mở hoặc đã qua ngày đóng).
+     * Trả null nếu được hủy, ngược lại trả lý do.
+     */
+    private function lyDoKhongTheHuy(int $dkId, array $lhp): ?string
+    {
+        if (!Academic::dangMoDangKy($lhp['thoi_gian_mo_dang_ky'] ?? null, $lhp['thoi_gian_dong_dang_ky'] ?? null)) {
+            return 'lớp học phần đang đóng đăng ký.';
+        }
+        return null;
     }
 }

@@ -23,6 +23,8 @@ Sinh viên cần hoàn thành toàn bộ môn học trong chương trình đào 
 
 ## RULE-08: Kiểm soát thời gian đăng ký học phần
 Sinh viên chỉ được đăng ký học phần trong khoảng thời gian đăng ký do nhà trường quy định. Nếu đăng ký ngoài khoảng thời gian này, hệ thống phải từ chối yêu cầu và thông báo đăng ký không hợp lệ do ngoài thời gian cho phép.
+- **RULE-08.1:** Lớp học phần chỉ có 2 trạng thái đăng ký: **Đang mở đăng ký** (đã nhập ngày mở và ngày đóng, thời điểm hiện tại nằm trong khoảng đó) và **Đóng đăng ký** (mọi trường hợp còn lại). Hết ngày đóng thì lớp tự chuyển sang Đóng đăng ký; không có trạng thái nhập tay.
+- **RULE-08.2:** Lớp Đang mở đăng ký thì sinh viên được đăng ký và được hủy đăng ký; lớp Đóng đăng ký thì không đăng ký và không hủy được.
 
 ## RULE-09: Lọc thời khóa biểu theo học kỳ và năm học
 Thời khóa biểu phải hiển thị các buổi học thuộc học kỳ và năm học mà người dùng đã chọn.

@@ -838,7 +838,7 @@ class Quanlycocau
         $hk = array_values(array_filter($this->hocKyRows(), fn($h) => (int) $h['id'] === $id))[0];
 
         $s = $this->db->prepare("
-            SELECT l.id, l.ma_lop_hoc_phan, l.phong_hoc, l.trang_thai, l.si_so_toi_da,
+            SELECT l.id, l.ma_lop_hoc_phan, l.phong_hoc, l.trang_thai, l.si_so_toi_da, l.thoi_gian_mo_dang_ky, l.thoi_gian_dong_dang_ky,
                    mh.ma_mon_hoc, mh.ten_mon_hoc, mh.so_tin_chi, mh.so_tiet, gv.ho_ten AS ten_giang_vien,
                    (SELECT COUNT(*) FROM dang_ky_hoc_phan dk WHERE dk.lop_hoc_phan_id = l.id AND " . Academic::activeDkSql('dk.trang_thai') . ") AS si_so_hien_tai,
                    (SELECT COUNT(*) FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id WHERE lh.lop_hoc_phan_id = l.id) AS so_buoi,
@@ -852,7 +852,7 @@ class Quanlycocau
             ORDER BY l.ma_lop_hoc_phan
         ");
         $s->execute([':hk' => $hk['hoc_ky'], ':nh' => $hk['nam_hoc']]);
-        $hk['lop_hoc_phan'] = $s->fetchAll();
+        $hk['lop_hoc_phan'] = array_map([Academic::class, 'ganTrangThaiDangKy'], $s->fetchAll());
 
         Response::json(['success' => true, 'data' => $hk]);
     }

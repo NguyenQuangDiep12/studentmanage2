@@ -6,6 +6,9 @@ class Jwt
     private const SECRET =
         '8f4c2d91a7e6b035c9d1428f6a3e70b4d1c8e529f6a0473b2d9c815e6a4f730c';
 
+    // Cho phép lệch đồng hồ tối đa 60 giây khi kiểm tra iat (token vừa tạo không bị từ chối oan)
+    private const LEEWAY = 60;
+
     private static function base64UrlEncode(string $data): string
     {
         return rtrim(
@@ -143,7 +146,7 @@ class Jwt
 
         if (
             $payload['exp'] <= $now ||
-            $payload['iat'] > $now ||
+            $payload['iat'] > $now + self::LEEWAY ||
             $payload['exp'] <= $payload['iat']
         ) {
             return null;

@@ -6,6 +6,40 @@
 class Academic
 {
     public const DK_ACTIVE = ['Đã đăng ký', 'da_dang_ky'];
+
+    /**
+     * RULE-08 (RULE-DK-TT): lớp học phần chỉ có 2 trạng thái đăng ký.
+     *  - Đang mở đăng ký: đã nhập thời gian mở + đóng và thời điểm hiện tại nằm trong khoảng đó.
+     *  - Đóng đăng ký: mọi trường hợp còn lại (chưa nhập thời gian, chưa tới ngày mở, đã qua ngày đóng).
+     * Hết hạn thì tự động đóng; không còn trạng thái "Đã đóng/Đã hủy/Hết hạn" nhập tay.
+     */
+    public const TT_DK_MO = 'Đang mở đăng ký';
+    public const TT_DK_DONG = 'Đóng đăng ký';
+
+    public static function dangMoDangKy(?string $mo, ?string $dong, ?string $now = null): bool
+    {
+        if (empty($mo) || empty($dong)) {
+            return false;
+        }
+        $now = $now ?? date('Y-m-d H:i:s');
+        return $now >= $mo && $now <= $dong;
+    }
+
+    /** Gắn trạng thái đăng ký tính sẵn vào một dòng lớp học phần (dùng chung cho mọi API). */
+    public static function ganTrangThaiDangKy(array $l): array
+    {
+        $mo = self::dangMoDangKy($l['thoi_gian_mo_dang_ky'] ?? null, $l['thoi_gian_dong_dang_ky'] ?? null);
+        $l['dang_mo_dang_ky'] = $mo;
+        $l['trang_thai_dang_ky'] = $mo ? self::TT_DK_MO : self::TT_DK_DONG;
+        return $l;
+    }
+
+    /** Điều kiện SQL "đang mở đăng ký" theo tham số :now_dk */
+    public static function dangMoDkSql(string $a = 'lhp'): string
+    {
+        return "($a.thoi_gian_mo_dang_ky IS NOT NULL AND $a.thoi_gian_mo_dang_ky != '' AND $a.thoi_gian_dong_dang_ky IS NOT NULL AND $a.thoi_gian_dong_dang_ky != ''"
+            . " AND :now_dk >= $a.thoi_gian_mo_dang_ky AND :now_dk2 <= $a.thoi_gian_dong_dang_ky)";
+    }
     public const DD_CO_MAT = 'co_mat';
     public const DD_VANG_MAT = 'vang_mat';
 
