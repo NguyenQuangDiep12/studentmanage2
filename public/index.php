@@ -3,6 +3,12 @@
 // Giờ Việt Nam cho các mốc thời gian đăng ký, điểm danh
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 
+// Cảnh báo/lỗi PHP không được in lẫn vào JSON (làm frontend không đọc được message): chỉ ghi log
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+// Gom mọi output in dở để Response::json() xóa đi trước khi trả JSON
+ob_start();
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');

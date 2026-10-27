@@ -265,15 +265,15 @@ class Quanlylophocphan
         }
 
         $data = $this->validate($in, null);
-        $schedules = $this->validateSchedules(Request::input('lich_hoc'), $data);
-        // RULE-HL-01, RULE-THIEU-03: chỉ lưu khi xếp đủ tổng số tiết (đã tránh xung đột, RULE-XL-06)
-        $this->requireDuTiet($this->planFor($data, $schedules, null));
-
+        // Kiểm tra trùng mã trước khi xếp lịch, để báo đúng lỗi trùng mã thay vì lỗi xếp lịch
         $dup = $this->db->prepare('SELECT 1 FROM lop_hoc_phan WHERE UPPER(ma_lop_hoc_phan) = UPPER(:ma)');
         $dup->execute([':ma' => $data['ma_lop_hoc_phan']]);
         if ($dup->fetchColumn()) {
             Response::json(['success' => false, 'message' => 'Mã lớp học phần "' . $data['ma_lop_hoc_phan'] . '" đã tồn tại!'], 409);
         }
+        $schedules = $this->validateSchedules(Request::input('lich_hoc'), $data);
+        // RULE-HL-01, RULE-THIEU-03: chỉ lưu khi xếp đủ tổng số tiết (đã tránh xung đột, RULE-XL-06)
+        $this->requireDuTiet($this->planFor($data, $schedules, null));
 
         $this->db->beginTransaction();
         try {
@@ -541,8 +541,6 @@ class Quanlylophocphan
         }
         if (!$mh) {
             $errors[] = 'Môn học không tồn tại.';
-        } elseif ($mh['trang_thai'] !== 'Hoạt động' && (!$existing || (int) $existing['mon_hoc_id'] !== $monHocId)) {
-            $errors[] = 'Môn học đang tạm ngưng, không thể mở lớp.';
         }
 
         if ($gvId !== null) {

@@ -297,7 +297,7 @@
                 });
             })
             .fail(function (xhr) {
-                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Lỗi tải danh sách lớp học phần';
+                var msg = Api.errorMessage(xhr, 'Lỗi tải danh sách lớp học phần');
                 App.showToast(msg, 'error');
             });
         },
@@ -366,7 +366,7 @@
                 $('#statRegisteredTC').html('<i class="fa-solid fa-book"></i> Đã đăng ký: ' + totalTC + ' Tín chỉ');
             })
             .fail(function (xhr) {
-                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Lỗi tải danh sách môn đã đăng ký';
+                var msg = Api.errorMessage(xhr, 'Lỗi tải danh sách môn đã đăng ký');
                 App.showToast(msg, 'error');
             });
         },
@@ -396,7 +396,7 @@
                 }
             })
             .fail(function (xhr) {
-                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Lỗi khi gửi yêu cầu đăng ký';
+                var msg = Api.errorMessage(xhr, 'Lỗi khi gửi yêu cầu đăng ký');
                 App.showToast(msg, 'error');
             });
         },
@@ -427,7 +427,7 @@
                     }
                 })
                 .fail(function (xhr) {
-                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Lỗi khi hủy đăng ký';
+                    var msg = Api.errorMessage(xhr, 'Lỗi khi hủy đăng ký');
                     App.showToast(msg, 'error');
                 });
             });

@@ -81,6 +81,13 @@ var Api = (function ($) {
 
     function errorMessage(xhr, fallback) {
         var body = xhr && xhr.responseJSON;
+        // Phản hồi lẫn cảnh báo PHP (HTML) trước JSON -> jQuery không parse được; tách phần JSON ra để lấy message
+        if (!body && xhr && typeof xhr.responseText === 'string') {
+            var txt = xhr.responseText, i = txt.indexOf('{'), j = txt.lastIndexOf('}');
+            if (i !== -1 && j > i) {
+                try { body = JSON.parse(txt.slice(i, j + 1)); } catch (e) { body = null; }
+            }
+        }
         if (body && body.message) return body.message;
         if (xhr && xhr.status === 0) return 'Không thể kết nối máy chủ PHP. Vui lòng kiểm tra backend.';
         return fallback || 'Đã xảy ra lỗi khi gọi API.';
