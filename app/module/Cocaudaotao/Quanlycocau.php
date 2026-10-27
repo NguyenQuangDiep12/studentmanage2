@@ -167,7 +167,7 @@ class Quanlycocau
 
         $rows = $this->db->prepare('
             SELECT ct.id, ct.hoc_ky, ct.nam_hoc, mh.id AS mon_hoc_id, mh.ma_mon_hoc, mh.ten_mon_hoc,
-                   mh.so_tin_chi, mh.so_tiet, mh.so_tiet_ly_thuyet, mh.so_tiet_thuc_hanh, mh.so_tin_chi_ly_thuyet, mh.so_tin_chi_thuc_hanh, mh.trang_thai
+                   mh.so_tin_chi, mh.so_tiet, mh.so_tiet_ly_thuyet, mh.so_tiet_thuc_hanh, mh.so_tin_chi_ly_thuyet, mh.so_tin_chi_thuc_hanh
             FROM chi_tiet_chuong_trinh_dao_tao ct
             INNER JOIN mon_hoc mh ON mh.id = ct.mon_hoc_id
             WHERE ct.chuong_trinh_id = :id
@@ -201,7 +201,7 @@ class Quanlycocau
         $nhomStmt->execute([':id' => $ctdtId]);
         $monNhom = $this->db->prepare('
             SELECT ctn.id, mh.id AS mon_hoc_id, mh.ma_mon_hoc, mh.ten_mon_hoc, mh.so_tin_chi, mh.so_tiet,
-                   mh.so_tiet_ly_thuyet, mh.so_tiet_thuc_hanh, mh.so_tin_chi_ly_thuyet, mh.so_tin_chi_thuc_hanh, mh.trang_thai
+                   mh.so_tiet_ly_thuyet, mh.so_tiet_thuc_hanh, mh.so_tin_chi_ly_thuyet, mh.so_tin_chi_thuc_hanh
             FROM chi_tiet_nhom_tu_chon ctn
             INNER JOIN mon_hoc mh ON mh.id = ctn.mon_hoc_id
             WHERE ctn.nhom_tu_chon_id = :id

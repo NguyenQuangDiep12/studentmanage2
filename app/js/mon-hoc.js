@@ -27,11 +27,6 @@
                 '          <i class="fa-solid fa-magnifying-glass search-icon"></i>' +
                 '          <input type="text" id="searchMonHoc" placeholder="Tìm theo mã hoặc tên môn">' +
                 '        </div>' +
-                '        <select id="filterTrangThaiMH" class="filter-select">' +
-                '          <option value="">-- Tất cả trạng thái --</option>' +
-                '          <option value="Hoạt động">Hoạt động</option>' +
-                '          <option value="Tạm ngưng">Tạm ngưng</option>' +
-                '        </select>' +
                 '      </div>' +
                 '      <div class="toolbar-right">' +
                 '        <span class="text-muted" id="totalMonHocCount">Tổng số: 0 môn học</span>' +
@@ -49,7 +44,6 @@
                 '            <th class="text-center">Lý thuyết</th>' +
                 '            <th class="text-center">Thực hành</th>' +
                 '            <th>Mô tả môn học</th>' +
-                '            <th class="text-center">Trạng thái</th>' +
                 (isAdmin ? '            <th class="text-center">Thao tác</th>' : '') +
                 '          </tr>' +
                 '        </thead>' +
@@ -68,7 +62,7 @@
         bindEvents: function () {
             var self = this;
 
-            $('#searchMonHoc, #filterTrangThaiMH').on('input change', function () {
+            $('#searchMonHoc').on('input change', function () {
                 self.loadData();
             });
 
@@ -97,10 +91,9 @@
 
             var self = this;
             var keyword = ($('#searchMonHoc').val() || '').trim();
-            var statusFilter = $('#filterTrangThaiMH').val();
 
             // Tìm kiếm & lọc thực hiện trên backend
-            Api.get('/api/monhoc', { search: keyword, trang_thai: statusFilter })
+            Api.get('/api/monhoc', { search: keyword })
                 .done(function (res) {
                     self.cache = res.data || [];
                     self.quyDoi = res.quy_doi || self.quyDoi;
@@ -116,16 +109,12 @@
             tbody.empty();
 
             if (list.length === 0) {
-                var colSpan = isAdmin ? 10 : 9;
+                var colSpan = isAdmin ? 9 : 8;
                 tbody.html('<tr><td colspan="' + colSpan + '" class="text-center text-muted py-4">Không tìm thấy môn học nào</td></tr>');
                 return;
             }
 
             list.forEach(function (mh, index) {
-                var statusBadge = mh.trang_thai === 'Hoạt động'
-                    ? '<span class="badge badge-success"><i class="fa-solid fa-check"></i> Hoạt động</span>'
-                    : '<span class="badge badge-danger"><i class="fa-solid fa-pause"></i> Tạm ngưng</span>';
-
                 var row =
                     '<tr>' +
                     '  <td class="text-center">' + (index + 1) + '</td>' +
@@ -135,7 +124,6 @@
                     '  <td class="text-center">' + (mh.so_tiet || '—') + '</td>' +
                     MonHocModule.tietCells(mh) +
                     '  <td><small>' + App.escapeHtml(mh.mo_ta || '—') + '</small></td>' +
-                    '  <td class="text-center">' + statusBadge + '</td>' +
                     (isAdmin ?
                     '  <td class="text-center">' +
                     '    <div class="table-actions">' +
@@ -182,13 +170,6 @@
                 '  </div>' +
                 ((mh && mh.so_tin_chi_ly_thuyet == null) ? '  <div class="alert alert-warning" style="font-size:0.82rem;">Môn học cũ chưa phân loại tín chỉ lý thuyết / thực hành (hiện có ' + mh.so_tin_chi + ' TC, ' + mh.so_tiet + ' tiết). Nhập số tín chỉ từng loại để áp dụng quy đổi; để trống cả hai thì giữ nguyên dữ liệu cũ.</div>' : '') +
                 '  <div class="mb-3" id="mhTietHint"></div>' +
-                '  <div class="form-group">' +
-                '    <label>Trạng thái</label>' +
-                '    <select class="form-control" id="mhTrangThai">' +
-                '      <option value="Hoạt động" ' + (mh && mh.trang_thai === 'Hoạt động' ? 'selected' : '') + '>Hoạt động</option>' +
-                '      <option value="Tạm ngưng" ' + (mh && mh.trang_thai === 'Tạm ngưng' ? 'selected' : '') + '>Tạm ngưng</option>' +
-                '    </select>' +
-                '  </div>' +
                 '  <div class="form-group">' +
                 '    <label>Mô tả môn học</label>' +
                 '    <textarea class="form-control" id="mhMoTa" rows="3" placeholder="Nhập mô tả chi tiết...">' + (mh ? App.escapeHtml(mh.mo_ta || '') : '') + '</textarea>' +
@@ -312,7 +293,6 @@
                 // Chỉ gửi số tín chỉ từng loại; số tiết do backend tính (RULE-CREDIT-09)
                 so_tin_chi_ly_thuyet: $('#mhTcLT').val(),
                 so_tin_chi_thuc_hanh: $('#mhTcTH').val(),
-                trang_thai: $('#mhTrangThai').val(),
                 mo_ta: $('#mhMoTa').val()
             };
 

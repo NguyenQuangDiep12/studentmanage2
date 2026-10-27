@@ -94,7 +94,7 @@ class Quanlydangky
 
             $sql = "
                 SELECT lhp.*, 
-                       mh.ten_mon_hoc, mh.so_tin_chi, mh.so_tiet, mh.trang_thai AS trang_thai_mon_hoc,
+                       mh.ten_mon_hoc, mh.so_tin_chi, mh.so_tiet,
                        u.ho_ten AS ten_giang_vien
                 FROM lop_hoc_phan lhp
                 INNER JOIN mon_hoc mh ON lhp.mon_hoc_id = mh.id
@@ -304,7 +304,7 @@ class Quanlydangky
 
             // Lấy thông tin lớp học phần và môn học
             $lhpStmt = $this->db->prepare("
-                SELECT lhp.*, mh.ten_mon_hoc, mh.so_tin_chi, mh.trang_thai AS trang_thai_mon_hoc
+                SELECT lhp.*, mh.ten_mon_hoc, mh.so_tin_chi
                 FROM lop_hoc_phan lhp
                 INNER JOIN mon_hoc mh ON lhp.mon_hoc_id = mh.id
                 WHERE lhp.id = :id
@@ -320,9 +320,6 @@ class Quanlydangky
             // 1. Kiểm tra môn học. Trạng thái đăng ký của lớp chỉ tính theo thời gian mở/đóng (RULE-08, bước 2)
             if ($targetLHP['trang_thai'] === 'Đã hủy') {
                 Response::json(['success' => false, 'message' => 'Lớp học phần đang đóng đăng ký.'], 400);
-            }
-            if ($targetLHP['trang_thai_mon_hoc'] === 'Tạm ngưng') {
-                Response::json(['success' => false, 'message' => 'Môn học này đang trong trạng thái Tạm ngưng đào tạo!'], 400);
             }
 
             // 2. RULE-08: Kiểm soát thời gian đăng ký học phần

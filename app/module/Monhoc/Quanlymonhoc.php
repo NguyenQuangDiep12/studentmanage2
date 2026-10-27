@@ -13,14 +13,12 @@ class Quanlymonhoc
 {
     private PDO $db;
 
-    private const STATUSES = ['Hoạt động', 'Tạm ngưng'];
-
     public function __construct()
     {
         $this->db = Database::connect();
     }
 
-    /** GET /api/monhoc?search=&trang_thai= */
+    /** GET /api/monhoc?search= */
     public function index(): void
     {
         AuthService::requireUser($this->db);
@@ -32,12 +30,6 @@ class Quanlymonhoc
             WHERE 1 = 1
         ';
         $params = [];
-
-        $trangThai = Request::str(Request::query('trang_thai', ''));
-        if ($trangThai !== '') {
-            $sql .= ' AND mh.trang_thai = :tt';
-            $params[':tt'] = $trangThai;
-        }
 
         $search = Request::str(Request::query('search', ''));
         if ($search !== '') {
@@ -100,9 +92,9 @@ class Quanlymonhoc
 
         $this->db->prepare('
             INSERT INTO mon_hoc (ma_mon_hoc, ten_mon_hoc, so_tin_chi, so_tin_chi_ly_thuyet, so_tin_chi_thuc_hanh,
-                                 so_tiet, so_tiet_ly_thuyet, so_tiet_thuc_hanh, mo_ta, trang_thai)
+                                 so_tiet, so_tiet_ly_thuyet, so_tiet_thuc_hanh, mo_ta)
             VALUES (:ma_mon_hoc, :ten_mon_hoc, :so_tin_chi, :so_tin_chi_ly_thuyet, :so_tin_chi_thuc_hanh,
-                    :so_tiet, :so_tiet_ly_thuyet, :so_tiet_thuc_hanh, :mo_ta, :trang_thai)
+                    :so_tiet, :so_tiet_ly_thuyet, :so_tiet_thuc_hanh, :mo_ta)
         ')->execute($this->bind($data));
 
         Response::json([
@@ -126,7 +118,7 @@ class Quanlymonhoc
 
         // Trường không gửi lên thì giữ giá trị hiện có (tránh tự xóa phân loại tín chỉ đã khai báo)
         $in = Request::body();
-        foreach (['ten_mon_hoc', 'so_tin_chi_ly_thuyet', 'so_tin_chi_thuc_hanh', 'mo_ta', 'trang_thai'] as $k) {
+        foreach (['ten_mon_hoc', 'so_tin_chi_ly_thuyet', 'so_tin_chi_thuc_hanh', 'mo_ta'] as $k) {
             if (!array_key_exists($k, $in)) {
                 $in[$k] = $existing[$k];
             }
@@ -145,7 +137,7 @@ class Quanlymonhoc
                 SET ten_mon_hoc = :ten_mon_hoc, so_tin_chi = :so_tin_chi,
                     so_tin_chi_ly_thuyet = :so_tin_chi_ly_thuyet, so_tin_chi_thuc_hanh = :so_tin_chi_thuc_hanh,
                     so_tiet = :so_tiet, so_tiet_ly_thuyet = :so_tiet_ly_thuyet, so_tiet_thuc_hanh = :so_tiet_thuc_hanh,
-                    mo_ta = :mo_ta, trang_thai = :trang_thai
+                    mo_ta = :mo_ta
                 WHERE id = :id
             ')->execute($params);
 
@@ -202,7 +194,7 @@ class Quanlymonhoc
 
         $checks = [
             ['SELECT COUNT(*) FROM lop_hoc_phan WHERE mon_hoc_id = :id',
-                'Không thể xóa! Đang có %d lớp học phần sử dụng môn học này - Hãy chuyển trạng thái sang Tạm ngưng'],
+                'Không thể xóa! Đang có %d lớp học phần sử dụng môn học này'],
             ['SELECT COUNT(*) FROM chi_tiet_chuong_trinh_dao_tao WHERE mon_hoc_id = :id',
                 'Không thể xóa! Môn học đang nằm trong khung chương trình đào tạo (%d mục)'],
             ['SELECT COUNT(*) FROM chi_tiet_nhom_tu_chon WHERE mon_hoc_id = :id',
@@ -244,7 +236,6 @@ class Quanlymonhoc
         $ma = $existing ? $existing['ma_mon_hoc'] : strtoupper(Request::str($in['ma_mon_hoc'] ?? ''));
         $ten = Request::str($in['ten_mon_hoc'] ?? '');
         $moTa = Request::str($in['mo_ta'] ?? '');
-        $tt = Request::str($in['trang_thai'] ?? 'Hoạt động');
 
         $errors = [];
 
@@ -253,9 +244,6 @@ class Quanlymonhoc
         }
         if ($ten === '' || mb_strlen($ten) > 150) {
             $errors[] = 'Tên môn học bắt buộc và không quá 150 ký tự.';
-        }
-        if (!in_array($tt, self::STATUSES, true)) {
-            $errors[] = 'Trạng thái môn học không hợp lệ.';
         }
 
         // RULE-MH-01: người dùng nhập số tín chỉ lý thuyết và thực hành (0 nếu không có loại đó)
@@ -310,7 +298,6 @@ class Quanlymonhoc
             'so_tiet_ly_thuyet' => $tin['so_tiet_ly_thuyet'],
             'so_tiet_thuc_hanh' => $tin['so_tiet_thuc_hanh'],
             'mo_ta' => $moTa !== '' ? $moTa : null,
-            'trang_thai' => $tt,
         ];
     }
 

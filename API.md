@@ -33,9 +33,9 @@ Api.post('/api/ketquahoctap/diem-thanh-phan', { dang_ky_id: 3, diem_giua_ky: 8 }
 ## 2. Môn học
 | Method | Endpoint | Quyền | Body / Query |
 |---|---|---|---|
-| GET | /api/monhoc | đã đăng nhập | `search`, `trang_thai`. Mỗi môn kèm `so_tin_chi_ly_thuyet`, `so_tin_chi_thuc_hanh`, `so_tiet_ly_thuyet`, `so_tiet_thuc_hanh` (`null` = môn cũ chưa phân loại); kèm `quy_doi` (hệ số tiết/TC) |
+| GET | /api/monhoc | đã đăng nhập | `search`. Mỗi môn kèm `so_tin_chi_ly_thuyet`, `so_tin_chi_thuc_hanh`, `so_tiet_ly_thuyet`, `so_tiet_thuc_hanh` (`null` = môn cũ chưa phân loại); kèm `quy_doi` (hệ số tiết/TC) |
 | GET | /api/monhoc/chi-tiet | đã đăng nhập | `id` |
-| POST | /api/monhoc | admin, GV | `ma_mon_hoc`, `ten_mon_hoc`, `so_tin_chi_ly_thuyet`, `so_tin_chi_thuc_hanh` (số nguyên ≥ 0, tổng 1-10), `mo_ta`, `trang_thai`. Backend tự tính `so_tin_chi`, `so_tiet_ly_thuyet` = TC LT × 18, `so_tiet_thuc_hanh` = TC TH × 36, `so_tiet` (RULE-CREDIT-08); số tiết gửi lên bị bỏ qua |
+| POST | /api/monhoc | admin, GV | `ma_mon_hoc`, `ten_mon_hoc`, `so_tin_chi_ly_thuyet`, `so_tin_chi_thuc_hanh` (số nguyên ≥ 0, tổng 1-10), `mo_ta`. Backend tự tính `so_tin_chi`, `so_tiet_ly_thuyet` = TC LT × 18, `so_tiet_thuc_hanh` = TC TH × 36, `so_tiet` (RULE-CREDIT-08); số tiết gửi lên bị bỏ qua |
 | PUT | /api/monhoc | admin | `id` + các trường trên (không đổi mã; trường không gửi giữ giá trị cũ). Tổng tiết đổi thì xếp lại lịch các lớp; lớp nào không đủ tiết → 409, không lưu |
 | DELETE | /api/monhoc?id= | admin | chặn nếu đã có lớp HP / thuộc CTĐT / nhóm tự chọn |
 

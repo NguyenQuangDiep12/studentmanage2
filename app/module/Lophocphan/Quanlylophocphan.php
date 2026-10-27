@@ -233,7 +233,7 @@ class Quanlylophocphan
 
         $mh = $this->db->query("
             SELECT id, ma_mon_hoc, ten_mon_hoc, so_tin_chi, so_tiet
-            FROM mon_hoc WHERE trang_thai = 'Hoạt động' ORDER BY ma_mon_hoc
+            FROM mon_hoc ORDER BY ma_mon_hoc
         ")->fetchAll();
 
         if ($user['vai_tro'] === 'giang_vien') {

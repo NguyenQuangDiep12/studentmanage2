@@ -43,11 +43,10 @@ var HelpComponent = (function ($) {
         },
         'mon-hoc': {
             steps: [
-                'Bấm "Thêm môn học" (quản trị viên hoặc giảng viên), nhập mã môn, tên môn, số tín chỉ lý thuyết, số tín chỉ thực hành (0 nếu không có), trạng thái rồi "Lưu môn học".',
+                'Bấm "Thêm môn học" (quản trị viên hoặc giảng viên), nhập mã môn, tên môn, số tín chỉ lý thuyết, số tín chỉ thực hành (0 nếu không có) rồi "Lưu môn học".',
                 'Hệ thống tự tính và hiển thị loại môn, tổng tín chỉ, số tiết lý thuyết (TC × 18), số tiết thực hành (TC × 36) và tổng số tiết để kiểm tra trước khi lưu.',
                 'Môn cũ chưa phân loại tín chỉ hiển thị "Chưa khai báo"; nhập số tín chỉ từng loại để áp dụng quy đổi.',
-                'Quản trị viên: "Sửa" để cập nhật (không đổi được mã môn); "Xóa" chỉ thực hiện được khi môn chưa có lớp học phần, chưa nằm trong CTĐT hoặc nhóm tự chọn.',
-                'Môn "Tạm ngưng" không thể mở lớp học phần mới.'
+                'Quản trị viên: "Sửa" để cập nhật (không đổi được mã môn); "Xóa" chỉ thực hiện được khi môn chưa có lớp học phần, chưa nằm trong CTĐT hoặc nhóm tự chọn.'
             ],
             rules: ['RULE-01', 'RULE-CREDIT', 'RULE-MH'],
             notes: ['Tiết thành phần (lý thuyết / thực hành) khác điểm thành phần.',

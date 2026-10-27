@@ -40,23 +40,23 @@ try {
     $db->exec("UPDATE users SET vai_tro = 'admin' WHERE ma_dinh_danh = 'adminaccount1'");
 
     // 5. Môn học
-    $db->exec("INSERT OR IGNORE INTO mon_hoc (id, ma_mon_hoc, ten_mon_hoc, so_tin_chi, so_tiet, mo_ta, trang_thai) VALUES
-        (1, 'CS101', 'Nhập môn lập trình', 3, 45, 'Nguyên lý lập trình C/C++', 'Hoạt động'),
-        (2, 'CS102', 'Cấu trúc dữ liệu và giải thuật', 4, 60, 'Danh sách liên kết, cây, đồ thị', 'Hoạt động'),
-        (3, 'CS201', 'Cơ sở dữ liệu', 3, 45, 'Mô hình quan hệ và SQL chuẩn', 'Hoạt động'),
-        (4, 'CS202', 'Mạng máy tính', 3, 45, 'Giao thức TCP/IP và định tuyến', 'Hoạt động'),
-        (5, 'CS301', 'Công nghệ phần mềm', 3, 45, 'Quy trình Agile, Scrum, thiết kế phần mềm', 'Hoạt động'),
-        (6, 'MA101', 'Toán rời rạc', 3, 45, 'Đại số Boolean, tập hợp, logic vị từ', 'Hoạt động'),
-        (7, 'MA102', 'Xác suất thống kê', 3, 45, 'Biến ngẫu nhiên, ước lượng kỳ vọng', 'Hoạt động'),
-        (8, 'EN101', 'Tiếng Anh chuyên ngành', 3, 45, 'Thuật ngữ CNTT và giao tiếp', 'Hoạt động'),
-        (9, 'CS303', 'Trí tuệ nhân tạo', 3, 45, 'Tìm kiếm không gian trạng thái, heuristic, suy diễn', 'Hoạt động'),
-        (10, 'CS304', 'An toàn thông tin', 3, 45, 'Mật mã học, bảo mật hệ thống mạng', 'Hoạt động'),
-        (11, 'CS302', 'Lập trình ứng dụng Web', 3, 45, 'Kiến trúc MVC, RESTful API, Frontend & Backend', 'Hoạt động'),
-        (12, 'CS305', 'Lập trình ứng dụng di động', 3, 45, 'Phát triển ứng dụng Android / iOS', 'Hoạt động'),
-        (13, 'CS306', 'Điện toán đám mây', 3, 45, 'Dịch vụ AWS, Docker và Kubernetes', 'Hoạt động'),
-        (14, 'CS307', 'Kiểm thử phần mềm', 3, 45, 'Unit test, Integration test, CI/CD', 'Hoạt động'),
-        (15, 'CS308', 'Phân tích thiết kế hệ thống', 3, 45, 'UML, thiết kế vi dịch vụ (Microservices)', 'Hoạt động'),
-        (16, 'CS309', 'Học máy nâng cao', 3, 45, 'Deep learning, neural networks, computer vision', 'Hoạt động')
+    $db->exec("INSERT OR IGNORE INTO mon_hoc (id, ma_mon_hoc, ten_mon_hoc, so_tin_chi, so_tiet, mo_ta) VALUES
+        (1, 'CS101', 'Nhập môn lập trình', 3, 45, 'Nguyên lý lập trình C/C++'),
+        (2, 'CS102', 'Cấu trúc dữ liệu và giải thuật', 4, 60, 'Danh sách liên kết, cây, đồ thị'),
+        (3, 'CS201', 'Cơ sở dữ liệu', 3, 45, 'Mô hình quan hệ và SQL chuẩn'),
+        (4, 'CS202', 'Mạng máy tính', 3, 45, 'Giao thức TCP/IP và định tuyến'),
+        (5, 'CS301', 'Công nghệ phần mềm', 3, 45, 'Quy trình Agile, Scrum, thiết kế phần mềm'),
+        (6, 'MA101', 'Toán rời rạc', 3, 45, 'Đại số Boolean, tập hợp, logic vị từ'),
+        (7, 'MA102', 'Xác suất thống kê', 3, 45, 'Biến ngẫu nhiên, ước lượng kỳ vọng'),
+        (8, 'EN101', 'Tiếng Anh chuyên ngành', 3, 45, 'Thuật ngữ CNTT và giao tiếp'),
+        (9, 'CS303', 'Trí tuệ nhân tạo', 3, 45, 'Tìm kiếm không gian trạng thái, heuristic, suy diễn'),
+        (10, 'CS304', 'An toàn thông tin', 3, 45, 'Mật mã học, bảo mật hệ thống mạng'),
+        (11, 'CS302', 'Lập trình ứng dụng Web', 3, 45, 'Kiến trúc MVC, RESTful API, Frontend & Backend'),
+        (12, 'CS305', 'Lập trình ứng dụng di động', 3, 45, 'Phát triển ứng dụng Android / iOS'),
+        (13, 'CS306', 'Điện toán đám mây', 3, 45, 'Dịch vụ AWS, Docker và Kubernetes'),
+        (14, 'CS307', 'Kiểm thử phần mềm', 3, 45, 'Unit test, Integration test, CI/CD'),
+        (15, 'CS308', 'Phân tích thiết kế hệ thống', 3, 45, 'UML, thiết kế vi dịch vụ (Microservices)'),
+        (16, 'CS309', 'Học máy nâng cao', 3, 45, 'Deep learning, neural networks, computer vision')
     ");
 
     // 6. Chi tiết chương trình đào tạo (Môn bắt buộc)

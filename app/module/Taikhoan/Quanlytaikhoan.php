@@ -285,7 +285,7 @@ class Quanlytaikhoan
                 'tong_sinh_vien' => $count("SELECT COUNT(*) FROM users WHERE vai_tro IN ('sinh_vien', 'student')"),
                 'tong_nguoi_dung' => $count('SELECT COUNT(*) FROM users'),
                 'tong_giang_vien' => $count("SELECT COUNT(*) FROM users WHERE vai_tro IN ('giang_vien', 'lecturer')"),
-                'tong_mon_hoc' => $count("SELECT COUNT(*) FROM mon_hoc WHERE trang_thai = 'Hoạt động'"),
+                'tong_mon_hoc' => $count("SELECT COUNT(*) FROM mon_hoc"),
                 'tong_lop_hoc_phan' => $count('SELECT COUNT(*) FROM lop_hoc_phan'),
                 'tong_dang_ky' => $count('SELECT COUNT(*) FROM dang_ky_hoc_phan WHERE ' . Academic::activeDkSql()),
                 'tong_kien_nghi' => $count('SELECT COUNT(*) FROM kien_nghi'),

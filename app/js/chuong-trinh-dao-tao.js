@@ -167,7 +167,7 @@ var ChuongTrinhDaoTaoModule = (function ($) {
                 return '<tr>' +
                     '<td class="text-center">' + stt + '</td>' +
                     '<td>' + App.escapeHtml(m.ma_mon_hoc) + '</td>' +
-                    '<td>' + App.escapeHtml(m.ten_mon_hoc) + (m.trang_thai !== 'Hoạt động' ? ' <span class="badge badge-warning">Tạm ngưng</span>' : '') + '</td>' +
+                    '<td>' + App.escapeHtml(m.ten_mon_hoc) + '</td>' +
                     '<td class="text-center ctdt-num">' + m.so_tin_chi + '</td>' +
                     '<td class="text-center ctdt-mark">' + (m.bat_buoc ? 'x' : '') + '</td>' +
                     (self.isSv ? '<td class="text-center ctdt-mark">' + daHoc + '</td>' : '') +
