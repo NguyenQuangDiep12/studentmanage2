@@ -90,9 +90,6 @@ class Academic
     // RULE-XL-09: quy định của trường cho phép rút ngắn buổi cuối còn đúng số tiết còn thiếu
     public const CHO_PHEP_RUT_NGAN_BUOI_CUOI = true;
 
-    // Giới hạn số tín chỉ đăng ký mỗi học kỳ (quy định có sẵn trong hệ thống cũ, đổi tại đây nếu quy chế khác)
-    public const MAX_TIN_CHI_HOC_KY = 24;
-
     /**
      * RULE-18.11: Quy tắc chọn điểm của học phần học lại khi tính GPA.
      *  'cao_nhat'    : lấy lần học có điểm hệ 10 cao nhất (bằng nhau thì lấy lần sau)

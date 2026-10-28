@@ -103,7 +103,7 @@ var HelpComponent = (function ($) {
             rules: ['RULE-01', 'RULE-02', 'RULE-03', 'RULE-04', 'RULE-05', 'RULE-06', 'RULE-08', 'RULE-CREDIT'],
             notes: [
                 'Chỉ đăng ký môn thuộc khoa và chương trình đào tạo của mình.',
-                'Không đăng ký trùng môn trong cùng học kỳ, không trùng lịch học, không vượt sĩ số tối đa và tối đa 24 tín chỉ / học kỳ.',
+                'Không đăng ký trùng môn trong cùng học kỳ, không trùng lịch học và không vượt sĩ số tối đa.',
                 'Chỉ hủy được trong thời gian đăng ký và khi chưa có dữ liệu điểm danh hoặc điểm.'
             ]
         },

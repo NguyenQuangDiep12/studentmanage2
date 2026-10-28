@@ -130,5 +130,4 @@ Sinh viên nghỉ từ 20% số tiết (R ≥ 20%) bị cấm thi: thêm / sửa
 - `TIN_CHI_MIN`, `TIN_CHI_MAX`: số tín chỉ hợp lệ của một môn (RULE-CREDIT-03).
 - `TIET_MOI_TC_LY_THUYET` (18), `TIET_MOI_TC_THUC_HANH` (36), `PHUT_MOI_TIET` (50): quy đổi tín chỉ → tiết (RULE-CREDIT-08).
 - `CHO_PHEP_RUT_NGAN_BUOI_CUOI`: cho phép buổi cuối ít tiết hơn khung (RULE-XL-09).
-- `MAX_TIN_CHI_HOC_KY`: số tín chỉ đăng ký tối đa mỗi học kỳ.
 - `RETAKE_POLICY`: quy tắc chọn điểm môn học lại (`cao_nhat` | `lan_gan_nhat`, RULE-18.11).

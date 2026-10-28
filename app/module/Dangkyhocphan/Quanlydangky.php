@@ -429,22 +429,7 @@ class Quanlydangky
                 }
             }
 
-            // 6. Kiểm tra giới hạn tín chỉ học kỳ (≤ 24 tín chỉ)
-            $currentTotalTC = 0;
-            foreach ($myActiveDks as $adk) {
-                if ((int)$adk['hoc_ky'] === (int)$targetLHP['hoc_ky'] && $adk['nam_hoc'] === $targetLHP['nam_hoc']) {
-                    $currentTotalTC += (int)$adk['so_tin_chi'];
-                }
-            }
-
-            if ($currentTotalTC + (int)$targetLHP['so_tin_chi'] > Academic::MAX_TIN_CHI_HOC_KY) {
-                Response::json([
-                    'success' => false,
-                    'message' => 'Vượt quá giới hạn đăng ký! Bạn đã đăng ký ' . $currentTotalTC . ' TC (tối đa ' . Academic::MAX_TIN_CHI_HOC_KY . ' TC/kỳ).'
-                ], 400);
-            }
-
-            // 7. Kiểm tra trùng lịch học
+            // 6. Kiểm tra trùng lịch học
             $targetLichStmt = $this->db->prepare('SELECT * FROM lich_hoc WHERE lop_hoc_phan_id = :lhp_id');
             $targetLichStmt->execute([':lhp_id' => $lhpId]);
             $targetLichList = $targetLichStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -473,7 +458,7 @@ class Quanlydangky
                 }
             }
 
-            // 8. RÀNG BUỘC NHÓM MÔN TỰ CHỌN (RULE-02 → RULE-06)
+            // 7. RÀNG BUỘC NHÓM MÔN TỰ CHỌN (RULE-02 → RULE-06)
             //    Lấy các nhóm của CTĐT sinh viên từ dữ liệu, thứ tự theo mã nhóm (A → B → C...).
             //    Muốn đăng ký môn thuộc một nhóm thì mọi nhóm đứng trước phải đạt đủ số tín chỉ tối thiểu.
             $ctdtSv = null;

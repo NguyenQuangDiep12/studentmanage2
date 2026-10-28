@@ -415,16 +415,39 @@ class Quanlylophocphan
         }
         $this->assertCanManage($user, $lhp, true);
 
-        $n = $this->countDangKy($id);
-        if ($n > 0) {
+        // RULE-LHP-04: chặn xóa khi lớp đã có điểm (giữa kỳ / cuối kỳ) hoặc còn sinh viên đang đăng ký (chưa hủy).
+        // Chưa có điểm và mọi đăng ký đều đã hủy (hoặc chưa ai đăng ký) thì được xóa.
+        $chk = $this->db->prepare("
+            SELECT COALESCE(SUM(CASE WHEN " . Academic::activeDkSql('dk.trang_thai') . " THEN 1 ELSE 0 END), 0) AS dang_dang_ky,
+                   COALESCE(SUM(CASE WHEN d.diem_giua_ky IS NOT NULL OR d.diem_cuoi_ky IS NOT NULL THEN 1 ELSE 0 END), 0) AS co_diem
+            FROM dang_ky_hoc_phan dk
+            LEFT JOIN diem d ON d.dang_ky_id = dk.id
+            WHERE dk.lop_hoc_phan_id = :id
+        ");
+        $chk->execute([':id' => $id]);
+        $chk = $chk->fetch();
+        if ((int) $chk['co_diem'] > 0) {
             Response::json([
                 'success' => false,
-                'message' => 'Không thể xóa! Đã có ' . $n . ' sinh viên từng đăng ký lớp này (kể cả đã hủy). Vui lòng chuyển trạng thái lớp sang "Đã hủy"!'
+                'message' => 'Không thể xóa! Lớp đã có ' . (int) $chk['co_diem'] . ' sinh viên có điểm. Vui lòng chuyển trạng thái lớp sang "Đã hủy" để giữ lại kết quả học tập!'
+            ], 409);
+        }
+        if ((int) $chk['dang_dang_ky'] > 0) {
+            Response::json([
+                'success' => false,
+                'message' => 'Không thể xóa! Lớp còn ' . (int) $chk['dang_dang_ky'] . ' sinh viên đang đăng ký. Chỉ xóa được khi mọi đăng ký đã hủy, hoặc chuyển trạng thái lớp sang "Đã hủy"!'
             ], 409);
         }
 
         $this->db->beginTransaction();
         try {
+            // Xóa dữ liệu phụ thuộc của các đăng ký đã hủy: điểm danh, bản ghi điểm (chỉ còn điểm chuyên cần), đăng ký
+            $dkIds = 'SELECT id FROM dang_ky_hoc_phan WHERE lop_hoc_phan_id = :id';
+            $this->db->prepare("DELETE FROM diem_danh WHERE dang_ky_id IN ($dkIds)
+                OR buoi_hoc_id IN (SELECT b.id FROM buoi_hoc b INNER JOIN lich_hoc lh ON lh.id = b.lich_hoc_id WHERE lh.lop_hoc_phan_id = :id2)")
+                ->execute([':id' => $id, ':id2' => $id]);
+            $this->db->prepare("DELETE FROM diem WHERE dang_ky_id IN ($dkIds)")->execute([':id' => $id]);
+            $this->db->prepare('DELETE FROM dang_ky_hoc_phan WHERE lop_hoc_phan_id = :id')->execute([':id' => $id]);
             $this->db->prepare('DELETE FROM buoi_hoc WHERE lich_hoc_id IN (SELECT id FROM lich_hoc WHERE lop_hoc_phan_id = :id)')
                 ->execute([':id' => $id]);
             $this->db->prepare('DELETE FROM lich_hoc WHERE lop_hoc_phan_id = :id')->execute([':id' => $id]);

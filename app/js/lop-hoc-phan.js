@@ -121,10 +121,12 @@
 
             $(document).off('click', '#btnAddScheduleRow').on('click', '#btnAddScheduleRow', function () {
                 self.addScheduleRow();
+                self.updateCalc();
             });
 
             $(document).off('click', '.btn-remove-schedule').on('click', '.btn-remove-schedule', function () {
                 $(this).closest('.schedule-item-row').remove();
+                self.updateCalc();
             });
         },
 
@@ -335,6 +337,7 @@
                 '  <p class="text-muted mb-2" style="font-size:0.8rem;">Chọn thứ học và khung tiết. Hệ thống lấy tổng số tiết của môn, xếp lần lượt vào các ngày của thứ đã chọn trong học kỳ, bỏ qua ngày trùng lịch giảng viên / phòng học và dừng khi đủ tiết; buổi cuối chỉ lấy đúng số tiết còn thiếu. Chỉ lưu được khi xếp đủ tiết. Bấm "Xem trước lịch" để kiểm tra trước khi lưu.</p>' +
                 '  <div id="scheduleContainer">' +
                 '  </div>' +
+                '  <div id="lhpCalc" class="mt-2" style="font-size:0.82rem;"></div>' +
                 '  <div id="lhpPreview" class="mt-3"></div>' +
                 '</div>' +
                 '<div class="modal-footer">' +
@@ -383,6 +386,125 @@
             } else {
                 self.addScheduleRow();
             }
+
+            // Hộp "Cách tính": cập nhật ngay khi đổi môn, học kỳ, thứ hoặc khung tiết
+            self.calcCtx = { mon: allMonHoc, buoiCu: isEdit ? (lhp.buoi_hoc || []) : [] };
+            $('#lhpMonHoc, #lhpHocKy, #lhpNamHoc').on('change', function () { self.updateCalc(); });
+            $('#scheduleContainer').on('change input', '.sch-thu, .sch-tbd, .sch-tkt', function () { self.updateCalc(); });
+            self.updateCalc();
+        },
+
+        /**
+         * Tính trước số tiết tối đa xếp được và ghi rõ công thức cho người dùng
+         * (RULE-CREDIT-08, RULE-XL-03, RULE-XL-07, RULE-XL-11, RULE-XL-12).
+         * Chưa trừ ngày trùng lịch giảng viên / phòng học (RULE-XD) - số chính xác xem bằng "Xem trước lịch".
+         */
+        updateCalc: function () {
+            var box = $('#lhpCalc');
+            if (!box.length) return;
+            var ctx = this.calcCtx || {};
+            var monId = parseInt($('#lhpMonHoc').val(), 10);
+            var mon = (ctx.mon || []).find(function (m) { return parseInt(m.id, 10) === monId; });
+            var hk = parseInt($('#lhpHocKy').val(), 10), nh = $('#lhpNamHoc').val();
+            var term = ((App.getTerms() || {}).hoc_ky || []).find(function (x) {
+                return parseInt(x.hoc_ky, 10) === hk && x.nam_hoc === nh && parseInt(x.da_khai_bao, 10) === 1;
+            });
+            if (!mon || !term) { box.empty(); return; }
+
+            var pad = function (n) { return ('0' + n).slice(-2); };
+            var iso = function (d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+            var parse = function (str) { var p = String(str).slice(0, 10).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); };
+            var dmy = function (str) { var p = String(str).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; };
+
+            var today = iso(new Date());
+            var batDau = String(term.bat_dau).slice(0, 10), ketThuc = String(term.ket_thuc).slice(0, 10);
+            var tu = batDau > today ? batDau : today;          // RULE-XL-12: không xếp buổi mới vào ngày đã qua
+            var can = parseInt(mon.so_tiet, 10) || 0;
+
+            // Các ngày của một thứ trong khoảng [tu, ketThuc] (Thứ 2..7 -> getDay 1..6, Chủ nhật = 8 -> 0)
+            var ngayCuaThu = function (thu) {
+                var out = [], d = parse(tu), end = parse(ketThuc), js = thu === 8 ? 0 : thu - 1;
+                while (d.getDay() !== js && d <= end) d.setDate(d.getDate() + 1);
+                while (d <= end) { out.push(iso(d)); d.setDate(d.getDate() + 7); }
+                return out;
+            };
+
+            // RULE-XL-11: khi sửa lớp, buổi đã diễn ra được giữ nguyên và tính vào tổng
+            var daHoc = (ctx.buoiCu || []).filter(function (b) { return String(b.ngay_hoc).slice(0, 10) < today; })
+                .reduce(function (sum, b) { return sum + (parseInt(b.so_tiet, 10) || 0); }, 0);
+
+            var rows = [], loi = '';
+            $('.schedule-item-row').each(function () {
+                var thu = parseInt($(this).find('.sch-thu').val(), 10);
+                var a = parseInt($(this).find('.sch-tbd').val(), 10), b = parseInt($(this).find('.sch-tkt').val(), 10);
+                if (!(a >= 1 && b <= 13 && b >= a)) { loi = 'Khung tiết chưa hợp lệ: tiết từ 1 đến 13 và tiết KT ≥ tiết BĐ.'; return; }
+                rows.push({ thu: thu, a: a, b: b, tiet: b - a + 1, ngay: ngayCuaThu(thu) });
+            });
+            if (loi || !rows.length) {
+                box.html('<div class="alert alert-warning mb-0">' + (loi || 'Chưa có buổi học trong tuần - bấm "Thêm buổi học trong tuần".') + '</div>');
+                return;
+            }
+
+            var toiDa = daHoc + rows.reduce(function (sum, r) { return sum + r.tiet * r.ngay.length; }, 0);
+            var thieu = can - toiDa;
+
+            var li = [];
+            li.push('Số tiết môn cần: <strong>' + can + ' tiết</strong> (' + App.escapeHtml(mon.ma_mon_hoc) + ', ' + mon.so_tin_chi +
+                ' TC; 1 TC lý thuyết = 18 tiết, 1 TC thực hành = 36 tiết).');
+            li.push('Khoảng ngày còn xếp được: <strong>' + dmy(tu) + ' → ' + dmy(ketThuc) + '</strong>' +
+                (tu > batDau ? ' (học kỳ bắt đầu ' + dmy(batDau) + ', nhưng các ngày trước hôm nay đã qua nên không xếp buổi mới).' : '.'));
+            if (daHoc) li.push('Buổi đã diễn ra (giữ nguyên): <strong>' + daHoc + ' tiết</strong>.');
+            rows.forEach(function (r) {
+                li.push(App.thuLabel(r.thu) + ', tiết ' + r.a + '–' + r.b + ': ' + r.tiet + ' tiết/buổi × ' + r.ngay.length +
+                    ' buổi = <strong>' + (r.tiet * r.ngay.length) + ' tiết</strong>.');
+            });
+            var phan = rows.map(function (r) { return r.tiet * r.ngay.length; });
+            if (daHoc) phan.unshift(daHoc);
+            li.push('Tối đa xếp được: ' + (phan.length > 1 ? phan.join(' + ') + ' = ' : '') + '<strong>' + toiDa + ' tiết</strong> ' +
+                (thieu > 0 ? '&lt; ' : '≥ ') + can + ' tiết cần.');
+
+            var ketLuan;
+            if (thieu <= 0) {
+                // Ngày dự kiến của buổi cuối: xếp lần lượt theo ngày đến khi đủ tiết
+                var slots = [];
+                rows.forEach(function (r) { r.ngay.forEach(function (n) { slots.push([n, r.tiet]); }); });
+                slots.sort(function (x, y) { return x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0; });
+                var cong = daHoc, cuoi = null;
+                for (var i = 0; i < slots.length && cong < can; i++) { cong += slots[i][1]; cuoi = slots[i][0]; }
+                ketLuan = '<strong class="text-success">✓ Đủ tiết.</strong>' + (cuoi ? ' Buổi cuối dự kiến khoảng ' + dmy(cuoi) + '.' : '');
+            } else {
+                var goiY = [];
+                // Gợi ý 1: tăng số tiết mỗi buổi của một thứ đang chọn
+                rows.forEach(function (r) {
+                    if (!r.ngay.length || goiY.length >= 2) return;
+                    var conLai = can - (toiDa - r.tiet * r.ngay.length);
+                    var x = Math.ceil(conLai / r.ngay.length);
+                    if (r.a + x - 1 <= 13) {
+                        goiY.push('Đổi ' + App.thuLabel(r.thu) + ' thành tiết ' + r.a + '–' + (r.a + x - 1) + ': ' + x + ' tiết/buổi × ' +
+                            r.ngay.length + ' buổi = ' + (x * r.ngay.length) + ' tiết.');
+                    }
+                });
+                // Gợi ý 2: thêm một thứ học với cùng khung tiết của dòng đầu tiên
+                var r0 = rows[0];
+                for (var t = 2; t <= 7; t++) {
+                    if (rows.some(function (r) { return r.thu === t; })) continue;
+                    var n = ngayCuaThu(t).length;
+                    if (toiDa + r0.tiet * n >= can) {
+                        goiY.push('Thêm ' + App.thuLabel(t) + ', tiết ' + r0.a + '–' + r0.b + ': ' + r0.tiet + ' tiết/buổi × ' + n +
+                            ' buổi = ' + (r0.tiet * n) + ' tiết → tổng ' + (toiDa + r0.tiet * n) + ' tiết.');
+                        break;
+                    }
+                }
+                goiY.push('Hoặc chọn học kỳ khác còn đủ thời gian.');
+                ketLuan = '<strong class="text-danger">✗ Thiếu ' + thieu + ' tiết (' + can + ' − ' + toiDa + ') → chưa lưu được.</strong> Gợi ý:' +
+                    '<ul class="mb-0 mt-1">' + goiY.map(function (g) { return '<li>' + g + '</li>'; }).join('') + '</ul>';
+            }
+
+            box.html('<div class="alert ' + (thieu > 0 ? 'alert-danger' : 'alert-info') + ' mb-0">' +
+                '<div style="font-weight:700; margin-bottom:4px;"><i class="fa-solid fa-calculator"></i> Cách tính số tiết xếp được</div>' +
+                '<ul class="mb-1">' + li.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' + ketLuan +
+                '<div class="text-muted mt-1" style="font-size:0.78rem;">Số trên chưa trừ những ngày trùng lịch giảng viên / phòng học. Bấm "Xem trước lịch" để có lịch chính xác.</div>' +
+                '</div>');
         },
 
         addScheduleRow: function (data) {

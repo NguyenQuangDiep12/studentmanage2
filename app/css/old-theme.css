@@ -1,0 +1,143 @@
+/* ================================================================
+   OLD-THEME.CSS - Màu sắc theo giao diện cũ (React)
+   Lấy đúng mã màu từ file CSS giao diện cũ; chỉ đổi phần trình bày,
+   HTML và chức năng giữ nguyên. Nạp sau theme.css để ghi đè.
+   ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=vietnamese');
+
+:root {
+    --bg-page: #eef4ff;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-2: #4f46e5;
+    --primary-light: #eff6ff;
+    --grad-primary: linear-gradient(135deg, #2563eb, #4f46e5);
+    --grad-avatar: linear-gradient(135deg, #2563eb, #7c3aed);
+    --grad-danger: linear-gradient(135deg, #ef4444, #dc2626);
+    --grad-warning: linear-gradient(135deg, #f59e0b, #ea580c);
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #d9e1f2;
+    --border-card: rgba(226, 232, 240, 0.9);
+    --shadow-card: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+*, *::before, *::after { font-family: Inter, Arial, Helvetica, sans-serif !important; }
+.fa, .fas, .far, .fa-solid, .fa-regular,
+.fa::before, .fas::before, .far::before, .fa-solid::before, .fa-regular::before { font-family: "Font Awesome 6 Free" !important; }
+.fab, .fa-brands, .fab::before, .fa-brands::before { font-family: "Font Awesome 6 Brands" !important; }
+
+/* ---------- Nền trang ---------- */
+html { background: #eef4ff; min-height: 100%; }
+body {
+    color: #1e293b;
+    line-height: 1.5;
+    background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 26%),
+        linear-gradient(180deg, #eff6ff 0%, #f8fbff 30%, #eef2ff 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+/* ---------- Thẻ (header, sidebar, card, thẻ thống kê) ---------- */
+.top-header-card, .app-sidebar, .card, .stat-modern-card {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 28px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(10px);
+}
+.card > .card-header { border-radius: 28px 28px 0 0; border-bottom-color: #e5edf8; }
+
+/* ---------- Header ---------- */
+.header-brand-info .app-tag { color: #2563eb; letter-spacing: 0.12em; font-size: 12px; font-weight: 700; }
+.header-brand-info h1 { color: #1e293b; }
+.header-brand-info p, .page-title-banner p, .stat-modern-card .stat-label { color: #64748b; }
+.btn-icon-square { border: 1px solid #d9e1f2; border-radius: 14px; background: #fff; }
+.user-profile-pill { background: #f8fbff; border: 1px solid #dbeafe; border-radius: 18px; }
+.user-profile-pill .pill-avatar, .sidebar-profile-avatar {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    border-radius: 14px;
+    box-shadow: none;
+}
+.user-profile-pill .pill-name, .sidebar-profile-info .title { color: #1e293b; }
+.user-profile-pill .pill-role { background: #eff6ff; color: #1d4ed8; }
+.btn-pill { border-radius: 14px; }
+.btn-pill-light { background: #edf2f7; color: #0f172a; }
+.btn-pill-danger { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: none; color: #fff; }
+.btn-pill-danger:hover { background: linear-gradient(135deg, #ef4444, #dc2626); filter: none; transform: translateY(-1px); }
+
+/* ---------- Sidebar ---------- */
+.nav-card-item {
+    background: #f8fbff;
+    border: 1px solid transparent;
+    border-radius: 18px;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.nav-card-item:hover { background: #f8fbff; border-color: #bfdbfe; transform: translateY(-1px); }
+.nav-card-item .nav-title { color: #1e293b; }
+.nav-card-item .nav-desc { color: #64748b; font-size: 13px; }
+.nav-card-item.active {
+    background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+    box-shadow: none;
+}
+.nav-card-item.active .nav-title { color: #fff; }
+.nav-card-item.active .nav-desc { color: rgba(255, 255, 255, 0.82); }
+
+/* ---------- Tiêu đề trang ---------- */
+.page-title-banner .sub-label { color: #2563eb; letter-spacing: 0.12em; font-size: 12px; font-weight: 700; }
+.page-title-banner h2 { color: #1e293b; }
+
+/* ---------- Nút ---------- */
+.btn { border-radius: 14px; font-weight: 700; transition: transform 0.15s ease, opacity 0.15s ease; }
+.btn:hover { transform: translateY(-1px); }
+.btn-sm { border-radius: 10px; }
+.btn-primary { background: linear-gradient(135deg, #2563eb, #4f46e5); color: #fff; border-color: transparent; box-shadow: none; }
+.btn-primary:hover { background: linear-gradient(135deg, #2563eb, #4f46e5); filter: none; }
+.btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; border-color: transparent; }
+.btn-danger:hover { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.btn-warning { background: linear-gradient(135deg, #f59e0b, #ea580c); color: #fff; border-color: transparent; }
+.btn-light, .btn-outline { background: #edf2f7; color: #0f172a; border-color: transparent; }
+.btn-outline-primary { color: #2563eb; border-color: #bfdbfe; background: #fff; }
+.btn-outline-primary:hover { color: #fff; background: #2563eb; border-color: #2563eb; }
+
+/* ---------- Ô nhập ---------- */
+.form-control, .filter-select, .search-box input, textarea {
+    border: 1px solid #d9e1f2;
+    border-radius: 14px;
+    background: #fff;
+}
+.form-control:focus, .filter-select:focus, .search-box input:focus, textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* ---------- Bảng ---------- */
+.data-table th { background: rgba(248, 250, 252, 0.75); color: #475569; font-weight: 700; font-size: 13px; }
+.data-table th, .data-table td { border-bottom: 1px solid #e5edf8; }
+
+/* ---------- Badge, thông báo ---------- */
+.badge-primary { background: #eff6ff; color: #1d4ed8; }
+.badge-success { background: #ecfdf5; color: #047857; }
+.badge-danger { background: #fef2f2; color: #b91c1c; }
+.alert { border-radius: 16px; font-weight: 600; }
+.alert-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.alert-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.text-danger { color: #b91c1c !important; }
+.text-success { color: #047857 !important; }
+
+/* ---------- Hộp thoại ---------- */
+.modal-overlay { background: rgba(15, 23, 42, 0.48); backdrop-filter: blur(4px); }
+.modal { border-radius: 22px; box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25); }
+
+/* ---------- Thời khóa biểu ---------- */
+.timetable th, .timetable td { border-color: #dbe7fb; }
+.timetable th { background: #f8fbff; color: #334155; }
+.timetable .tiet-col { background: linear-gradient(180deg, #38bdf8 0%, #2563eb 100%); color: #fff; }
+
+/* ---------- Nút Hướng dẫn ở cuối trang ---------- */
+.page-help-footer { display: flex; justify-content: flex-end; }

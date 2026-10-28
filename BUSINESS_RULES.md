@@ -227,6 +227,7 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-LHP-01: Khi tạo lớp học phần, người dùng chọn môn học, học kỳ (đã khai báo), giảng viên phụ trách, phòng học, một hoặc nhiều thứ học trong tuần, tiết bắt đầu và tiết kết thúc của mỗi thứ.
 - RULE-LHP-02: Lớp học phần là lớp mở cho sinh viên đăng ký (môn, giảng viên, phòng, lịch, sĩ số). Lớp sinh viên (lớp hành chính, VD CNTT01) là thực thể riêng; lớp học phần không bắt buộc gắn với lớp sinh viên. Sinh viên đăng ký lớp học phần còn chỗ theo các rule đăng ký.
 - RULE-LHP-03: Quản trị viên và giảng viên được tạo lớp học phần; giảng viên tạo lớp thì chính giảng viên đó phụ trách. Sinh viên không được tạo lớp học phần.
+- RULE-LHP-04: Xóa lớp học phần bị chặn khi lớp đã có điểm (giữa kỳ hoặc cuối kỳ) hoặc còn sinh viên đang đăng ký (chưa hủy). Lớp chưa có điểm và mọi đăng ký đều đã hủy (hoặc chưa ai đăng ký) thì được xóa, hệ thống xóa luôn đăng ký đã hủy, điểm danh, lịch học và buổi học của lớp. Lớp không xóa được thì chuyển trạng thái sang "Đã hủy".
 
 ## RULE-TKB: Khung giờ tiết học
 - RULE-TKB-01: Một ngày có 13 tiết cố định (khai báo trong mã nguồn, không lưu DB): 1 06:45-07:35, 2 07:45-08:35, 3 08:45-09:35, 4 09:45-10:35, 5 10:45-11:35, 6 12:30-13:20, 7 13:30-14:20, 8 14:30-15:20, 9 15:30-16:20, 10 16:30-17:20, 11 17:30-18:20, 12 18:30-19:20, 13 19:30-20:20.

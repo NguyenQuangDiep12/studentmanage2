@@ -1,0 +1,248 @@
+// Sơ đồ CSDL hệ thống quản lý đào tạo (SQLite: database/app.db)
+// Dán toàn bộ nội dung vào https://dbdiagram.io
+
+Project quan_ly_dao_tao {
+  database_type: 'SQLite'
+}
+
+// ===================== TÀI KHOẢN =====================
+Table users {
+  id integer [pk, increment]
+  username text
+  password text [note: 'Mật khẩu đã băm']
+  ma_dinh_danh text [unique, note: 'Mã sinh viên / mã giảng viên']
+  ho_ten text
+  vai_tro text [note: 'admin | giang_vien | sinh_vien']
+  ngay_sinh text
+  gioi_tinh text
+  email text
+  so_dien_thoai text
+  dia_chi text
+  lop_sinh_vien_id integer
+  khoa_id integer
+  trang_thai text [note: 'Hoạt động | Đã khóa']
+  created_at text
+}
+
+Table revoked_tokens {
+  jti text [pk, note: 'Token đã đăng xuất']
+  expires_at integer [not null]
+}
+
+// ===================== CƠ CẤU ĐÀO TẠO =====================
+Table khoa {
+  id integer [pk, increment]
+  ma_khoa text [unique]
+  ten_khoa text
+}
+
+Table chuyen_nganh {
+  id integer [pk, increment]
+  ma_chuyen_nganh text [unique]
+  ten_chuyen_nganh text
+  khoa_id integer [not null]
+}
+
+Table chuong_trinh_dao_tao {
+  id integer [pk, increment]
+  ma_chuong_trinh text [unique]
+  ten_chuong_trinh text
+  thoi_gian_dao_tao text
+  chuyen_nganh_id integer [not null]
+}
+
+Table lop_sinh_vien {
+  id integer [pk, increment]
+  ma_lop text [unique]
+  ten_lop text
+  khoa_hoc text
+  chuong_trinh_id integer [not null]
+}
+
+Table chi_tiet_chuong_trinh_dao_tao {
+  id integer [pk, increment]
+  chuong_trinh_id integer [not null]
+  mon_hoc_id integer [not null]
+  hoc_ky integer
+  nam_hoc integer
+}
+
+Table nhom_tu_chon {
+  id integer [pk, increment]
+  ma_nhom text [unique, note: 'A, B, C...']
+  ten_nhom text
+  chuong_trinh_id integer [not null]
+  so_tin_chi_toi_thieu integer
+}
+
+Table chi_tiet_nhom_tu_chon {
+  id integer [pk, increment]
+  nhom_tu_chon_id integer [not null]
+  mon_hoc_id integer [not null]
+}
+
+// ===================== MÔN HỌC =====================
+Table mon_hoc {
+  id integer [pk, increment]
+  ma_mon_hoc text [unique]
+  ten_mon_hoc text
+  so_tin_chi integer
+  so_tin_chi_ly_thuyet integer
+  so_tin_chi_thuc_hanh integer
+  so_tiet integer [note: '1 TC LT = 18 tiết, 1 TC TH = 36 tiết']
+  so_tiet_ly_thuyet integer
+  so_tiet_thuc_hanh integer
+  mo_ta text
+}
+
+// ===================== LỚP HỌC PHẦN & LỊCH =====================
+Table hoc_ky {
+  id integer [pk, increment]
+  nam_hoc text [not null]
+  hoc_ky integer [not null, note: '1 | 2 | 3 (Hè)']
+  ngay_bat_dau text [not null]
+  ngay_ket_thuc text [not null, note: 'CHECK ngay_ket_thuc > ngay_bat_dau']
+
+  indexes {
+    (nam_hoc, hoc_ky) [unique]
+  }
+}
+
+Table lop_hoc_phan {
+  id integer [pk, increment]
+  ma_lop_hoc_phan text [unique]
+  mon_hoc_id integer [not null]
+  giang_vien_user_id integer
+  hoc_ky integer [note: 'Cùng nam_hoc tham chiếu bảng hoc_ky']
+  nam_hoc text
+  si_so_toi_da integer
+  phong_hoc text
+  trang_thai text [note: 'Đang mở | Đã hủy']
+  thoi_gian_mo_dang_ky text
+  thoi_gian_dong_dang_ky text
+}
+
+Table lich_hoc {
+  id integer [pk, increment]
+  lop_hoc_phan_id integer [not null]
+  thu integer [note: '2..7, 8 = Chủ nhật']
+  tiet_bat_dau integer [note: '1..13']
+  tiet_ket_thuc integer
+  ngay_bat_dau text
+  ngay_ket_thuc text
+}
+
+Table buoi_hoc {
+  id integer [pk, increment]
+  lich_hoc_id integer [not null]
+  ngay_hoc text
+  tiet_bat_dau integer
+  tiet_ket_thuc integer
+  trang_thai text
+}
+
+// ===================== ĐĂNG KÝ HỌC PHẦN =====================
+Table dang_ky_hoc_phan {
+  id integer [pk, increment]
+  sinh_vien_user_id integer [not null]
+  lop_hoc_phan_id integer [not null]
+  ngay_dang_ky text
+  thoi_gian_mo_dang_ky text
+  thoi_gian_dong_dang_ky text
+  trang_thai text [note: 'Đã đăng ký | Đã hủy']
+}
+
+// ===================== KẾT QUẢ HỌC TẬP =====================
+Table diem_danh {
+  id integer [pk, increment]
+  buoi_hoc_id integer [not null]
+  dang_ky_id integer [not null]
+  trang_thai text [note: 'Có mặt | Vắng mặt']
+  ghi_chu text
+  thoi_gian_diem_danh text
+
+  indexes {
+    (buoi_hoc_id, dang_ky_id) [unique]
+  }
+}
+
+Table diem {
+  id integer [pk, increment]
+  dang_ky_id integer [unique, not null]
+  diem_chuyen_can real [note: 'Hệ thống tự tính từ điểm danh']
+  diem_giua_ky real
+  diem_cuoi_ky real
+  diem_tong_ket real [note: '0.6*CK + 0.3*GK + 0.1*CC']
+  diem_he_10 real
+  diem_he_4 real
+  diem_chu text
+  ket_qua text [note: 'Đạt | Không đạt']
+  updated_at text
+}
+
+// ===================== TIN TỨC & KIẾN NGHỊ =====================
+Table tin_tuc {
+  id integer [pk, increment]
+  tieu_de text
+  tom_tat text
+  noi_dung text
+  danh_muc text
+  trang_thai text [note: 'Công khai | Bản nháp | Đã ẩn']
+  nguoi_dang_user_id integer [not null]
+  created_at text
+  updated_at text
+}
+
+Table kien_nghi {
+  id integer [pk, increment]
+  sinh_vien_user_id integer [not null]
+  tieu_de text
+  noi_dung text
+  trang_thai text
+  created_at text
+  updated_at text
+}
+
+Table phan_hoi_kien_nghi {
+  id integer [pk, increment]
+  kien_nghi_id integer [not null]
+  nguoi_phan_hoi_user_id integer [not null]
+  noi_dung text
+  created_at text
+}
+
+// ===================== QUAN HỆ =====================
+Ref: users.lop_sinh_vien_id > lop_sinh_vien.id
+Ref: users.khoa_id > khoa.id
+
+Ref: chuyen_nganh.khoa_id > khoa.id
+Ref: chuong_trinh_dao_tao.chuyen_nganh_id > chuyen_nganh.id
+Ref: lop_sinh_vien.chuong_trinh_id > chuong_trinh_dao_tao.id
+Ref: chi_tiet_chuong_trinh_dao_tao.chuong_trinh_id > chuong_trinh_dao_tao.id
+Ref: chi_tiet_chuong_trinh_dao_tao.mon_hoc_id > mon_hoc.id
+Ref: nhom_tu_chon.chuong_trinh_id > chuong_trinh_dao_tao.id
+Ref: chi_tiet_nhom_tu_chon.nhom_tu_chon_id > nhom_tu_chon.id
+Ref: chi_tiet_nhom_tu_chon.mon_hoc_id > mon_hoc.id
+
+Ref: lop_hoc_phan.mon_hoc_id > mon_hoc.id
+Ref: lop_hoc_phan.giang_vien_user_id > users.id
+Ref: lich_hoc.lop_hoc_phan_id > lop_hoc_phan.id
+Ref: buoi_hoc.lich_hoc_id > lich_hoc.id
+
+Ref: dang_ky_hoc_phan.sinh_vien_user_id > users.id
+Ref: dang_ky_hoc_phan.lop_hoc_phan_id > lop_hoc_phan.id
+
+Ref: diem_danh.buoi_hoc_id > buoi_hoc.id
+Ref: diem_danh.dang_ky_id > dang_ky_hoc_phan.id
+Ref: diem.dang_ky_id - dang_ky_hoc_phan.id
+
+Ref: tin_tuc.nguoi_dang_user_id > users.id
+Ref: kien_nghi.sinh_vien_user_id > users.id
+Ref: phan_hoi_kien_nghi.kien_nghi_id > kien_nghi.id
+Ref: phan_hoi_kien_nghi.nguoi_phan_hoi_user_id > users.id
+
+TableGroup tai_khoan { users revoked_tokens }
+TableGroup co_cau_dao_tao { khoa chuyen_nganh chuong_trinh_dao_tao lop_sinh_vien chi_tiet_chuong_trinh_dao_tao nhom_tu_chon chi_tiet_nhom_tu_chon }
+TableGroup lop_hoc_phan_lich { hoc_ky lop_hoc_phan lich_hoc buoi_hoc }
+TableGroup ket_qua_hoc_tap { diem_danh diem }
+TableGroup tin_tuc_kien_nghi { tin_tuc kien_nghi phan_hoi_kien_nghi }

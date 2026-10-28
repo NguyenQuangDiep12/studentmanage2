@@ -6,7 +6,7 @@
     <title>Hệ thống quản lý sinh viên</title>
     <!-- Font Awesome 6.5.1 CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=20261026b">
+    <link rel="stylesheet" href="css/style.css?v=20261029a">
 </head>
 <body>
     <div class="app-container">
@@ -29,7 +29,7 @@
                 <button class="btn-pill btn-pill-light" id="btnResetData" style="display:none;" title="Khôi phục dữ liệu mẫu hệ thống">
                     <i class="fa-solid fa-arrows-rotate"></i> Reset dữ liệu
                 </button>
-                <button class="btn-pill btn-pill-light" id="btnChangePassword">
+                <button class="btn-pill btn-pill-light" id="btnChangePassword" style="display:none;">
                     Đổi mật khẩu
                 </button>
                 <button class="btn-pill btn-pill-danger" id="btnLogout">
@@ -58,9 +58,6 @@
             <!-- Main Content Pane -->
             <main class="main-content-pane">
                 <div class="page-title-banner" id="pageBanner">
-                    <button class="btn btn-sm btn-outline-primary banner-help-btn" id="btnPageHelp" title="Hướng dẫn thao tác và quy tắc nghiệp vụ của trang này">
-                        <i class="fa-solid fa-circle-question"></i> Hướng dẫn
-                    </button>
                     <span class="sub-label" id="pageCategoryLabel">BẢNG ĐIỀU KHIỂN</span>
                     <h2 id="pageMainTitle">Tổng quan</h2>
                     <p id="pageSubTitle">Thống kê hệ thống và dữ liệu nhanh</p>
@@ -69,6 +66,13 @@
                 <!-- Content Area -->
                 <div id="contentArea">
                     <!-- Loaded dynamically by JS modules -->
+                </div>
+
+                <!-- Nút Hướng dẫn đặt ở cuối trang -->
+                <div class="page-help-footer">
+                    <button class="btn btn-sm btn-outline-primary" id="btnPageHelp" title="Hướng dẫn thao tác và quy tắc nghiệp vụ của trang này">
+                        <i class="fa-solid fa-circle-question"></i> Hướng dẫn
+                    </button>
                 </div>
             </main>
         </div>
@@ -91,7 +95,7 @@
     <script src="js/components/toast.js?v=20261026b"></script>
     <script src="js/components/modal.js?v=20261026b"></script>
     <script src="js/components/header.js?v=20261026b"></script>
-    <script src="js/components/sidebar.js?v=20261026b"></script>
+    <script src="js/components/sidebar.js?v=20261029a"></script>
     <script src="js/components/dashboard.js?v=20261026b"></script>
     <script src="js/components/help.js?v=20261026b"></script>
     <script src="js/components/giai-thich-diem.js?v=20261026b"></script>

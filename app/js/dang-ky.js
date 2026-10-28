@@ -1,7 +1,7 @@
 /* ================================================================
    DANG-KY.JS - Quản lý đăng ký học phần cho sinh viên
    Kết nối Backend PHP thuần & SQLite
-   Kiểm tra thời hạn mở/đóng, sĩ số, trùng lịch, giới hạn tín chỉ (≤24 TC)
+   Kiểm tra thời hạn mở/đóng, sĩ số, trùng lịch
    Ràng buộc chuẩn môn bắt buộc trong CTĐT & thứ tự môn tự chọn (A -> B -> C)
    Font Awesome icons, XSS protection
    ================================================================ */
@@ -139,7 +139,6 @@
                 '      <div class="card p-3" style="background:#f8fafc; border:1px solid var(--border-color);">' +
                 '        <h4 style="font-size:0.95rem; font-weight:800; margin-bottom:6px;"><i class="fa-solid fa-circle-exclamation" style="color:var(--primary);"></i> Giới hạn đăng ký & Điều kiện tốt nghiệp:</h4>' +
                 '        <ul style="padding-left:20px; font-size:0.88rem; color:var(--text-main); line-height:1.7;">' +
-                '          <li>Số tín chỉ tối đa cho phép đăng ký trong một học kỳ là <strong>24 tín chỉ</strong></li>' +
                 '          <li>Sinh viên chỉ được đăng ký các môn học thuộc chương trình đào tạo của khóa/chuyên ngành mình đang học</li>' +
                 '          <li>Lớp <strong>Đang mở đăng ký</strong> thì sinh viên được hủy đăng ký; lớp <strong>Đóng đăng ký</strong> thì không hủy được</li>' +
                 '        </ul>' +
