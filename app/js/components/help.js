@@ -112,7 +112,7 @@ var HelpComponent = (function ($) {
                 'Bấm "Thêm học kỳ": chọn năm học, học kỳ, ngày bắt đầu, ngày kết thúc rồi "Lưu học kỳ".',
                 '"Chi tiết" để xem thông tin học kỳ và danh sách lớp học phần thuộc học kỳ; bấm "Xem lớp" để mở chi tiết lớp và danh sách buổi học.',
                 '"Sửa" để đổi ngày (học kỳ đã có lớp chỉ đổi được ngày, khoảng mới phải bao trùm các buổi đã xếp); "Xóa" khi học kỳ chưa có lớp.',
-                'Cột "Kiểm tra dữ liệu" cảnh báo học kỳ chồng thời gian hoặc có buổi học nằm ngoài học kỳ - cần sửa lại ngày.'
+                'Cảnh báo đỏ (⚠) chỉ hiện dưới năm học khi học kỳ chồng thời gian hoặc có buổi học nằm ngoài học kỳ - cần sửa lại ngày.'
             ],
             rules: ['RULE-HK'],
             notes: ['Số tuần = số tuần lịch Thứ 2 → Chủ nhật mà học kỳ đi qua, cùng cách tính với Thời khóa biểu.']

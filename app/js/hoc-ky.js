@@ -21,8 +21,8 @@
                 '    Các học kỳ trong cùng năm học không được trùng thời gian.</p>' +
                 '    <div class="table-responsive"><table class="data-table"><thead><tr>' +
                 '      <th class="text-center">STT</th><th>Năm học</th><th class="text-center">Học kỳ</th><th class="text-center">Ngày bắt đầu</th>' +
-                '      <th class="text-center">Ngày kết thúc</th><th class="text-center">Số tuần</th><th class="text-center">Lớp học phần</th><th>Kiểm tra dữ liệu</th><th class="text-center">Thao tác</th>' +
-                '    </tr></thead><tbody id="hocKyBody"><tr><td colspan="9" class="text-center text-muted py-3">Đang tải...</td></tr></tbody></table></div>' +
+                '      <th class="text-center">Ngày kết thúc</th><th class="text-center">Số tuần</th><th class="text-center">Lớp học phần</th><th class="text-center">Thao tác</th>' +
+                '    </tr></thead><tbody id="hocKyBody"><tr><td colspan="8" class="text-center text-muted py-3">Đang tải...</td></tr></tbody></table></div>' +
                 '  </div>' +
                 '</div>';
             $('#contentArea').html(html);
@@ -50,18 +50,17 @@
                 self.list = res.data || [];
                 var tbody = $('#hocKyBody').empty();
                 if (!self.list.length) {
-                    tbody.html('<tr><td colspan="9" class="text-center text-muted py-3">Chưa khai báo học kỳ nào - lớp học phần cần học kỳ đã khai báo để xếp lịch</td></tr>');
+                    tbody.html('<tr><td colspan="8" class="text-center text-muted py-3">Chưa khai báo học kỳ nào - lớp học phần cần học kỳ đã khai báo để xếp lịch</td></tr>');
                     return;
                 }
                 self.list.forEach(function (h, i) {
-                    var cb = (h.canh_bao || []).length
-                        ? h.canh_bao.map(function (x) { return '<div class="text-danger" style="font-size:0.8rem;">⚠ ' + App.escapeHtml(x) + '</div>'; }).join('')
-                        : '<span class="text-success" style="font-size:0.8rem;">Hợp lệ</span>';
+                    // RULE-HK-09: chỉ hiện cảnh báo khi dữ liệu vi phạm, không hiện gì nếu hợp lệ
+                    var cb = (h.canh_bao || []).map(function (x) { return '<div class="text-danger" style="font-size:0.8rem;">⚠ ' + App.escapeHtml(x) + '</div>'; }).join('');
                     tbody.append(
-                        '<tr><td class="text-center">' + (i + 1) + '</td><td><strong>' + App.escapeHtml(h.nam_hoc) + '</strong></td>' +
+                        '<tr><td class="text-center">' + (i + 1) + '</td><td><strong>' + App.escapeHtml(h.nam_hoc) + '</strong>' + cb + '</td>' +
                         '<td class="text-center">' + self.tenHk(h.hoc_ky) + '</td>' +
                         '<td class="text-center">' + App.formatDate(h.ngay_bat_dau) + '</td><td class="text-center">' + App.formatDate(h.ngay_ket_thuc) + '</td>' +
-                        '<td class="text-center">' + h.so_tuan + '</td><td class="text-center">' + h.so_lop_hoc_phan + '</td><td>' + cb + '</td>' +
+                        '<td class="text-center">' + h.so_tuan + '</td><td class="text-center">' + h.so_lop_hoc_phan + '</td>' +
                         '<td class="text-center"><div class="table-actions table-actions-stack justify-center">' +
                         '<button class="btn btn-sm btn-outline-primary btn-hk-xem" data-id="' + h.id + '">Chi tiết</button>' +
                         '<button class="btn btn-sm btn-outline btn-hk-sua" data-id="' + h.id + '">Sửa</button>' +
