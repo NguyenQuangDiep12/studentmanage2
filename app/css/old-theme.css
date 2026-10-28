@@ -137,7 +137,11 @@ body {
 /* ---------- Thời khóa biểu ---------- */
 .timetable th, .timetable td { border-color: #dbe7fb; }
 .timetable th { background: #f8fbff; color: #334155; }
-.timetable .tiet-col { background: linear-gradient(180deg, #38bdf8 0%, #2563eb 100%); color: #fff; }
+.timetable th.tiet-col { background: #f8fbff; color: #334155; }
+.timetable .tiet-col { width: 92px; min-width: 92px; }
+.timetable td.tiet-col { background: linear-gradient(180deg, #38bdf8 0%, #2563eb 100%); color: #fff; padding: 10px 8px; }
+.timetable td.tiet-col .tiet-so { display: block; font-weight: 700; color: #fff; }
+.timetable td.tiet-col .tiet-gio { display: block; margin-top: 4px; font-size: 0.75rem; white-space: nowrap; color: rgba(255, 255, 255, 0.88); }
 
 /* ---------- Nút Hướng dẫn ở cuối trang ---------- */
 .page-help-footer { display: flex; justify-content: flex-end; }

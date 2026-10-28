@@ -10,8 +10,13 @@ COPY . /var/www/html/
 RUN mkdir -p /opt/seed && cp /var/www/html/database/app.db /opt/seed/app.db \
  && chown -R www-data:www-data /var/www/html
 
+RUN echo "expose_php=Off" > /usr/local/etc/php/conf.d/security.ini
+
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+RUN echo "ServerTokens Prod" >> /etc/apache2/conf-available/security.conf \
+    && echo "ServerSignature Off" >> /etc/apache2/conf-available/security.conf
 
 ENV PORT=10000
 EXPOSE 10000

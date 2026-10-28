@@ -293,8 +293,8 @@
                 // Cột Ca học
                 rowHtml +=
                     '<td class="tiet-col">' +
-                    '  <div style="font-weight:700;">Tiết ' + tiet + '</div>' +
-                    '  <div style="font-size:0.75rem; color:#64748b;">' + timeStart + ' - ' + (tietGioKetThuc[tiet] || '') + '</div>' +
+                    '  <div class="tiet-so">Tiết ' + tiet + '</div>' +
+                    '  <div class="tiet-gio">' + timeStart + ' - ' + (tietGioKetThuc[tiet] || '') + '</div>' +
                     '</td>';
 
                 // 7 ngày trong tuần: Thứ 2 (2) -> Chủ nhật (8)
