@@ -238,11 +238,14 @@ var HelpComponent = (function ($) {
         var title = $('#pageMainTitle').text() || 'Hướng dẫn';
 
         loadRules(function (rules) {
-            var rulesHtml = meta.rules.length
-                ? meta.rules.map(function (id) {
+            var loaded = Object.keys(rules).length > 0;
+            var rulesHtml = !meta.rules.length
+                ? '<p class="text-muted">Trang này không có RULE nghiệp vụ riêng.</p>'
+                : !loaded
+                ? '<p class="text-muted">Không đọc được file BUSINESS_RULES.md trên server.</p>'
+                : meta.rules.map(function (id) {
                     return rules[id] ? renderRule(rules[id]) : '<div class="help-rule text-muted">' + id + ': không tìm thấy trong BUSINESS_RULES.md</div>';
-                }).join('')
-                : '<p class="text-muted">Trang này không có RULE nghiệp vụ riêng.</p>';
+                }).join('');
 
             var html =
                 '<div class="modal-header"><h3><i class="fa-solid fa-circle-question"></i> Hướng dẫn: ' + App.escapeHtml(title) + '</h3>' +

@@ -2,3 +2,5 @@
 _to_delete
 database/*.bak-*
 *.md
+# Trang "Hướng dẫn" đọc file này qua /BUSINESS_RULES.md - phải có trong image
+!BUSINESS_RULES.md
