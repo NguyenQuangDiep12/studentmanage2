@@ -91,9 +91,10 @@
                 var authorName = n.ten_nguoi_dang || 'Ban Quản trị';
 
                 var itemHtml =
-                    '<div class="news-item news-item-card" data-id="' + n.id + '" style="cursor:pointer;">' +
+                    '<div class="news-item news-item-card' + (parseInt(n.quan_trong, 10) === 1 ? ' news-important' : '') + '" data-id="' + n.id + '" style="cursor:pointer;">' +
                     '  <div style="flex:1;">' +
                     '    <div class="d-flex align-center gap-2 mb-1">' +
+                    (parseInt(n.quan_trong, 10) === 1 ? '      <span class="badge badge-danger"><i class="fa-solid fa-thumbtack"></i> Quan trọng</span>' : '') +
                     '      <span class="badge badge-info">' + App.escapeHtml(n.danh_muc || 'Thông báo') + '</span>' +
                     '      <span class="text-gray" style="font-size:0.82rem;"><i class="fa-regular fa-calendar"></i> ' + App.formatDate(n.created_at) + '</span>' +
                     '    </div>' +
@@ -278,7 +279,8 @@
                 var row =
                     '<tr>' +
                     '  <td class="text-center font-bold">' + (idx + 1) + '</td>' +
-                    '  <td><strong>' + App.escapeHtml(n.tieu_de) + '</strong></td>' +
+                    '  <td><strong>' + App.escapeHtml(n.tieu_de) + '</strong>' +
+                    (parseInt(n.quan_trong, 10) === 1 ? ' <span class="badge badge-danger"><i class="fa-solid fa-thumbtack"></i> Quan trọng</span>' : '') + '</td>' +
                     '  <td><span class="badge badge-info">' + App.escapeHtml(n.danh_muc || 'Chung') + '</span></td>' +
                     '  <td>' + App.escapeHtml(authorName) + '</td>' +
                     '  <td><small>' + App.formatDateTime(n.created_at) + '</small></td>' +
@@ -334,6 +336,12 @@
                 '    </div>' +
                 '  </div>' +
                 '  <div class="form-group">' +
+                '    <label class="checkbox-inline" style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer;">' +
+                '      <input type="checkbox" id="newsQuanTrong" ' + (n && parseInt(n.quan_trong, 10) === 1 ? 'checked' : '') + '>' +
+                '      <span>Đánh dấu là tin quan trọng (luôn hiển thị đầu danh sách)</span>' +
+                '    </label>' +
+                '  </div>' +
+                '  <div class="form-group">' +
                 '    <label>Tóm tắt ngắn</label>' +
                 '    <textarea class="form-control" id="newsTomTat" rows="2" placeholder="Tóm tắt ngắn gọn nội dung thông báo...">' + (n ? App.escapeHtml(n.tom_tat || '') : '') + '</textarea>' +
                 '  </div>' +
@@ -364,6 +372,7 @@
                 tieu_de: $('#newsTieuDe').val(),
                 danh_muc: $('#newsDanhMuc').val(),
                 trang_thai: $('#newsTrangThai').val(),
+                quan_trong: $('#newsQuanTrong').is(':checked') ? 1 : 0,
                 tom_tat: $('#newsTomTat').val(),
                 noi_dung: $('#newsNoiDung').val()
             };

@@ -24,6 +24,11 @@ class Quanlytintuc
         // Dữ liệu cũ ở trạng thái "Đã ẩn" (đã bỏ) chuyển thành Bản nháp - cùng quyền xem: chỉ quản trị viên
         $this->db->prepare("UPDATE tin_tuc SET trang_thai = :draft WHERE trang_thai IN ('Đã ẩn', 'an')")
             ->execute([':draft' => self::DRAFT_STATUS]);
+        // RULE-19: cột đánh dấu tin quan trọng (DB cũ chưa có thì tự thêm, mặc định 0 = tin thường)
+        $cols = array_column($this->db->query('PRAGMA table_info(tin_tuc)')->fetchAll(), 'name');
+        if (!in_array('quan_trong', $cols, true)) {
+            $this->db->exec('ALTER TABLE tin_tuc ADD COLUMN quan_trong INTEGER NOT NULL DEFAULT 0');
+        }
     }
 
     /**
@@ -63,7 +68,8 @@ class Quanlytintuc
             $params += [':s1' => $kw, ':s2' => $kw, ':s3' => $kw];
         }
 
-        $sql .= ' ORDER BY t.created_at DESC, t.id DESC';
+        // RULE-20: tin quan trọng luôn ở đầu danh sách, sau đó mới theo ngày đăng mới nhất
+        $sql .= ' ORDER BY t.quan_trong DESC, t.created_at DESC, t.id DESC';
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -95,9 +101,10 @@ class Quanlytintuc
         $now = date('Y-m-d H:i:s');
 
         $this->db->prepare('
-            INSERT INTO tin_tuc (tieu_de, tom_tat, noi_dung, danh_muc, trang_thai, nguoi_dang_user_id, created_at, updated_at)
-            VALUES (:tieu_de, :tom_tat, :noi_dung, :danh_muc, :trang_thai, :uid, :c, :u)
+            INSERT INTO tin_tuc (tieu_de, tom_tat, noi_dung, danh_muc, trang_thai, quan_trong, nguoi_dang_user_id, created_at, updated_at)
+            VALUES (:tieu_de, :tom_tat, :noi_dung, :danh_muc, :trang_thai, :quan_trong, :uid, :c, :u)
         ')->execute([
+            ':quan_trong' => $data['quan_trong'],
             ':tieu_de' => $data['tieu_de'],
             ':tom_tat' => $data['tom_tat'],
             ':noi_dung' => $data['noi_dung'],
@@ -130,9 +137,10 @@ class Quanlytintuc
 
         $this->db->prepare('
             UPDATE tin_tuc SET tieu_de = :tieu_de, tom_tat = :tom_tat, noi_dung = :noi_dung,
-                               danh_muc = :danh_muc, trang_thai = :trang_thai, updated_at = :u
+                               danh_muc = :danh_muc, trang_thai = :trang_thai, quan_trong = :quan_trong, updated_at = :u
             WHERE id = :id
         ')->execute([
+            ':quan_trong' => $data['quan_trong'],
             ':tieu_de' => $data['tieu_de'],
             ':tom_tat' => $data['tom_tat'],
             ':noi_dung' => $data['noi_dung'],
@@ -209,7 +217,7 @@ class Quanlytintuc
     /** RULE-19.3: kiểm tra trường bắt buộc */
     private function validate(array $in): array
     {
-        $tieuDe = Request::str($in['tieu_de'] ?? '');
+        $tieuDe = is_scalar($in['tieu_de'] ?? '') ? (string) ($in['tieu_de'] ?? '') : '';
         $tomTat = Request::str($in['tom_tat'] ?? '');
         $noiDung = Request::str($in['noi_dung'] ?? '');
         $danhMuc = Request::str($in['danh_muc'] ?? 'Chung');
@@ -233,8 +241,14 @@ class Quanlytintuc
         if (!in_array($tt, self::STATUSES, true)) {
             Response::json(['success' => false, 'message' => 'Trạng thái tin tức không hợp lệ!'], 422);
         }
+        // Tin quan trọng: chỉ nhận 0/1 (true/false); không gửi = tin thường
+        $qt = $in['quan_trong'] ?? 0;
+        if (!in_array($qt, [0, 1, '0', '1', true, false], true)) {
+            Response::json(['success' => false, 'message' => 'Giá trị tin quan trọng không hợp lệ (0 hoặc 1)!'], 422);
+        }
 
         return [
+            'quan_trong' => ($qt === 1 || $qt === '1' || $qt === true) ? 1 : 0,
             'tieu_de' => $tieuDe,
             'tom_tat' => $tomTat !== '' ? $tomTat : null,
             'noi_dung' => $noiDung,

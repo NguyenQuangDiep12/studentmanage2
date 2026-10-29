@@ -187,7 +187,8 @@ Table tin_tuc {
   tom_tat text
   noi_dung text
   danh_muc text
-  trang_thai text [note: 'Công khai | Bản nháp | Đã ẩn']
+  trang_thai text [note: 'Công khai | Bản nháp']
+  quan_trong integer [not null, default: 0, note: '1 = tin quan trọng, hiển thị đầu danh sách']
   nguoi_dang_user_id integer [not null]
   created_at text
   updated_at text

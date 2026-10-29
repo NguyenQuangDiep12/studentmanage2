@@ -167,9 +167,11 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 ## RULE-19: Quản trị viên quản lý tin tức
 - Quản trị viên đăng nhập, tạo, sửa, xóa tin tức và chuyển trạng thái tin sau khi kiểm tra các trường bắt buộc.
 - Tin tức chỉ có 2 trạng thái: **Công khai** (quản trị viên, giảng viên, sinh viên đều xem được) và **Bản nháp** (chỉ quản trị viên xem được). Mặc định Công khai.
+- Khi đăng / sửa tin, quản trị viên có thể tick **Tin quan trọng**. Mặc định không tick (tin thường).
 
 ## RULE-20: Hiển thị tin tức cho sinh viên và giảng viên
 - Sinh viên và giảng viên xem tin tức công khai.
+- Danh sách tin (cả trang quản lý của quản trị viên) xếp tin quan trọng lên đầu, có nhãn "Quan trọng"; trong cùng nhóm thì tin mới đăng ở trên. Bỏ tick thì tin trở về vị trí theo ngày đăng.
 
 ## RULE-21: Đăng nhập
 - Nhập tên đăng nhập/mã định danh và mật khẩu hợp lệ.
