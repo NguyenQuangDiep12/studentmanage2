@@ -330,16 +330,11 @@
                 '    <div class="form-group">' +
                 '      <label>Trạng thái hiển thị</label>' +
                 '      <select class="form-control" id="newsTrangThai">' +
-                '        <option value="Công khai" ' + (currentStatus === 'Công khai' ? 'selected' : '') + '>Công khai (quản trị viên, giảng viên, sinh viên đều xem được)</option>' +
-                '        <option value="Bản nháp" ' + (currentStatus === 'Bản nháp' ? 'selected' : '') + '>Bản nháp (chỉ quản trị viên xem được)</option>' +
+                '        <option value="Công khai" ' + (currentStatus === 'Công khai' ? 'selected' : '') + '>Công khai</option>' +
+                '        <option value="Bản nháp" ' + (currentStatus === 'Bản nháp' ? 'selected' : '') + '>Bản nháp</option>' +
                 '      </select>' +
+                '      <small class="text-muted" style="display:block; margin-top:4px; font-size:0.78rem;">Công khai: quản trị viên, giảng viên, sinh viên đều xem được. Bản nháp: chỉ quản trị viên xem được.</small>' +
                 '    </div>' +
-                '  </div>' +
-                '  <div class="form-group">' +
-                '    <label class="checkbox-inline" style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer;">' +
-                '      <input type="checkbox" id="newsQuanTrong" ' + (n && parseInt(n.quan_trong, 10) === 1 ? 'checked' : '') + '>' +
-                '      <span>Đánh dấu là tin quan trọng (luôn hiển thị đầu danh sách)</span>' +
-                '    </label>' +
                 '  </div>' +
                 '  <div class="form-group">' +
                 '    <label>Tóm tắt ngắn</label>' +
@@ -348,6 +343,12 @@
                 '  <div class="form-group">' +
                 '    <label>Nội dung chi tiết <span class="required">*</span></label>' +
                 '    <textarea class="form-control" id="newsNoiDung" rows="7" placeholder="Nhập toàn văn nội dung thông báo...">' + (n ? App.escapeHtml(n.noi_dung || '') : '') + '</textarea>' +
+                '  </div>' +
+                '  <div class="form-group">' +
+                '    <label class="checkbox-inline" style="display:flex; align-items:flex-start; gap:8px; font-weight:600; cursor:pointer;">' +
+                '      <input type="checkbox" id="newsQuanTrong" style="margin-top:3px; flex-shrink:0;" ' + (n && parseInt(n.quan_trong, 10) === 1 ? 'checked' : '') + '>' +
+                '      <span>Đánh dấu là tin quan trọng (luôn hiển thị đầu danh sách)</span>' +
+                '    </label>' +
                 '  </div>' +
                 '</div>' +
                 '<div class="modal-footer">' +
