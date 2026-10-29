@@ -333,7 +333,6 @@
                 '        <option value="Công khai" ' + (currentStatus === 'Công khai' ? 'selected' : '') + '>Công khai</option>' +
                 '        <option value="Bản nháp" ' + (currentStatus === 'Bản nháp' ? 'selected' : '') + '>Bản nháp</option>' +
                 '      </select>' +
-                '      <small class="text-muted" style="display:block; margin-top:4px; font-size:0.78rem;">Công khai: quản trị viên, giảng viên, sinh viên đều xem được. Bản nháp: chỉ quản trị viên xem được.</small>' +
                 '    </div>' +
                 '  </div>' +
                 '  <div class="form-group">' +
