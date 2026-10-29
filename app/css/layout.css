@@ -6,10 +6,11 @@
 
 .dashboard-grid { display: grid; gap: 20px; align-items: start; margin-bottom: 20px; }
 .dashboard-grid > * { min-width: 0; }
-.dashboard-grid.two-columns { grid-template-columns: 1fr; } /* form ở trên, danh sách ở dưới */
+/* Lưới 2 cột như hệ thống cũ: mỗi hàng 2 khối chức năng, khối thứ 3, 4... xuống hàng dưới */
+.dashboard-grid.two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .dashboard-grid .card { margin-bottom: 0; }
 
-@media (max-width: 1360px) {
+@media (max-width: 1100px) {
     .dashboard-grid.two-columns { grid-template-columns: 1fr; }
 }
 
@@ -42,3 +43,33 @@
 @media (max-width: 768px) {
     .inline-form-card > .card-body { grid-template-columns: 1fr; }
 }
+
+/* Áp dụng cho mọi trang có từ 2 khối chức năng (thẻ .card) trở lên:
+   mỗi hàng 2 khối, khối tiếp theo xuống hàng dưới; trang chỉ có 1 khối giữ nguyên.
+   Thanh tab, ô thống kê, vùng chứa khác chiếm cả hàng. */
+#contentArea:has(> .card ~ .card),
+.tab-content.active:has(> .card ~ .card) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+    gap: 20px;
+    align-items: start;
+}
+#contentArea:has(> .card ~ .card) > *,
+.tab-content.active:has(> .card ~ .card) > * { grid-column: 1 / -1; margin-bottom: 0; }
+#contentArea:has(> .card ~ .card) > .card,
+#contentArea:has(> .card ~ .card) > #diemFormSlot:not(:empty),
+.tab-content.active:has(> .card ~ .card) > .card { grid-column: auto; }
+#diemFormSlot:empty { display: none; }
+/* Bảng điểm đứng một mình (không mở form sửa điểm) thì rộng cả hàng */
+#diemFormSlot:empty ~ #diemTableCard { grid-column: 1 / -1; }
+@media (max-width: 1100px) {
+    #contentArea:has(> .card ~ .card),
+    .tab-content.active:has(> .card ~ .card) { grid-template-columns: 1fr; }
+}
+
+/* Bỏ icon (Font Awesome) trên toàn hệ thống; riêng nút chuông chỉ có biểu tượng nên giữ lại */
+i.fa, i.fas, i.far, i.fab, i[class^="fa-"], i[class*=" fa-"] { display: none !important; }
+#btnNotifications i { display: inline-block !important; }
+.search-box .search-icon { display: none !important; }
+.search-box input { padding-left: 14px !important; }

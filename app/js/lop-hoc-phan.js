@@ -18,7 +18,7 @@
 
             // Bố cục giống giao diện React: form tạo lớp (lớn) đặt trên, danh sách lớp bên dưới
             var html =
-                '<section class="dashboard-grid">' +
+                '<section class="dashboard-grid two-columns">' +
                 ((isAdmin || isGV) ? '<div id="lhpFormSlot"></div>' : '') +
                 '<div class="card">' +
                 '  <div class="card-header">' +
