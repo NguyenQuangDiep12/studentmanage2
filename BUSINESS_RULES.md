@@ -165,7 +165,8 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
     GPA được tính lại mỗi lần tra cứu nên luôn theo điểm mới nhất.
 
 ## RULE-19: Quản trị viên quản lý tin tức
-- Quản trị viên đăng nhập, tạo, sửa, ẩn/ngừng hiển thị tin tức sau khi kiểm tra các trường bắt buộc.
+- Quản trị viên đăng nhập, tạo, sửa, xóa tin tức và chuyển trạng thái tin sau khi kiểm tra các trường bắt buộc.
+- Tin tức chỉ có 2 trạng thái: **Công khai** (quản trị viên, giảng viên, sinh viên đều xem được) và **Bản nháp** (chỉ quản trị viên xem được). Mặc định Công khai.
 
 ## RULE-20: Hiển thị tin tức cho sinh viên và giảng viên
 - Sinh viên và giảng viên xem tin tức công khai.

@@ -327,7 +327,6 @@ var App = (function ($) {
 
     function trangThaiTinTucBadge(tt) {
         if (tt === 'Công khai' || tt === 'cong_khai') return '<span class="badge badge-success">Công khai</span>';
-        if (tt === 'Đã ẩn' || tt === 'an') return '<span class="badge badge-warning">Đã ẩn</span>';
         return '<span class="badge badge-secondary">Bản nháp</span>';
     }
 

@@ -180,8 +180,8 @@ var HelpComponent = (function ($) {
         'tin-tuc-admin': {
             steps: [
                 'Bấm "Đăng bài mới", nhập tiêu đề, nội dung (bắt buộc), tóm tắt, danh mục, trạng thái hiển thị.',
-                '"Sửa" để chỉnh nội dung; nút "Ẩn" / "Đăng" để đổi trạng thái hiển thị; "Xóa" để xóa bài.',
-                'Tin ở trạng thái "Đã ẩn" hoặc "Bản nháp" không hiển thị cho sinh viên và giảng viên.'
+                '"Sửa" để chỉnh nội dung; nút "Chuyển nháp" / "Đăng" để đổi trạng thái; "Xóa" để xóa bài.',
+                'Tin có 2 trạng thái: "Công khai" thì quản trị viên, giảng viên, sinh viên đều xem được; "Bản nháp" thì chỉ quản trị viên xem được.'
             ],
             rules: ['RULE-19', 'RULE-20']
         },

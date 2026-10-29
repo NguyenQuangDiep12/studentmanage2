@@ -13,17 +13,22 @@ class Quanlytintuc
     private PDO $db;
 
     private const PUBLIC_STATUS = 'Công khai';
-    private const STATUSES = ['Công khai', 'Đã ẩn', 'Bản nháp'];
+    private const DRAFT_STATUS = 'Bản nháp';
+    // RULE-19: tin tức chỉ có 2 trạng thái - Công khai (mọi vai trò xem được) và Bản nháp (chỉ quản trị viên xem được)
+    private const STATUSES = ['Công khai', 'Bản nháp'];
     private const CATEGORIES = ['Đào tạo', 'Sự kiện', 'Tuyển dụng', 'Chung'];
 
     public function __construct()
     {
         $this->db = Database::connect();
+        // Dữ liệu cũ ở trạng thái "Đã ẩn" (đã bỏ) chuyển thành Bản nháp - cùng quyền xem: chỉ quản trị viên
+        $this->db->prepare("UPDATE tin_tuc SET trang_thai = :draft WHERE trang_thai IN ('Đã ẩn', 'an')")
+            ->execute([':draft' => self::DRAFT_STATUS]);
     }
 
     /**
      * GET /api/tintuc?search=&danh_muc=
-     * Quản trị viên thêm ?quan_ly=1 (&trang_thai=) để xem cả tin ẩn / nháp.
+     * Quản trị viên thêm ?quan_ly=1 (&trang_thai=) để xem cả tin bản nháp.
      */
     public function index(): void
     {
@@ -140,7 +145,7 @@ class Quanlytintuc
         Response::json(['success' => true, 'message' => 'Cập nhật tin tức thành công!', 'data' => $this->find($id)]);
     }
 
-    /** POST /api/tintuc/trang-thai — body { id, trang_thai } ẩn / hiển thị (RULE-19.6) */
+    /** POST /api/tintuc/trang-thai — body { id, trang_thai } chuyển Công khai <-> Bản nháp (RULE-19) */
     public function changeStatus(): void
     {
         Request::requireMethod('POST', 'PUT');
@@ -153,7 +158,7 @@ class Quanlytintuc
 
         $tt = Request::str(Request::input('trang_thai'));
         if (!in_array($tt, self::STATUSES, true)) {
-            Response::json(['success' => false, 'message' => 'Trạng thái tin tức không hợp lệ (Công khai, Đã ẩn, Bản nháp).'], 422);
+            Response::json(['success' => false, 'message' => 'Trạng thái tin tức không hợp lệ (Công khai, Bản nháp).'], 422);
         }
 
         $this->db->prepare('UPDATE tin_tuc SET trang_thai = :tt, updated_at = :u WHERE id = :id')

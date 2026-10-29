@@ -88,7 +88,7 @@ Sinh viên nghỉ từ 20% số tiết (R ≥ 20%) bị cấm thi: thêm / sửa
 | GET | /api/tintuc/chi-tiet | đã đăng nhập | `id` |
 | POST | /api/tintuc | admin | `tieu_de`, `noi_dung`, `tom_tat`, `danh_muc`, `trang_thai` |
 | PUT | /api/tintuc | admin | `id` + các trường trên |
-| POST | /api/tintuc/trang-thai | admin | `id`, `trang_thai`: `Công khai` \| `Đã ẩn` \| `Bản nháp` |
+| POST | /api/tintuc/trang-thai | admin | `id`, `trang_thai`: `Công khai` \| `Bản nháp` |
 | DELETE | /api/tintuc?id= | admin | — |
 
 ## 7. Cơ cấu đào tạo & Chương trình đào tạo

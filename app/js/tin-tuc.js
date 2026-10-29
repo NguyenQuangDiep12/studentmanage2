@@ -1,7 +1,7 @@
 /* ================================================================
    TIN-TUC.JS - Quản lý & Hiển thị Tin tức, Thông báo nhà trường
    Font Awesome CDN Icons & Thiết kế Card hiện đại
-   Thống nhất trạng thái: 'Công khai', 'Đã ẩn', 'Bản nháp'
+   Thống nhất trạng thái: 'Công khai', 'Bản nháp' (RULE-19)
    Bảo vệ XSS & Tương thích chuẩn API PHP Backend
    ================================================================ */
 
@@ -175,7 +175,6 @@
                 '        <select id="filterTrangThaiNewsAdmin" class="filter-select">' +
                 '          <option value="">Tất cả trạng thái</option>' +
                 '          <option value="Công khai">Công khai</option>' +
-                '          <option value="Đã ẩn">Đã ẩn</option>' +
                 '          <option value="Bản nháp">Bản nháp</option>' +
                 '        </select>' +
                 '      </div>' +
@@ -269,7 +268,7 @@
 
                 var isPublic = (n.trang_thai === 'Công khai' || n.trang_thai === 'cong_khai');
                 var toggleBtnText = isPublic
-                    ? '<i class="fa-solid fa-eye-slash"></i> Ẩn'
+                    ? '<i class="fa-solid fa-file-pen"></i> Chuyển nháp'
                     : '<i class="fa-solid fa-globe"></i> Đăng';
 
                 var row =
@@ -298,9 +297,7 @@
 
             var currentStatus = 'Công khai';
             if (n) {
-                if (n.trang_thai === 'an' || n.trang_thai === 'Đã ẩn') currentStatus = 'Đã ẩn';
-                else if (n.trang_thai === 'nhap' || n.trang_thai === 'Bản nháp') currentStatus = 'Bản nháp';
-                else currentStatus = 'Công khai';
+                currentStatus = (n.trang_thai === 'Công khai' || n.trang_thai === 'cong_khai') ? 'Công khai' : 'Bản nháp';
             }
 
             var html =
@@ -327,9 +324,8 @@
                 '    <div class="form-group">' +
                 '      <label>Trạng thái hiển thị</label>' +
                 '      <select class="form-control" id="newsTrangThai">' +
-                '        <option value="Công khai" ' + (currentStatus === 'Công khai' ? 'selected' : '') + '>Công khai (Hiển thị ngay)</option>' +
-                '        <option value="Đã ẩn" ' + (currentStatus === 'Đã ẩn' ? 'selected' : '') + '>Đã ẩn (Tạm ẩn khỏi sinh viên / giảng viên)</option>' +
-                '        <option value="Bản nháp" ' + (currentStatus === 'Bản nháp' ? 'selected' : '') + '>Bản nháp</option>' +
+                '        <option value="Công khai" ' + (currentStatus === 'Công khai' ? 'selected' : '') + '>Công khai (quản trị viên, giảng viên, sinh viên đều xem được)</option>' +
+                '        <option value="Bản nháp" ' + (currentStatus === 'Bản nháp' ? 'selected' : '') + '>Bản nháp (chỉ quản trị viên xem được)</option>' +
                 '      </select>' +
                 '    </div>' +
                 '  </div>' +
@@ -382,7 +378,7 @@
             var n = this.findCached(id);
             if (!n) return;
 
-            var newStatus = n.trang_thai === 'Công khai' ? 'Đã ẩn' : 'Công khai';
+            var newStatus = n.trang_thai === 'Công khai' ? 'Bản nháp' : 'Công khai';
             Api.post('/api/tintuc/trang-thai', { id: n.id, trang_thai: newStatus })
                 .done(function (res) {
                     App.showToast(res.message, 'info');
