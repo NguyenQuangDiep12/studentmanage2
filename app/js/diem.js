@@ -82,6 +82,8 @@
                 '  <div class="stat-modern-card"><div class="stat-label">Không đạt (F)</div><div class="stat-number text-danger" id="statDiemF">0</div><div class="stat-desc">Cần học lại (dưới 4.0)</div></div>' +
                 '</div>' +
 
+                // Form sửa điểm một sinh viên hiện ngay trên trang, phía trên bảng điểm
+                '<div id="diemFormSlot" class="mb-3"></div>' +
                 '<!-- Bảng nhập điểm -->' +
                 '<div class="card" id="diemTableCard" style="display:none;">' +
                 '  <div class="card-header">' +
@@ -126,6 +128,7 @@
             var self = this;
 
             $('#selectDiemLHP').on('change', function () {
+                $('#diemFormSlot').empty();
                 self.loadClassGrades();
             });
 
@@ -290,7 +293,7 @@
             var d = this.findRow(dkId);
             if (!d) return;
             var v = function (x) { return x != null ? x : ''; };
-            App.showModal(
+            App.showInlineForm(
                 '<div class="modal-header"><h3>Sửa điểm: ' + App.escapeHtml(d.ma_dinh_danh + ' - ' + d.ho_ten) + '</h3>' +
                 '<button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
                 '<div class="modal-body">' +
@@ -301,7 +304,9 @@
                 '  </div>' +
                 '</div>' +
                 '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
-                '<button class="btn btn-primary" id="btnLuuSuaDiem">Lưu điểm</button></div>', 'sm');
+                '<button class="btn btn-primary" id="btnLuuSuaDiem">Lưu điểm</button></div>', '#diemFormSlot', function () { $('#diemFormSlot').empty(); });
+            $('#diemFormSlot .inline-form-card').addClass('is-editing');
+            App.focusInlineForm('#diemFormSlot');
 
             $('#btnLuuSuaDiem').on('click', function () {
                 var gk = $('#edGk').val(), ck = $('#edCk').val();
@@ -315,9 +320,9 @@
                 if (Object.keys(sua).length) calls.push(function () { return Api.put('/api/ketquahoctap/diem-thanh-phan', $.extend({ dang_ky_id: dkId }, sua)); });
                 if (Object.keys(them).length) calls.push(function () { return Api.post('/api/ketquahoctap/diem-thanh-phan', $.extend({ dang_ky_id: dkId }, them)); });
                 xoa.forEach(function (loai) { calls.push(function () { return Api.del('/api/ketquahoctap/diem-thanh-phan', { dang_ky_id: dkId, loai: loai }); }); });
-                if (!calls.length) { App.closeModal(); return; }
+                if (!calls.length) { $('#diemFormSlot').empty(); return; }
                 var run = function (i) {
-                    if (i >= calls.length) { App.showToast('Đã cập nhật điểm sinh viên ' + d.ma_dinh_danh + '.', 'success'); App.closeModal(); self.loadClassGrades(); return; }
+                    if (i >= calls.length) { App.showToast('Đã cập nhật điểm sinh viên ' + d.ma_dinh_danh + '.', 'success'); $('#diemFormSlot').empty(); self.loadClassGrades(); return; }
                     calls[i]().done(function () { run(i + 1); }).fail(function (xhr) { Api.toastError(xhr); self.loadClassGrades(); });
                 };
                 run(0);

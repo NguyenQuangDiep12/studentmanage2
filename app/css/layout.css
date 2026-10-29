@@ -1,0 +1,31 @@
+/* ================================================================
+   LAYOUT.CSS - Bố cục nội dung theo giao diện React
+   Mỗi trang quản lý: thẻ form (trái) + thẻ danh sách (phải);
+   form lớn (lớp học phần) xếp trên danh sách.
+   ================================================================ */
+
+.dashboard-grid { display: grid; gap: 20px; align-items: start; margin-bottom: 20px; }
+.dashboard-grid > * { min-width: 0; }
+.dashboard-grid.two-columns { grid-template-columns: minmax(340px, 4fr) minmax(0, 7fr); }
+.dashboard-grid .card { margin-bottom: 0; }
+
+@media (max-width: 1360px) {
+    .dashboard-grid.two-columns { grid-template-columns: 1fr; }
+}
+
+/* Thẻ form đặt ngay trên trang */
+.inline-form-card .card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.inline-form-card .card-header h3 { margin: 0; }
+.inline-form-card .card-footer.form-actions {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0 26px 22px;
+    border-top: 0;
+    background: transparent;
+}
+.dashboard-grid.two-columns .inline-form-card .form-row { flex-wrap: wrap; }
+.dashboard-grid.two-columns .inline-form-card .form-row .form-group { flex: 1 1 200px; }
+.inline-form-card.is-editing { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12), 0 18px 40px rgba(15, 23, 42, 0.06); }

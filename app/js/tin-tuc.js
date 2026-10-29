@@ -159,11 +159,13 @@
                 return;
             }
 
+            // Bố cục giống giao diện React: thẻ form (trái) + thẻ danh sách (phải)
             var html =
+                '<section class="dashboard-grid two-columns">' +
+                '<div id="newsFormSlot"></div>' +
                 '<div class="card">' +
                 '  <div class="card-header">' +
                 '    <h3><i class="fa-solid fa-newspaper"></i> Quản lý tin tức & bài viết</h3>' +
-                '    <button class="btn btn-primary" id="btnThemTinTuc"><i class="fa-solid fa-plus"></i> Đăng bài mới</button>' +
                 '  </div>' +
                 '  <div class="card-body">' +
                 '    <div class="toolbar">' +
@@ -200,10 +202,12 @@
                 '      </table>' +
                 '    </div>' +
                 '  </div>' +
-                '</div>';
+                '</div>' +
+                '</section>';
 
             $('#contentArea').html(html);
             this.bindEvents();
+            this.showFormModal(); // form đăng bài mới hiện sẵn trên trang
             this.loadAdminNews();
         },
 
@@ -302,7 +306,7 @@
 
             var html =
                 '<div class="modal-header">' +
-                '  <h3><i class="fa-solid fa-' + (isEdit ? 'pen-to-square' : 'newspaper') + '"></i> ' + (isEdit ? 'Chỉnh sửa tin tức' : 'Đăng tin tức mới') + '</h3>' +
+                '  <h3><i class="fa-solid fa-' + (isEdit ? 'pen-to-square' : 'newspaper') + '"></i> ' + (isEdit ? 'Chỉnh sửa tin tức' : 'Đăng bài mới') + '</h3>' +
                 '  <button class="modal-close" onclick="App.closeModal()">&times;</button>' +
                 '</div>' +
                 '<div class="modal-body">' +
@@ -343,7 +347,10 @@
                 '  <button class="btn btn-primary" id="btnSaveNews"><i class="fa-solid fa-floppy-disk"></i> Lưu tin tức</button>' +
                 '</div>';
 
-            App.showModal(html, 'lg');
+            var self = this;
+            App.showInlineForm(html, '#newsFormSlot', function () { self.showFormModal(); });
+            $('#newsFormSlot .inline-form-card').toggleClass('is-editing', isEdit);
+            if (isEdit) App.focusInlineForm('#newsFormSlot');
         },
 
         findCached: function (id) {
@@ -368,7 +375,7 @@
 
             req.done(function (res) {
                 App.showToast(res.message, 'success');
-                App.closeModal();
+                self.showFormModal(); // đưa form về trạng thái đăng bài mới
                 self.loadAdminNews();
             }).fail(Api.toastError);
         },

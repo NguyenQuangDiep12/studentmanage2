@@ -14,11 +14,13 @@
             var isAdmin = currentUser && currentUser.vai_tro === 'admin';
             var canCreate = currentUser && (currentUser.vai_tro === 'admin' || currentUser.vai_tro === 'giang_vien');
 
+            // Bố cục giống giao diện React: thẻ form (trái) + thẻ danh sách (phải)
             var html =
+                '<section class="dashboard-grid' + (canCreate ? ' two-columns' : '') + '">' +
+                (canCreate ? '<div id="mhFormSlot"></div>' : '') +
                 '<div class="card">' +
                 '  <div class="card-header">' +
                 '    <h3><i class="fa-solid fa-book-bookmark" style="color:var(--primary);"></i> Danh mục môn học</h3>' +
-                (canCreate ? '    <button class="btn btn-primary" id="btnThemMonHoc"><i class="fa-solid fa-plus"></i> Thêm môn học</button>' : '') +
                 '  </div>' +
                 '  <div class="card-body">' +
                 '    <div class="toolbar">' +
@@ -52,7 +54,8 @@
                 '      </table>' +
                 '    </div>' +
                 '  </div>' +
-                '</div>';
+                '</div>' +
+                '</section>';
 
             $('#contentArea').html(html);
             this.bindEvents();
@@ -98,6 +101,8 @@
                     self.cache = res.data || [];
                     self.quyDoi = res.quy_doi || self.quyDoi;
                     self.renderRows(self.cache, isAdmin);
+                    // Lần đầu vào trang: hiện form tạo môn học mới
+                    if ($('#mhFormSlot').length && !$('#mhFormSlot').children().length) self.showFormModal();
                 })
                 .fail(Api.toastError);
         },
@@ -142,7 +147,7 @@
 
             var html =
                 '<div class="modal-header">' +
-                '  <h3><i class="fa-solid ' + (isEdit ? 'fa-pen' : 'fa-plus') + '"></i> ' + (isEdit ? 'Cập nhật môn học' : 'Thêm môn học mới') + '</h3>' +
+                '  <h3><i class="fa-solid ' + (isEdit ? 'fa-pen' : 'fa-plus') + '"></i> ' + (isEdit ? 'Cập nhật môn học' : 'Tạo môn học mới') + '</h3>' +
                 '  <button class="modal-close" onclick="App.closeModal()">&times;</button>' +
                 '</div>' +
                 '<div class="modal-body">' +
@@ -180,11 +185,13 @@
                 '  <button class="btn btn-primary" id="btnSaveMonHoc"><i class="fa-solid fa-floppy-disk"></i> Lưu môn học</button>' +
                 '</div>';
 
-            App.showModal(html, 'lg');
+            var self = this;
+            App.showInlineForm(html, '#mhFormSlot', function () { self.showFormModal(); });
+            $('#mhFormSlot .inline-form-card').toggleClass('is-editing', isEdit);
+            if (isEdit) App.focusInlineForm('#mhFormSlot');
 
             // RULE-CREDIT-08, RULE-CREDIT-09: hiển thị từng bước quy đổi để kiểm tra trước khi lưu
             // (số liệu lấy từ backend; backend tự tính lại khi lưu, không nhận số tiết từ giao diện)
-            var self = this;
             var hint = function () {
                 var q = self.quyDoi;
                 var $h = $('#mhTietHint');
@@ -303,7 +310,7 @@
 
             req.done(function (res) {
                 App.showToast(res.message, 'success');
-                App.closeModal();
+                self.showFormModal(); // đưa form về trạng thái tạo mới
                 self.loadData();
             }).fail(Api.toastError);
         },

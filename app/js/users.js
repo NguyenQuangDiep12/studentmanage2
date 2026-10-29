@@ -69,13 +69,13 @@
                     '</select>';
             }
 
+            // Bố cục giống giao diện React: thẻ form (trái) + thẻ danh sách (phải)
             var html =
+                '<section class="dashboard-grid two-columns">' +
+                '<div id="userFormSlot"></div>' +
                 '<div class="card">' +
                 '  <div class="card-header">' +
                 '    <h3><i class="fa-solid ' + titleIcon + '"></i> ' + pageTitle + '</h3>' +
-                '    <button class="btn btn-primary" id="btnThemUser">' +
-                '      <i class="fa-solid fa-plus"></i> ' + addBtnText +
-                '    </button>' +
                 '  </div>' +
                 '  <div class="card-body">' +
                 '    <div class="toolbar">' +
@@ -113,10 +113,12 @@
                 '      </table>' +
                 '    </div>' +
                 '  </div>' +
-                '</div>';
+                '</div>' +
+                '</section>';
 
             $('#contentArea').html(html);
             this.bindEvents();
+            this.showFormModal(); // form thêm mới hiện sẵn trên trang
             this.loadUsers();
         },
 
@@ -377,7 +379,10 @@
                 '  <button class="btn btn-primary" id="btnSaveUser"><i class="fa-solid fa-floppy-disk"></i> Lưu thông tin</button>' +
                 '</div>';
 
-            App.showModal(html, 'lg');
+            var self = this;
+            App.showInlineForm(html, '#userFormSlot', function () { self.showFormModal(); });
+            $('#userFormSlot .inline-form-card').toggleClass('is-editing', isEdit);
+            if (isEdit) App.focusInlineForm('#userFormSlot');
         },
 
         saveUser: function () {
@@ -427,7 +432,7 @@
 
             req.done(function (res) {
                 App.showToast(res.message, 'success');
-                App.closeModal();
+                self.showFormModal(); // đưa form về trạng thái thêm mới
                 self.loadUsers();
             }).fail(Api.toastError);
         },

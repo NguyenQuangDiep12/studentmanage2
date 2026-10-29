@@ -316,6 +316,9 @@
             .done(function (res) {
                 var dks = (res && res.data) ? res.data : [];
                 var activeDKs = dks.filter(function (d) { return d.trang_thai_dk === 'Đã đăng ký' || d.trang_thai_dk === 'da_dang_ky'; });
+                // Môn đang có đăng ký hiệu lực (để không hiện nút Đăng ký lại cho môn đã đăng ký ở lớp khác)
+                var monDangHoc = activeDKs.map(function (d) { return String(d.mon_hoc_id); });
+                var homNay = new Date();
                 $('#registeredCountBadge').text(activeDKs.length);
 
                 var totalTC = res.total_credits || 0;
@@ -343,7 +346,18 @@
                         actionBtn = '<span class="badge badge-secondary" title="' + App.escapeHtml(dk.ly_do_khong_huy || '') + '"><i class="fa-solid fa-lock"></i> Không thể hủy</span>' +
                             '<br><small class="text-muted">' + App.escapeHtml(dk.ly_do_khong_huy || '') + '</small>';
                     } else {
-                        actionBtn = '<span class="text-muted">—</span>';
+                        // Đăng ký đã hủy: nút quay lại "Đăng ký" nếu lớp còn trong thời gian mở đăng ký
+                        // (sĩ số, trùng lịch... backend kiểm tra khi bấm)
+                        var mo = dk.thoi_gian_mo_dang_ky ? new Date(String(dk.thoi_gian_mo_dang_ky).replace(' ', 'T')) : null;
+                        var dong = dk.thoi_gian_dong_dang_ky ? new Date(String(dk.thoi_gian_dong_dang_ky).replace(' ', 'T')) : null;
+                        var dangMo = mo && dong && homNay >= mo && homNay <= dong;
+                        if (monDangHoc.indexOf(String(dk.mon_hoc_id)) !== -1) {
+                            actionBtn = '<span class="text-muted">—</span>';
+                        } else if (dangMo) {
+                            actionBtn = '<button class="btn btn-sm btn-primary btn-dang-ky-lhp" data-id="' + dk.lop_hoc_phan_id + '"><i class="fa-solid fa-plus"></i> Đăng ký</button>';
+                        } else {
+                            actionBtn = '<span class="badge badge-secondary"><i class="fa-solid fa-lock"></i> Đóng đăng ký</span>';
+                        }
                     }
 
                     var row =

@@ -16,11 +16,13 @@
 
             var pageHeading = isGV ? 'Lớp học phần phụ trách' : 'Danh sách Lớp học phần';
 
+            // Bố cục giống giao diện React: form tạo lớp (lớn) đặt trên, danh sách lớp bên dưới
             var html =
+                '<section class="dashboard-grid">' +
+                ((isAdmin || isGV) ? '<div id="lhpFormSlot"></div>' : '') +
                 '<div class="card">' +
                 '  <div class="card-header">' +
                 '    <h3><i class="fa-solid fa-school" style="color:var(--primary);"></i> ' + pageHeading + '</h3>' +
-                ((isAdmin || isGV) ? '    <button class="btn btn-primary" id="btnThemLHP"><i class="fa-solid fa-plus"></i> Tạo lớp học phần mới</button>' : '') +
                 '  </div>' +
                 '  <div class="card-body">' +
                 '    <div class="toolbar">' +
@@ -70,12 +72,17 @@
                 '      </table>' +
                 '    </div>' +
                 '  </div>' +
-                '</div>';
+                '</div>' +
+                '</section>';
 
             $('#contentArea').html(html);
             this.bindEvents();
             var self = this;
-            App.fillTermSelects('#filterHocKyLHP', '#filterNamHocLHP', {}, function () { self.loadData(); });
+            App.fillTermSelects('#filterHocKyLHP', '#filterNamHocLHP', {}, function () {
+                self.loadData();
+                // Form tạo lớp hiện sẵn trên trang (cần danh sách học kỳ / năm học đã nạp)
+                if ($('#lhpFormSlot').length) self.showFormModal();
+            });
         },
 
         bindEvents: function () {
@@ -110,9 +117,9 @@
 
             // Tạo lớp học phần khi chưa có môn: chuyển sang trang Môn học để tạo trước
             $(document).off('click', '#lnkTaoMonHoc').on('click', '#lnkTaoMonHoc', function () {
-                App.closeModal();
                 App.navigate('mon-hoc');
-                setTimeout(function () { $('#btnThemMonHoc').trigger('click'); }, 400);
+                // Trang Môn học có sẵn form tạo môn ở đầu trang -> đặt con trỏ vào ô Mã môn học
+                setTimeout(function () { $('#mhMa').trigger('focus'); }, 600);
             });
 
             $(document).off('click', '#btnPreviewLHP').on('click', '#btnPreviewLHP', function () {
@@ -346,9 +353,11 @@
                 '  <button class="btn btn-primary" id="btnSaveLHP"><i class="fa-solid fa-floppy-disk"></i> Lưu lớp học phần</button>' +
                 '</div>';
 
-            App.showModal(html, 'xl');
-
             var self = this;
+            App.showInlineForm(html, '#lhpFormSlot', function () { self.showFormModal(); });
+            $('#lhpFormSlot .inline-form-card').toggleClass('is-editing', isEdit);
+            if (isEdit) App.focusInlineForm('#lhpFormSlot');
+
             var showTerm = function () {
                 // RULE-HK-04: dùng đúng ngày bắt đầu / kết thúc đã khai báo, không mặc định độ dài học kỳ
                 var hk = parseInt($('#lhpHocKy').val(), 10), nh = $('#lhpNamHoc').val();
@@ -617,7 +626,7 @@
 
             req.done(function (res) {
                 App.showToast(res.message, 'success');
-                App.closeModal();
+                self.showFormModal(); // đưa form về trạng thái tạo mới
                 self.loadData();
             }).fail(function (xhr) {
                 Api.toastError(xhr);

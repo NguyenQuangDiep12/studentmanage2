@@ -429,13 +429,13 @@ class Quanlylophocphan
         if ((int) $chk['co_diem'] > 0) {
             Response::json([
                 'success' => false,
-                'message' => 'Không thể xóa! Lớp đã có ' . (int) $chk['co_diem'] . ' sinh viên có điểm. Vui lòng chuyển trạng thái lớp sang "Đã hủy" để giữ lại kết quả học tập!'
+                'message' => 'Không thể xóa! Lớp đã có ' . (int) $chk['co_diem'] . ' sinh viên có điểm, cần giữ lại kết quả học tập.'
             ], 409);
         }
         if ((int) $chk['dang_dang_ky'] > 0) {
             Response::json([
                 'success' => false,
-                'message' => 'Không thể xóa! Lớp còn ' . (int) $chk['dang_dang_ky'] . ' sinh viên đang đăng ký. Chỉ xóa được khi mọi đăng ký đã hủy, hoặc chuyển trạng thái lớp sang "Đã hủy"!'
+                'message' => 'Không thể xóa! Lớp còn ' . (int) $chk['dang_dang_ky'] . ' sinh viên đang đăng ký. Chỉ xóa được khi mọi đăng ký đã hủy!'
             ], 409);
         }
 

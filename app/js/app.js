@@ -390,6 +390,30 @@ var App = (function ($) {
         showToast: function (msg, type) { ToastComponent.show(msg, type); },
         showModal: function (html, size) { ModalComponent.show(html, size); },
         closeModal: function () { ModalComponent.close(); },
+        /**
+         * Hiện form ngay trên trang (bố cục giống giao diện React: thẻ form + thẻ danh sách)
+         * html: cùng cấu trúc modal-header / modal-body / modal-footer như hộp thoại cũ
+         * slot: vùng chứa form; onReset: gọi khi bấm Hủy (đưa form về trạng thái thêm mới)
+         */
+        showInlineForm: function (html, slot, onReset) {
+            var $slot = $(slot);
+            if (!$slot.length) { ModalComponent.show(html, 'lg'); return; }
+            var $card = $('<div class="card inline-form-card"></div>').html(html);
+            $card.find('.modal-close').remove();
+            $card.find('.modal-header').removeClass('modal-header').addClass('card-header');
+            $card.find('.modal-body').removeClass('modal-body').addClass('card-body');
+            $card.find('.modal-footer').removeClass('modal-footer').addClass('card-footer form-actions');
+            $card.find('[onclick="App.closeModal()"]').removeAttr('onclick').on('click', function (e) {
+                e.preventDefault();
+                if (typeof onReset === 'function') onReset();
+            });
+            $slot.empty().append($card);
+        },
+        /** Cuộn tới form khi bấm Sửa ở một dòng trong bảng */
+        focusInlineForm: function (slot) {
+            var $slot = $(slot);
+            if ($slot.length && $slot[0].scrollIntoView) $slot[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
         confirm: function (msg, cb) { ModalComponent.confirm(msg, cb); },
         trangThaiUserBadge: trangThaiUserBadge,
         trangThaiLHPBadge: trangThaiLHPBadge,
