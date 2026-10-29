@@ -397,6 +397,7 @@
             }
 
             // Hộp "Cách tính": cập nhật ngay khi đổi môn, học kỳ, thứ hoặc khung tiết
+            self.calcOpen = false;
             self.calcCtx = { mon: allMonHoc, buoiCu: isEdit ? (lhp.buoi_hoc || []) : [] };
             $('#lhpMonHoc, #lhpHocKy, #lhpNamHoc').on('change', function () { self.updateCalc(); });
             $('#scheduleContainer').on('change input', '.sch-thu, .sch-tbd, .sch-tkt', function () { self.updateCalc(); });
@@ -411,6 +412,18 @@
         updateCalc: function () {
             var box = $('#lhpCalc');
             if (!box.length) return;
+            // Cách tính ẩn mặc định, bấm nút để xem / ẩn. Nút chỉ tạo một lần, nội dung cập nhật bên dưới
+            var self = this;
+            if (!$('#btnToggleCalc').length) {
+                box.html(
+                    '<button type="button" class="btn btn-sm btn-outline" id="btnToggleCalc"><i class="fa-solid fa-calculator"></i> Xem cách tính số tiết</button>' +
+                    '<div id="lhpCalcBody" style="display:' + (self.calcOpen ? 'block' : 'none') + '; margin-top:8px; padding:12px 14px; border:1px solid var(--border-color); border-radius:12px; background:#f8fbff;"></div>');
+                $('#btnToggleCalc').on('click', function () {
+                    self.calcOpen = !self.calcOpen;
+                    $('#lhpCalcBody').toggle(self.calcOpen);
+                    $(this).html('<i class="fa-solid fa-calculator"></i> ' + (self.calcOpen ? 'Ẩn cách tính số tiết' : 'Xem cách tính số tiết'));
+                });
+            }
             var ctx = this.calcCtx || {};
             var monId = parseInt($('#lhpMonHoc').val(), 10);
             var mon = (ctx.mon || []).find(function (m) { return parseInt(m.id, 10) === monId; });
@@ -418,7 +431,7 @@
             var term = ((App.getTerms() || {}).hoc_ky || []).find(function (x) {
                 return parseInt(x.hoc_ky, 10) === hk && x.nam_hoc === nh && parseInt(x.da_khai_bao, 10) === 1;
             });
-            if (!mon || !term) { box.empty(); return; }
+            if (!mon || !term) { $('#lhpCalcBody').empty(); return; }
 
             var pad = function (n) { return ('0' + n).slice(-2); };
             var iso = function (d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
@@ -450,7 +463,7 @@
                 rows.push({ thu: thu, a: a, b: b, tiet: b - a + 1, ngay: ngayCuaThu(thu) });
             });
             if (loi || !rows.length) {
-                box.html('<div class="alert alert-warning mb-0">' + (loi || 'Chưa có buổi học trong tuần - bấm "Thêm buổi học trong tuần".') + '</div>');
+                $('#lhpCalcBody').html('<div class="text-warning">' + (loi || 'Chưa có buổi học trong tuần - bấm "Thêm buổi học trong tuần".') + '</div>');
                 return;
             }
 
@@ -506,14 +519,13 @@
                 }
                 goiY.push('Hoặc chọn học kỳ khác còn đủ thời gian.');
                 ketLuan = '<strong class="text-danger">✗ Thiếu ' + thieu + ' tiết (' + can + ' − ' + toiDa + ') → chưa lưu được.</strong> Gợi ý:' +
-                    '<ul class="mb-0 mt-1">' + goiY.map(function (g) { return '<li>' + g + '</li>'; }).join('') + '</ul>';
+                    '<ul class="mb-0 mt-1" style="padding-left:18px;">' + goiY.map(function (g) { return '<li>' + g + '</li>'; }).join('') + '</ul>';
             }
 
-            box.html('<div class="alert ' + (thieu > 0 ? 'alert-danger' : 'alert-info') + ' mb-0">' +
-                '<div style="font-weight:700; margin-bottom:4px;"><i class="fa-solid fa-calculator"></i> Cách tính số tiết xếp được</div>' +
-                '<ul class="mb-1">' + li.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' + ketLuan +
-                '<div class="text-muted mt-1" style="font-size:0.78rem;">Số trên chưa trừ những ngày trùng lịch giảng viên / phòng học. Bấm "Xem trước lịch" để có lịch chính xác.</div>' +
-                '</div>');
+            $('#lhpCalcBody').html(
+                '<ul class="mb-1" style="padding-left:18px;">' + li.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' +
+                '<div>' + ketLuan + '</div>' +
+                '<div class="text-muted mt-1" style="font-size:0.78rem;">Số trên chưa trừ những ngày trùng lịch giảng viên / phòng học. Bấm "Xem trước lịch" để có lịch chính xác.</div>');
         },
 
         addScheduleRow: function (data) {

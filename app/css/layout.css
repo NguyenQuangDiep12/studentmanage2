@@ -6,7 +6,7 @@
 
 .dashboard-grid { display: grid; gap: 20px; align-items: start; margin-bottom: 20px; }
 .dashboard-grid > * { min-width: 0; }
-.dashboard-grid.two-columns { grid-template-columns: minmax(340px, 4fr) minmax(0, 7fr); }
+.dashboard-grid.two-columns { grid-template-columns: 1fr; } /* form ở trên, danh sách ở dưới */
 .dashboard-grid .card { margin-bottom: 0; }
 
 @media (max-width: 1360px) {
