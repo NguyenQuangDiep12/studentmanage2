@@ -32,3 +32,13 @@
 
 /* Tin quan trọng: luôn ở đầu danh sách, viền đỏ nhạt */
 .news-item-card.news-important { border-left: 4px solid #dc2626; background: #fff7f7; }
+
+/* Ô nhập trong form xếp 2 cột (giống hệ thống cũ); khối không phải ô nhập chiếm cả hàng */
+.inline-form-card > .card-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.inline-form-card > .card-body > * { grid-column: 1 / -1; }
+.inline-form-card > .card-body > .form-row { display: contents; }
+.inline-form-card > .card-body > .form-row > .form-group { grid-column: auto; }
+.inline-form-card > .card-body > .form-group { grid-column: auto; } /* mọi ô nhập xếp lần lượt, mỗi hàng 2 cột */
+@media (max-width: 768px) {
+    .inline-form-card > .card-body { grid-template-columns: 1fr; }
+}
