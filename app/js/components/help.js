@@ -163,10 +163,8 @@ var HelpComponent = (function ($) {
         },
         'ket-qua': {
             steps: [
-                'Chọn học kỳ, năm học (hoặc "Tất cả") để xem bảng điểm.',
-                'Phía dưới hiển thị điểm trung bình học kỳ, tích lũy (hệ 10 và hệ 4), số tín chỉ đạt và xếp loại.',
-                'Môn học lại có ghi chú "Lần học x/y" và cho biết lần nào được tính vào tích lũy.',
-                'Bấm "Xem" ở cột "Cách tính" để xem từng bước tính điểm môn; phần "Cách tính điểm trung bình" liệt kê tử số, mẫu số của GPA học kỳ và tích lũy.'
+                'Bảng điểm cá nhân liệt kê mọi môn đã đăng ký: tên môn, mã môn, học kỳ, điểm giữa kỳ, cuối kỳ, tổng kết và điểm chữ.',
+                'Điểm chưa có sẽ hiển thị dấu "—".'
             ],
             rules: ['RULE-16', 'RULE-17', 'RULE-18', 'RULE-CREDIT']
         },

@@ -60,7 +60,7 @@ var SidebarComponent = (function ($) {
             item('chuong-trinh-dao-tao', 'Khung chương trình', 'Khung chương trình và các môn đã học');
             item('dang-ky', 'Đăng ký học phần', 'Đăng ký và hủy đăng ký lớp học phần');
             item('tkb', 'Thời khóa biểu', 'Xem lịch học theo tuần');
-            item('ket-qua', 'Tra cứu bảng điểm', 'Điểm theo môn, kết quả theo học kỳ');
+            item('ket-qua', 'Điểm số', 'Xem dashboard bảng điểm và kết quả học tập');
             item('tin-tuc', 'Danh sách tin tức', 'Xem thông báo chính thức');
             item('kien-nghi', 'Gửi & theo dõi kiến nghị', 'Gửi kiến nghị và theo dõi trạng thái');
         }

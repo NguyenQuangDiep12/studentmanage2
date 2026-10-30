@@ -708,3 +708,27 @@ code { white-space: nowrap; }
 .help-rule li.help-sub { margin-left: 18px; list-style: circle; }
 .help-rule p { margin: 4px 0; }
 @media (max-width: 768px) { .banner-help-btn { position: static; margin-bottom: 8px; } }
+
+
+/* Bảng điểm cá nhân */
+.bang-diem-card { border-radius: 16px; }
+.bang-diem-card .card-body { padding: 20px 24px; }
+.bang-diem-title { font-size: 1.05rem; font-weight: 700; color: #1e293b; margin: 0 0 6px; }
+.bang-diem-desc { color: #64748b; font-size: 0.88rem; margin: 0 0 18px; }
+.bang-diem-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.bang-diem-table th { text-align: left; font-weight: 500; color: #475569; background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+.bang-diem-table td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #1e293b; vertical-align: middle; }
+.bang-diem-table .bd-mon { color: #1e293b; }
+.bang-diem-table .bd-ma { color: #64748b; font-size: 0.78rem; margin-top: 4px; }
+.bang-diem-table .bang-diem-empty { text-align: center; color: #94a3b8; padding: 28px 16px; }
+.bd-chu { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 5px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: #f1f5f9; color: #475569; }
+.bd-chu-A { background: #dcfce7; color: #15803d; }
+.bd-chu-B { background: #dcfce7; color: #15803d; }
+.bd-chu-C { background: #fef3c7; color: #b45309; }
+.bd-chu-D { background: #ffedd5; color: #c2410c; }
+.bd-chu-F { background: #fee2e2; color: #b91c1c; }
+/* Luôn hiển thị theo hàng ngang, các cột giãn hết chiều rộng; màn hình hẹp thì cuộn ngang */
+.bang-diem-scroll { width: 100%; overflow-x: auto; }
+.bang-diem-table { table-layout: auto; min-width: 560px; }
+.bang-diem-table th, .bang-diem-table td { white-space: nowrap; }
+.bang-diem-table td.bd-action { text-align: right; }

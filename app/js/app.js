@@ -110,8 +110,8 @@ var App = (function ($) {
         },
         'ket-qua': {
             category: 'KẾT QUẢ HỌC TẬP',
-            title: 'Kết quả học tập',
-            desc: 'Bảng điểm chi tiết học kỳ và điểm trung bình tích lũy',
+            title: 'Điểm số',
+            desc: 'Bảng điểm cá nhân',
             roles: ['sinh_vien']
         },
         'tin-tuc': {
