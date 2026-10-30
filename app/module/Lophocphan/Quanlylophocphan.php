@@ -600,15 +600,13 @@ class Quanlylophocphan
             $errors[] = 'Vui lòng nhập ngày mở và ngày đóng đăng ký hợp lệ.';
         } // [Lỗi gieo #09] bỏ kiểm tra ngày mở phải trước hoặc bằng ngày đóng đăng ký
 
-        // RULE-DL-03, RULE-HK-01: lớp học phần tham chiếu học kỳ đã khai báo (lấy ngày bắt đầu / kết thúc)
-        $term = null;
-        if (!$errors) {
-            $st = $this->db->prepare('SELECT * FROM hoc_ky WHERE hoc_ky = :hk AND nam_hoc = :nh');
-            $st->execute([':hk' => $hk, ':nh' => $nh]);
-            $term = $st->fetch();
-            if (!$term) {
-                $errors[] = 'Học kỳ ' . $hk . ' năm học ' . $nh . ' chưa được khai báo ngày bắt đầu / kết thúc. Quản trị viên khai báo tại Cơ cấu đào tạo > Học kỳ.';
-            }
+        // RULE-NGAY-01: khoảng ngày học phần do người tạo lớp nhập (không phụ thuộc ngày học kỳ đã khai báo)
+        $bdHp = substr(Request::str($in['ngay_bat_dau_hoc_phan'] ?? ''), 0, 10);
+        $ktHp = substr(Request::str($in['ngay_ket_thuc_hoc_phan'] ?? ''), 0, 10);
+        if (!$this->validDate($bdHp) || !$this->validDate($ktHp)) {
+            $errors[] = 'Vui lòng nhập ngày bắt đầu và ngày kết thúc học phần hợp lệ.';
+        } elseif ($bdHp > $ktHp) {
+            $errors[] = 'Ngày bắt đầu học phần phải trước hoặc bằng ngày kết thúc học phần.';
         }
 
         if ($errors) {
@@ -616,8 +614,9 @@ class Quanlylophocphan
         }
 
         return [
-            'ngay_bat_dau_hk' => $term['ngay_bat_dau'],
-            'ngay_ket_thuc_hk' => $term['ngay_ket_thuc'],
+            // Giữ tên khóa cũ để các hàm xếp lịch dùng chung: nay là khoảng ngày học phần (RULE-NGAY-01)
+            'ngay_bat_dau_hk' => $bdHp,
+            'ngay_ket_thuc_hk' => $ktHp,
             'ma_lop_hoc_phan' => $ma,
             'mon_hoc_id' => $monHocId,
             'giang_vien_user_id' => $gvId,
@@ -671,7 +670,7 @@ class Quanlylophocphan
             ];
 
             if (!Academic::sessionDates($item)) {
-                Response::json(['success' => false, 'message' => "Lịch học thứ {$n}: học kỳ không có ngày " . $this->thuLabel($thu) . ' nào.'], 422);
+                Response::json(['success' => false, 'message' => "Lịch học thứ {$n}: khoảng ngày học phần không có ngày " . $this->thuLabel($thu) . ' nào.'], 422);
             }
 
             // RULE-XD-04: trong cùng lớp, hai lịch không trùng khung tiết cùng thứ
@@ -825,6 +824,9 @@ class Quanlylophocphan
         if ($plan['con_thieu'] > 0) {
             $msg .= ' Còn thiếu ' . $plan['con_thieu'] . ' tiết (nguyên nhân: ' . implode('; ', $plan['nguyen_nhan'])
                 . '). Hãy thêm thứ học, đổi khung tiết hoặc phòng học rồi xếp lại (RULE-THIEU-05).';
+        } elseif (!Academic::XEP_DU_TIET && $plan['da_xep'] !== $plan['tong_tiet_mon']) {
+            // RULE-NGAY-03: chỉ thông tin, không chặn lưu
+            $msg .= ' (Số tiết theo tín chỉ của môn: ' . $plan['tong_tiet_mon'] . ' tiết; lịch xếp theo khoảng ngày học phần đã nhập.)';
         }
 
         return $msg;

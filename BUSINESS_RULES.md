@@ -213,12 +213,12 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-MH-01: Khi tạo hoặc sửa môn học, người dùng khai báo mã môn, tên môn, số tín chỉ lý thuyết, số tín chỉ thực hành; loại môn (Lý thuyết / Thực hành / Kết hợp) được xác định từ hai giá trị này.
 - RULE-MH-02: Số tiết lý thuyết, số tiết thực hành và tổng số tiết do hệ thống tính theo RULE-CREDIT-08.
 - RULE-MH-03: Tiết thành phần (lý thuyết/thực hành) khác điểm thành phần (chuyên cần, giữa kỳ, cuối kỳ); không ảnh hưởng công thức điểm.
-- RULE-MH-04: Quản trị viên và giảng viên được tạo môn học; sửa/xóa môn học do quản trị viên thực hiện. Sinh viên không được tạo môn học.
+- RULE-MH-04: Quản trị viên và giảng viên được tạo, sửa, xóa môn học (theo giao diện mã nguồn cũ). Sinh viên không được tạo, sửa, xóa môn học. Ràng buộc khi xóa (môn đang có lớp học phần, nằm trong CTĐT / nhóm tự chọn) vẫn áp dụng.
 
 ## RULE-HK: Học kỳ
 - RULE-HK-01: Học kỳ (bảng hoc_ky) gồm năm học, số học kỳ (1, 2, 3), ngày bắt đầu, ngày kết thúc; do quản trị viên khai báo.
 - RULE-HK-02: Ngày kết thúc phải lớn hơn ngày bắt đầu.
-- RULE-HK-03: Mọi buổi học phải nằm trong khoảng ngày của học kỳ.
+- RULE-HK-03: Mọi buổi học phải nằm trong khoảng ngày của học kỳ. **[Không áp dụng – thay bằng RULE-NGAY-01]**
 - RULE-HK-04: Không mặc định độ dài học kỳ; luôn dùng ngày bắt đầu và kết thúc đã khai báo.
 - RULE-HK-05: Không tạo bảng phân bố số tiết theo tuần.
 - RULE-HK-06: Học kỳ đã có lớp học phần thì không đổi năm học / số học kỳ và không xóa; được đổi ngày nếu khoảng ngày mới vẫn bao trùm mọi buổi học đã xếp (RULE-HK-03).
@@ -245,12 +245,18 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-XL-04: Với từng ngày, kiểm tra xung đột (RULE-XD) trước khi tạo buổi học.
 - RULE-XL-05: Không xung đột thì tạo buổi học và cộng số tiết vào tổng đã xếp.
 - RULE-XL-06: Xung đột thì bỏ qua ngày đó và xét ngày phù hợp tiếp theo trong các thứ đã chọn.
-- RULE-XL-07: Tiếp tục đến khi đủ tổng số tiết hoặc hết ngày học hợp lệ.
+- RULE-XL-07: Tiếp tục đến khi đủ tổng số tiết hoặc hết ngày học hợp lệ. **[Không áp dụng – thay bằng RULE-NGAY-02/03]**
 - RULE-XL-08: Không tự chuyển sang thứ chưa chọn, không tự đổi khung tiết, không xếp lịch ngoài học kỳ.
-- RULE-XL-09: Buổi cuối được rút ngắn còn đúng số tiết còn thiếu (theo quy định của trường, cấu hình CHO_PHEP_RUT_NGAN_BUOI_CUOI); không kéo dài. VD 54 tiết, mỗi buổi 4 tiết: 13 buổi đủ + 1 buổi 2 tiết. Nếu không cho phép rút ngắn thì dừng và báo số tiết còn thiếu.
-- RULE-XL-10: Hết học kỳ mà chưa đủ tiết thì thông báo số tiết đã xếp và số tiết còn thiếu.
+- RULE-XL-09: Buổi cuối được rút ngắn còn đúng số tiết còn thiếu (theo quy định của trường, cấu hình CHO_PHEP_RUT_NGAN_BUOI_CUOI); không kéo dài. VD 54 tiết, mỗi buổi 4 tiết: 13 buổi đủ + 1 buổi 2 tiết. Nếu không cho phép rút ngắn thì dừng và báo số tiết còn thiếu. **[Không áp dụng – thay bằng RULE-NGAY-02/03]**
+- RULE-XL-10: Hết học kỳ mà chưa đủ tiết thì thông báo số tiết đã xếp và số tiết còn thiếu. **[Không áp dụng – thay bằng RULE-NGAY-02/03]**
 - RULE-XL-11: Khi sửa lịch hoặc số tiết môn, buổi đã điểm danh và buổi đã diễn ra (ngày học trước hôm nay) được giữ nguyên và tính vào tổng; chỉ các buổi tương lai chưa điểm danh được xếp lại. Lịch trong tuần đã có buổi đã diễn ra không được xóa. Không xóa lịch sử điểm danh, điểm hoặc đăng ký. Sinh lịch nhiều lần không tạo bản ghi trùng.
 - RULE-XL-12: Buổi học mới chỉ được xếp từ ngày hiện tại trở đi; các ngày đã qua chỉ giữ buổi đã có, không tạo thêm buổi trong quá khứ.
+
+## RULE-NGAY: Khoảng ngày học phần (thay cho khoảng ngày học kỳ khi xếp lịch)
+- RULE-NGAY-01: Khi tạo / sửa lớp học phần, người dùng nhập **ngày bắt đầu** và **ngày kết thúc học phần** (như mã nguồn cũ). Ngày bắt đầu ≤ ngày kết thúc. Lớp học phần không bắt buộc học kỳ đã được khai báo ngày; học kỳ, năm học chỉ dùng để lọc / phân loại.
+- RULE-NGAY-02: Hệ thống sinh buổi học vào **mọi ngày** thuộc các thứ đã chọn trong khoảng ngày học phần (bỏ qua ngày trùng giảng viên / phòng học – RULE-XD, không tạo buổi mới vào ngày đã qua – RULE-XL-12). Không dừng khi đủ số tiết của môn, không rút ngắn buổi cuối.
+- RULE-NGAY-03: Không chặn lưu khi tổng số tiết đã xếp khác số tiết theo tín chỉ của môn; số tiết theo tín chỉ chỉ hiển thị để đối chiếu.
+- Cấu hình: Academic::XEP_DU_TIET = false. Đặt true để quay lại cách xếp đủ tiết cũ (RULE-XL-07, RULE-XL-09, RULE-HL-01).
 
 ## RULE-XD: Kiểm tra xung đột
 - RULE-XD-01: Một buổi học bị xung đột nếu cùng ngày thực tế, khoảng tiết giao nhau và trùng giảng viên hoặc phòng học với buổi của lớp học phần đang mở khác.
@@ -261,8 +267,8 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 
 ## RULE-THIEU: Xử lý khi không đủ lịch
 - RULE-THIEU-01: Ngày bị xung đột được bỏ qua, xét ngày hợp lệ tiếp theo thuộc các thứ đã chọn.
-- RULE-THIEU-02: Hết học kỳ mà chưa đủ tiết thì không tạo lịch ngoài học kỳ.
-- RULE-THIEU-03: Không lưu / không đánh dấu hoàn thành khi tổng số tiết đã xếp thấp hơn tổng số tiết yêu cầu.
+- RULE-THIEU-02: Hết học kỳ mà chưa đủ tiết thì không tạo lịch ngoài học kỳ. **[Không áp dụng – thay bằng RULE-NGAY-02/03]**
+- RULE-THIEU-03: Không lưu / không đánh dấu hoàn thành khi tổng số tiết đã xếp thấp hơn tổng số tiết yêu cầu. **[Không áp dụng – thay bằng RULE-NGAY-02/03]**
 - RULE-THIEU-04: Thông báo số tiết đã xếp, số tiết còn thiếu và nguyên nhân chính (số ngày bị bỏ qua do xung đột, hết ngày học trong học kỳ).
 - RULE-THIEU-05: Người tạo điều chỉnh thứ học, khung tiết hoặc học kỳ rồi xếp lại.
 - RULE-THIEU-06: Hiển thị lịch dự kiến ("Xem trước lịch") để kiểm tra trước khi xác nhận lưu.
@@ -277,8 +283,8 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-DL-07: Thời khóa biểu, điểm danh và danh sách buổi học của lớp cùng đọc một nguồn buoi_hoc; số thứ tự buổi do backend đánh theo ngày học, tiết bắt đầu (Academic::soThuTuBuoi) để mọi màn hình thống nhất.
 
 ## RULE-HL: Điều kiện lịch hợp lệ
-- RULE-HL-01: Chỉ lưu lớp học phần khi tổng số tiết đã xếp bằng tổng số tiết yêu cầu.
-- RULE-HL-02: Tất cả buổi học nằm trong học kỳ.
+- RULE-HL-01: Chỉ lưu lớp học phần khi tổng số tiết đã xếp bằng tổng số tiết yêu cầu. **[Không áp dụng – thay bằng RULE-NGAY-03]**
+- RULE-HL-02: Tất cả buổi học nằm trong học kỳ. **[Không áp dụng – thay bằng RULE-NGAY-01]**
 - RULE-HL-03: Không xung đột giảng viên hoặc phòng học.
 - RULE-HL-04: Các tiết nằm trong khung giờ hợp lệ (RULE-TKB-02).
 - RULE-HL-05: Dữ liệu lịch được lưu trong cùng một giao dịch; lỗi giữa chừng thì hoàn tác toàn bộ.

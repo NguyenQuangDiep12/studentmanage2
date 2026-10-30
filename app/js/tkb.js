@@ -61,18 +61,17 @@
             if (!currentUser) return;
 
             var isGV = (currentUser.vai_tro === 'giang_vien');
-            var roleTitle = isGV ? 'Thời khóa biểu giảng dạy trong tuần' : 'Thời khóa biểu học tập trong tuần';
-            var roleSub = isGV ? 'Bảng tuần hiển thị lịch của các lớp học phần bạn đã tạo hoặc phụ trách' : 'Bảng tuần hiển thị lịch học của các lớp học phần bạn đã đăng ký';
+            // Tiêu đề, mô tả theo mã nguồn cũ (renderWeeklyScheduleSection / WeeklyTimetable)
+            this.isGV = isGV;
+            var roleTitle = isGV ? 'Thời khóa biểu giảng dạy trong tuần' : 'Thời khóa biểu tuần';
+            var roleSub = isGV ? 'Bảng tuần hiển thị lịch của các lớp học phần bạn đã tạo.' : 'Bảng tuần hiển thị tự động từ các lớp học phần bạn đã đăng ký.';
 
             var html =
                 '<div class="card">' +
                 '  <div class="card-header">' +
                 '    <div>' +
-                '      <h3><i class="fa-solid fa-calendar-days" style="color:var(--primary);"></i> ' + roleTitle + '</h3>' +
-                '      <p style="font-size:0.82rem; color:var(--text-muted); margin:0;">' + roleSub + '</p>' +
-                '    </div>' +
-                '    <div class="d-flex align-center gap-2">' +
-                '      <button class="btn btn-sm btn-outline" id="btnPrintTKB" onclick="window.print()"><i class="fa-solid fa-print"></i> In lịch</button>' +
+                '      <h3>' + roleTitle + '</h3>' +
+                '      <p style="color:#64748b; margin:6px 0 0;">' + roleSub + '</p>' +
                 '    </div>' +
                 '  </div>' +
                 '  <div class="card-body">' +
@@ -101,25 +100,6 @@
                 '      </div>' +
                 '    </div>' +
 
-                '    <!-- Thống kê nhanh -->' +
-                '    <div class="stats-grid-modern mb-3" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">' +
-                '      <div class="stat-modern-card">' +
-                '        <div class="stat-label">Số tiết trong tuần này</div>' +
-                '        <div class="stat-number text-primary" id="statTietTrongTuan">0</div>' +
-                '        <div class="stat-desc">Dựa theo các buổi diễn ra trong tuần</div>' +
-                '      </div>' +
-                '      <div class="stat-modern-card">' +
-                '        <div class="stat-label">Tổng tiết dự kiến đã qua</div>' +
-                '        <div class="stat-number text-success" id="statTietTichLuy">0</div>' +
-                '        <div class="stat-desc">Tính đến hết tuần đang chọn</div>' +
-                '      </div>' +
-                '      <div class="stat-modern-card">' +
-                '        <div class="stat-label">Tổng số môn tham gia</div>' +
-                '        <div class="stat-number" id="statTongMon">0</div>' +
-                '        <div class="stat-desc">Số môn học có trong học kỳ này</div>' +
-                '      </div>' +
-                '    </div>' +
-
                 '    <div id="tkbCanhBao"></div>' +
                 '    <!-- Timetable Grid 13 Tiết -->' +
                 '    <div class="timetable-wrapper">' +
@@ -141,6 +121,12 @@
                 '      </table>' +
                 '    </div>' +
                 '  </div>' +
+                '</div>' +
+                // Thẻ ghi chú bên dưới lưới (theo mã cũ)
+                '<div class="nd-card mt-3">' +
+                OldUI.header(isGV ? 'Ghi chú lịch giảng dạy' : 'Ghi chú thời khóa biểu',
+                    isGV ? 'Dữ liệu được lấy trực tiếp từ các lớp học phần bạn đã tạo trong hệ thống.' : 'Dữ liệu được lấy trực tiếp từ các lớp học phần bạn đã đăng ký trong hệ thống.') +
+                '  <div class="nd-profile-grid" id="tkbGhiChu"></div>' +
                 '</div>';
 
             $('#contentArea').html(html);
@@ -264,9 +250,17 @@
             // Giảng viên (và quản trị viên) điểm danh trực tiếp từ ô buổi học
             var canDiemDanh = user && (user.vai_tro === 'giang_vien' || user.vai_tro === 'admin');
 
-            $('#statTongMon').text((data.so_mon || 0) + ' môn');
-            $('#statTietTrongTuan').text((data.so_tiet_trong_tuan || 0) + ' tiết');
-            $('#statTietTichLuy').text((data.tong_tiet_du_kien_da_hoc || 0) + ' tiết');
+            var buoi = data.buoi_hoc || [];
+            var soLop = {};
+            buoi.forEach(function (b) { soLop[b.lop_hoc_phan_id] = 1; });
+            var g = function (k, v) { return '<div><strong>' + k + ':</strong> ' + v + '</div>'; };
+            $('#tkbGhiChu').html(this.isGV
+                ? g('Số buổi dạy trong tuần', buoi.length) + g('Số lớp học phần trong tuần', Object.keys(soLop).length) +
+                  g('Môn đang giảng dạy', data.so_mon || 0) + g('Thời khóa biểu tuần', buoi.length ? 'Đã cập nhật' : 'Chưa có dữ liệu') +
+                  g('Số tiết trong tuần này', (data.so_tiet_trong_tuan || 0) + ' tiết') + g('Tổng tiết dự kiến đã qua', (data.tong_tiet_du_kien_da_hoc || 0) + ' tiết')
+                : g('Tổng số buổi học', buoi.length) + g('Số lớp học phần trong tuần', Object.keys(soLop).length) +
+                  g('Môn học trong học kỳ', data.so_mon || 0) + g('Giảng viên hiển thị', buoi.some(function (b) { return b.ten_giang_vien; }) ? 'Có' : 'Chưa có dữ liệu') +
+                  g('Số tiết trong tuần này', (data.so_tiet_trong_tuan || 0) + ' tiết') + g('Tổng tiết dự kiến đã qua', (data.tong_tiet_du_kien_da_hoc || 0) + ' tiết'));
 
             // daySchedules[thu][tiet] = { isStart, span, b }
             var daySchedules = {};

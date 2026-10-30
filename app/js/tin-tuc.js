@@ -13,103 +13,62 @@
     // ================================================================
     var TinTucViewerModule = {
         render: function () {
-            var currentUser = App.getCurrentUser();
-            var isAdmin = currentUser && currentUser.vai_tro === 'admin';
-
+            var self = this;
+            this.search = { query: '', field: 'all' };
+            // Bố cục theo mã nguồn cũ (renderNewsSection - người xem): thẻ tin tức, thanh tìm kiếm, danh sách thẻ tin
             var html =
-                '<div class="card">' +
-                '  <div class="card-header">' +
-                '    <h3><i class="fa-solid fa-bullhorn"></i> Bảng tin & Thông báo</h3>' +
-                (isAdmin ? '    <button class="btn btn-primary" onclick="App.navigate(\'tin-tuc-admin\')"><i class="fa-solid fa-gear"></i> Quản lý bài viết</button>' : '') +
-                '  </div>' +
-                '  <div class="card-body">' +
-                '    <div class="toolbar">' +
-                '      <div class="toolbar-left">' +
-                '        <div class="search-box">' +
-                '          <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>' +
-                '          <input type="text" id="searchNewsViewer" placeholder="Tìm kiếm tin tức, thông báo...">' +
-                '        </div>' +
-                '        <select id="filterDanhMucNews" class="filter-select">' +
-                '          <option value="">Tất cả danh mục</option>' +
-                '          <option value="Đào tạo">Đào tạo</option>' +
-                '          <option value="Sự kiện">Sự kiện</option>' +
-                '          <option value="Tuyển dụng">Tuyển dụng</option>' +
-                '          <option value="Chung">Chung</option>' +
-                '        </select>' +
-                '      </div>' +
+                '<section class="nd-scope">' +
+                '  <div class="nd-card">' +
+                OldUI.header('Tin tức và thông báo', 'Các thông báo mới nhất từ admin như nghỉ học, lịch học bù hoặc nội dung học vụ quan trọng.') +
+                OldUI.toolbar('newsSearch', ['Tiêu đề', 'Phân loại', 'Ngày đăng'], 'Nhập từ khóa tin tức...') +
+                '    <div class="nd-news-toolbar">' +
+                '      <select id="filterDanhMucNews">' +
+                '        <option value="">Tất cả phân loại</option>' +
+                '        <option value="Đào tạo">Đào tạo</option>' +
+                '        <option value="Sự kiện">Sự kiện</option>' +
+                '        <option value="Tuyển dụng">Tuyển dụng</option>' +
+                '        <option value="Chung">Chung</option>' +
+                '      </select>' +
                 '    </div>' +
-
-                '    <div class="news-list" id="publicNewsList">' +
-                '    </div>' +
+                '    <div class="nd-news-list" id="publicNewsList"></div>' +
                 '  </div>' +
-                '</div>';
-
+                '</section>';
             $('#contentArea').html(html);
-            this.bindEvents();
+            OldUI.bind('newsSearch', function (q) { self.search = q; self.renderNews(); });
+            $('#filterDanhMucNews').on('change', function () { self.loadNews(); });
             this.loadNews();
         },
 
-        bindEvents: function () {
-            var self = this;
-            $('#searchNewsViewer, #filterDanhMucNews').on('input change', function () {
-                self.loadNews();
-            });
-
-            $(document).off('click', '.news-item-card').on('click', '.news-item-card', function () {
-                var id = $(this).data('id');
-                self.showNewsDetail(id);
-            });
-        },
+        bindEvents: function () { /* sự kiện gắn trong render */ },
 
         loadNews: function () {
             var self = this;
             // RULE-20: backend chỉ trả về tin đã công khai
-            Api.get('/api/tintuc', {
-                search: ($('#searchNewsViewer').val() || '').trim(),
-                danh_muc: $('#filterDanhMucNews').val()
-            })
-                .done(function (res) { self.renderNews(res.data || []); })
+            Api.get('/api/tintuc', { search: '', danh_muc: $('#filterDanhMucNews').val() || '' })
+                .done(function (res) { self.cache = res.data || []; self.renderNews(); })
                 .fail(Api.toastError);
         },
 
-        renderNews: function (list) {
-            var container = $('#publicNewsList');
-            container.empty();
-
-            if (list.length === 0) {
-                container.html(
-                    '<div class="empty-state py-5">' +
-                    '  <div class="empty-icon"><i class="fa-solid fa-newspaper" style="opacity:0.3; font-size:2.5rem;"></i></div>' +
-                    '  <h4>Không có thông báo nào</h4>' +
-                    '  <p>Hiện không tìm thấy bài viết hoặc thông báo phù hợp</p>' +
-                    '</div>'
-                );
-                return;
-            }
-
-            list.forEach(function (n) {
-                var authorName = n.ten_nguoi_dang || 'Ban Quản trị';
-
-                var itemHtml =
-                    '<div class="news-item news-item-card' + (parseInt(n.quan_trong, 10) === 1 ? ' news-important' : '') + '" data-id="' + n.id + '" style="cursor:pointer;">' +
-                    '  <div style="flex:1;">' +
-                    '    <div class="d-flex align-center gap-2 mb-1">' +
-                    (parseInt(n.quan_trong, 10) === 1 ? '      <span class="badge badge-danger"><i class="fa-solid fa-thumbtack"></i> Quan trọng</span>' : '') +
-                    '      <span class="badge badge-info">' + App.escapeHtml(n.danh_muc || 'Thông báo') + '</span>' +
-                    '      <span class="text-gray" style="font-size:0.82rem;"><i class="fa-regular fa-calendar"></i> ' + App.formatDate(n.created_at) + '</span>' +
-                    '    </div>' +
-                    '    <h4 class="news-title">' + App.escapeHtml(n.tieu_de) + '</h4>' +
-                    '    <p class="news-summary">' + App.escapeHtml(n.tom_tat || '') + '</p>' +
-                    '    <div class="news-meta text-gray" style="font-size:0.82rem;">' +
-                    '      <span><i class="fa-solid fa-user-pen"></i> ' + App.escapeHtml(authorName) + '</span>' +
-                    '    </div>' +
-                    '  </div>' +
-                    '  <div>' +
-                    '    <button class="btn btn-sm btn-outline-primary">Chi tiết <i class="fa-solid fa-arrow-right"></i></button>' +
-                    '  </div>' +
-                    '</div>';
-                container.append(itemHtml);
-            });
+        renderNews: function () {
+            var esc = App.escapeHtml, q = this.search;
+            var all = this.cache || [];
+            var list = all.filter(function (n) { return OldUI.match([n.tieu_de, n.danh_muc, App.formatDateTime(n.created_at)], q); });
+            OldUI.count('newsSearch', list.length, all.length, 'tin');
+            var html = list.map(function (n) {
+                var qt = parseInt(n.quan_trong, 10) === 1;
+                return '<article class="nd-news-card">' +
+                    '<div class="nd-news-top"><div class="nd-news-badges">' +
+                    '<span class="nd-pill ' + (qt ? 'nd-pill-danger' : 'nd-pill-neutral') + '">' + (qt ? 'Quan trọng' : esc(n.danh_muc || 'Thông báo')) + '</span>' +
+                    '<span class="nd-pill nd-pill-success">Đang hiển thị</span>' +
+                    '</div><small class="nd-note">' + App.formatDateTime(n.created_at) + '</small></div>' +
+                    '<h4>' + esc(n.tieu_de) + '</h4>' +
+                    '<p class="nd-news-summary">' + esc(n.tom_tat || 'Không có mô tả ngắn.') + '</p>' +
+                    '<div class="nd-news-content">' + esc(n.noi_dung || '') + '</div>' +
+                    '<div class="nd-news-meta">Người đăng: ' + esc(n.ten_nguoi_dang || 'Admin hệ thống') + '</div>' +
+                    '</article>';
+            }).join('');
+            $('#publicNewsList').html(html || '<p class="nd-empty" style="text-align:center;color:#94a3b8;">' +
+                (q.query || $('#filterDanhMucNews').val() ? 'Không có tin tức nào khớp bộ lọc.' : 'Hiện chưa có tin tức nào để hiển thị.') + '</p>');
         },
 
         showNewsDetail: function (id) {

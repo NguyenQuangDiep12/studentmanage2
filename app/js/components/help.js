@@ -153,11 +153,10 @@ var HelpComponent = (function ($) {
         },
         'quan-ly-diem': {
             steps: [
-                'Chọn lớp học phần, nhập điểm giữa kỳ (B) và cuối kỳ (A) cho từng sinh viên, bấm "Lưu bảng điểm".',
-                'Hoặc dùng "Sửa" ở từng sinh viên để thêm / sửa / để trống từng điểm; "Xóa" để xóa điểm giữa kỳ, cuối kỳ hoặc toàn bộ.',
-                'Bấm "Cách tính" để xem từng bước: tỷ lệ nghỉ R, điểm chuyên cần C, điều kiện dự thi, D = 0.6A + 0.3B + 0.1C, làm tròn và quy đổi.',
-                'Sinh viên bị cấm thi (nghỉ từ 20% số tiết) bị khóa ô điểm, điểm tổng kết = 0.',
-                '"Tính lại toàn bộ" tải lại chuyên cần và tổng kết mới nhất.'
+                'Ở khung "Nhập điểm sinh viên": chọn sinh viên, chọn môn học (học kỳ tự hiển thị), nhập điểm giữa kỳ và cuối kỳ rồi bấm "Nhập điểm".',
+                'Ở "Bảng điểm sinh viên": chọn tiêu chí (Mã SV, Sinh viên, Mã môn, Môn học, Học kỳ), nhập từ khóa rồi bấm "Lọc".',
+                'Bấm "Sửa" để đưa điểm lên form, sửa rồi bấm "Lưu điểm" (để trống ô = xóa điểm đó); "Xóa" để xóa toàn bộ điểm của môn.',
+                'Chuyên cần, điểm tổng kết, hệ 4, điểm chữ do hệ thống tự tính; sinh viên bị cấm thi không được nhập điểm.'
             ],
             rules: ['RULE-14', 'RULE-15', 'RULE-17', 'RULE-18']
         },

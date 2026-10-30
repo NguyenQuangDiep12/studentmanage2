@@ -9,208 +9,115 @@
 
     var MonHocModule = {
         render: function () {
+            var self = this;
             var currentUser = App.getCurrentUser();
             // Quản trị viên: thêm / sửa / xóa. Giảng viên: được thêm môn học và tra cứu (backend kiểm tra quyền).
-            var isAdmin = currentUser && currentUser.vai_tro === 'admin';
-            var canCreate = currentUser && (currentUser.vai_tro === 'admin' || currentUser.vai_tro === 'giang_vien');
+            this.isAdmin = currentUser && currentUser.vai_tro === 'admin';
+            // RULE-MH-04: quản trị viên và giảng viên được sửa / xóa môn học
+            this.canEdit = currentUser && (currentUser.vai_tro === 'admin' || currentUser.vai_tro === 'giang_vien');
+            this.canCreate = currentUser && (currentUser.vai_tro === 'admin' || currentUser.vai_tro === 'giang_vien');
+            this.search = { query: '', field: 'all' };
 
-            // Bố cục giống giao diện React: thẻ form (trái) + thẻ danh sách (phải)
+            // Bố cục theo mã nguồn cũ (renderCoursesSection + CourseForm): form (trái) + danh sách (phải)
             var html =
-                '<section class="dashboard-grid' + (canCreate ? ' two-columns' : '') + '">' +
-                (canCreate ? '<div id="mhFormSlot"></div>' : '') +
-                '<div class="card">' +
-                '  <div class="card-header">' +
-                '    <h3><i class="fa-solid fa-book-bookmark" style="color:var(--primary);"></i> Danh mục môn học</h3>' +
+                '<section class="nd-scope' + (this.canCreate ? ' nd-two' : '') + '">' +
+                (this.canCreate ? '<div class="nd-card" id="mhFormCard"></div>' : '') +
+                '  <div class="nd-card">' +
+                OldUI.header('Danh sách môn học', 'Tạo môn học trước, sau đó mở lớp học phần để sinh viên đăng ký.') +
+                OldUI.toolbar('mhSearch', ['Mã môn', 'Tên môn'], 'Nhập từ khóa môn học...') +
+                '    <div class="nd-table-wrap"><table class="nd-table">' +
+                '      <thead><tr><th>Mã môn</th><th>Tên môn</th><th>Tín chỉ</th><th>Số tiết</th>' + (this.canEdit ? '<th>Thao tác</th>' : '') + '</tr></thead>' +
+                '      <tbody id="monHocTableBody"><tr><td colspan="5" class="nd-empty">Đang tải...</td></tr></tbody>' +
+                '    </table></div>' +
                 '  </div>' +
-                '  <div class="card-body">' +
-                '    <div class="toolbar">' +
-                '      <div class="toolbar-left">' +
-                '        <div class="search-box">' +
-                '          <i class="fa-solid fa-magnifying-glass search-icon"></i>' +
-                '          <input type="text" id="searchMonHoc" placeholder="Tìm theo mã hoặc tên môn">' +
-                '        </div>' +
-                '      </div>' +
-                '      <div class="toolbar-right">' +
-                '        <span class="text-muted" id="totalMonHocCount">Tổng số: 0 môn học</span>' +
-                '      </div>' +
-                '    </div>' +
-                '    <div class="table-responsive">' +
-                '      <table class="data-table" id="tableMonHoc">' +
-                '        <thead>' +
-                '          <tr>' +
-                '            <th>STT</th>' +
-                '            <th>Mã môn</th>' +
-                '            <th>Tên môn học</th>' +
-                '            <th class="text-center">Số tín chỉ</th>' +
-                '            <th class="text-center">Số tiết</th>' +
-                '            <th class="text-center">Lý thuyết</th>' +
-                '            <th class="text-center">Thực hành</th>' +
-                '            <th>Mô tả môn học</th>' +
-                (isAdmin ? '            <th class="text-center">Thao tác</th>' : '') +
-                '          </tr>' +
-                '        </thead>' +
-                '        <tbody id="monHocTableBody">' +
-                '        </tbody>' +
-                '      </table>' +
-                '    </div>' +
-                '  </div>' +
-                '</div>' +
                 '</section>';
 
             $('#contentArea').html(html);
-            this.bindEvents();
+            OldUI.bind('mhSearch', function (q) { self.search = q; self.renderRows(); });
+            $('#monHocTableBody').on('click', '.btn-edit-mh', function () { self.showForm($(this).data('id')); });
+            $('#monHocTableBody').on('click', '.btn-del-mh', function () { self.deleteMonHoc($(this).data('id')); });
+            if (this.canCreate) this.showForm();
             this.loadData();
         },
 
-        bindEvents: function () {
-            var self = this;
-
-            $('#searchMonHoc').on('input change', function () {
-                self.loadData();
-            });
-
-            $('#btnThemMonHoc').on('click', function () {
-                self.showFormModal();
-            });
-
-            $(document).off('click', '.btn-edit-mh').on('click', '.btn-edit-mh', function () {
-                var id = $(this).data('id');
-                self.showFormModal(id);
-            });
-
-            $(document).off('click', '.btn-del-mh').on('click', '.btn-del-mh', function () {
-                var id = $(this).data('id');
-                self.deleteMonHoc(id);
-            });
-
-            $(document).off('click', '#btnSaveMonHoc').on('click', '#btnSaveMonHoc', function () {
-                self.saveMonHoc();
-            });
-        },
-
         loadData: function () {
-            var currentUser = App.getCurrentUser();
-            var isAdmin = currentUser && currentUser.vai_tro === 'admin';
-
             var self = this;
-            var keyword = ($('#searchMonHoc').val() || '').trim();
-
-            // Tìm kiếm & lọc thực hiện trên backend
-            Api.get('/api/monhoc', { search: keyword })
+            Api.get('/api/monhoc', { search: '' })
                 .done(function (res) {
                     self.cache = res.data || [];
                     self.quyDoi = res.quy_doi || self.quyDoi;
-                    self.renderRows(self.cache, isAdmin);
-                    // Lần đầu vào trang: hiện form tạo môn học mới
-                    if ($('#mhFormSlot').length && !$('#mhFormSlot').children().length) self.showFormModal();
+                    self.renderRows();
+                    if (self.canCreate && !$('#mhId').val()) self.updateHint();
                 })
                 .fail(Api.toastError);
         },
 
-        renderRows: function (list, isAdmin) {
-            $('#totalMonHocCount').text('Tổng số: ' + list.length + ' môn học');
-
-            var tbody = $('#monHocTableBody');
-            tbody.empty();
-
-            if (list.length === 0) {
-                var colSpan = isAdmin ? 9 : 8;
-                tbody.html('<tr><td colspan="' + colSpan + '" class="text-center text-muted py-4">Không tìm thấy môn học nào</td></tr>');
-                return;
-            }
-
-            list.forEach(function (mh, index) {
-                var row =
-                    '<tr>' +
-                    '  <td class="text-center">' + (index + 1) + '</td>' +
-                    '  <td><strong>' + App.escapeHtml(mh.ma_mon_hoc) + '</strong></td>' +
-                    '  <td>' + App.escapeHtml(mh.ten_mon_hoc) + '</td>' +
-                    '  <td class="text-center">' + mh.so_tin_chi + '<br><small class="text-muted">' + MonHocModule.loaiTinChi(mh) + '</small></td>' +
-                    '  <td class="text-center">' + (mh.so_tiet || '—') + '</td>' +
-                    MonHocModule.tietCells(mh) +
-                    '  <td><small>' + App.escapeHtml(mh.mo_ta || '—') + '</small></td>' +
-                    (isAdmin ?
-                    '  <td class="text-center">' +
-                    '    <div class="table-actions">' +
-                    '      <button class="btn btn-sm btn-outline btn-edit-mh" data-id="' + mh.id + '" title="Sửa môn học">Sửa</button>' +
-                    '      <button class="btn btn-sm btn-outline btn-del-mh text-danger" data-id="' + mh.id + '" title="Xóa môn học">Xóa</button>' +
-                    '    </div>' +
-                    '  </td>' : '') +
+        renderRows: function () {
+            var self = this, esc = App.escapeHtml, q = this.search;
+            var all = this.cache || [];
+            var list = all.filter(function (mh) { return OldUI.match([mh.ma_mon_hoc, mh.ten_mon_hoc], q); });
+            OldUI.count('mhSearch', list.length, all.length, 'môn học');
+            var html = list.map(function (mh) {
+                var tiet = (mh.so_tiet_ly_thuyet == null || mh.so_tiet_thuc_hanh == null)
+                    ? (mh.so_tiet || '—') + '<small class="d-block">Chưa khai báo LT/TH</small>'
+                    : (mh.so_tiet || '—') + '<small class="d-block">LT ' + mh.so_tiet_ly_thuyet + ' · TH ' + mh.so_tiet_thuc_hanh + '</small>';
+                return '<tr>' +
+                    '<td>' + esc(mh.ma_mon_hoc) + '</td>' +
+                    '<td>' + esc(mh.ten_mon_hoc) + (mh.mo_ta ? '<small class="d-block">' + esc(mh.mo_ta) + '</small>' : '') + '</td>' +
+                    '<td>' + mh.so_tin_chi + '<small class="d-block">' + MonHocModule.loaiTinChi(mh) + '</small></td>' +
+                    '<td>' + tiet + '</td>' +
+                    (self.canEdit ? '<td><div class="nd-actions">' +
+                        '<button type="button" class="nd-btn nd-btn-warning btn-edit-mh" data-id="' + mh.id + '">Sửa</button>' +
+                        '<button type="button" class="nd-btn nd-btn-danger btn-del-mh" data-id="' + mh.id + '">Xóa</button>' +
+                        '</div></td>' : '') +
                     '</tr>';
-                tbody.append(row);
-            });
+            }).join('');
+            $('#monHocTableBody').html(html || '<tr><td colspan="5" class="nd-empty">Chưa có môn học nào.</td></tr>');
         },
 
-        showFormModal: function (id) {
+        /** Form theo CourseForm cũ: ô nhập dạng placeholder, nút "Tạo môn học" / "Lưu môn học" + "Hủy sửa" */
+        showForm: function (id) {
+            var self = this, esc = App.escapeHtml;
             var mh = id ? (this.cache || []).find(function (m) { return m.id === parseInt(id, 10); }) : null;
-            var isEdit = !!mh;
-
+            var v = function (x) { return x != null ? x : ''; };
             var html =
-                '<div class="modal-header">' +
-                '  <h3><i class="fa-solid ' + (isEdit ? 'fa-pen' : 'fa-plus') + '"></i> ' + (isEdit ? 'Cập nhật môn học' : 'Tạo môn học mới') + '</h3>' +
-                '  <button class="modal-close" onclick="App.closeModal()">&times;</button>' +
-                '</div>' +
-                '<div class="modal-body">' +
+                OldUI.header(mh ? 'Cập nhật môn học' : 'Tạo môn học mới', 'Giảng viên có thể tự nhập mã môn và tên môn thay vì chỉ chọn các môn có sẵn.') +
+                '<form class="nd-grid-form" id="mhForm" autocomplete="off">' +
                 '  <input type="hidden" id="mhId" value="' + (mh ? mh.id : '') + '">' +
-                '  <div class="form-row">' +
-                '    <div class="form-group">' +
-                '      <label>Mã môn học</label>' +
-                '      <input type="text" class="form-control" id="mhMa" value="' + (mh ? App.escapeHtml(mh.ma_mon_hoc) : '') + '" placeholder="VD: CS101" ' + (isEdit ? 'readonly' : '') + '>' +
-                '    </div>' +
-                '    <div class="form-group">' +
-                '      <label>Tên môn học</label>' +
-                '      <input type="text" class="form-control" id="mhTen" value="' + (mh ? App.escapeHtml(mh.ten_mon_hoc) : '') + '" placeholder="VD: Lập trình Cơ bản">' +
-                '    </div>' +
-                '  </div>' +
+                '  <input id="mhMa" placeholder="Mã môn học, ví dụ INT301" value="' + (mh ? esc(mh.ma_mon_hoc) : '') + '"' + (mh ? ' readonly' : '') + '>' +
+                '  <input id="mhTen" placeholder="Tên môn học" value="' + (mh ? esc(mh.ten_mon_hoc) : '') + '">' +
                 // RULE-MH-01: chỉ nhập số tín chỉ lý thuyết / thực hành; số tiết do hệ thống tính (RULE-CREDIT-08)
-                '  <div class="form-row">' +
-                '    <div class="form-group">' +
-                '      <label>Số tín chỉ lý thuyết</label>' +
-                '      <input type="number" min="0" class="form-control mh-tc" id="mhTcLT" value="' + (mh && mh.so_tin_chi_ly_thuyet != null ? mh.so_tin_chi_ly_thuyet : '') + '" placeholder="VD: 3 (nhập 0 nếu không có)">' +
-                '    </div>' +
-                '    <div class="form-group">' +
-                '      <label>Số tín chỉ thực hành</label>' +
-                '      <input type="number" min="0" class="form-control mh-tc" id="mhTcTH" value="' + (mh && mh.so_tin_chi_thuc_hanh != null ? mh.so_tin_chi_thuc_hanh : '') + '" placeholder="VD: 0 (nhập 0 nếu không có)">' +
-                '    </div>' +
+                '  <input type="number" min="0" class="mh-tc" id="mhTcLT" placeholder="Số tín chỉ lý thuyết" value="' + (mh ? v(mh.so_tin_chi_ly_thuyet) : '') + '">' +
+                '  <input type="number" min="0" class="mh-tc" id="mhTcTH" placeholder="Số tín chỉ thực hành" value="' + (mh ? v(mh.so_tin_chi_thuc_hanh) : '') + '">' +
+                '  <textarea id="mhMoTa" class="nd-full" placeholder="Mô tả môn học">' + (mh ? esc(mh.mo_ta || '') : '') + '</textarea>' +
+                '  <div class="nd-form-actions">' +
+                '    <button class="nd-btn nd-btn-primary" type="submit">' + (mh ? 'Lưu môn học' : 'Tạo môn học') + '</button>' +
+                (mh ? '    <button class="nd-btn nd-btn-light" type="button" id="mhCancel">Hủy sửa</button>' : '') +
                 '  </div>' +
-                ((mh && mh.so_tin_chi_ly_thuyet == null) ? '  <div class="alert alert-warning" style="font-size:0.82rem;">Môn học cũ chưa phân loại tín chỉ lý thuyết / thực hành (hiện có ' + mh.so_tin_chi + ' TC, ' + mh.so_tiet + ' tiết). Nhập số tín chỉ từng loại để áp dụng quy đổi; để trống cả hai thì giữ nguyên dữ liệu cũ.</div>' : '') +
-                '  <div class="form-group">' +
-                '    <label>Mô tả môn học</label>' +
-                '    <textarea class="form-control" id="mhMoTa" rows="3" placeholder="Nhập mô tả chi tiết...">' + (mh ? App.escapeHtml(mh.mo_ta || '') : '') + '</textarea>' +
-                '  </div>' +
-                '</div>' +
-                '<div class="modal-footer">' +
-                '  <button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
-                '  <button class="btn btn-primary" id="btnSaveMonHoc"><i class="fa-solid fa-floppy-disk"></i> Lưu môn học</button>' +
-                '</div>' +
-                // Cách tính số tiết đặt ở cuối form, dưới các nút
-                '<div id="mhTietHint" class="form-note"></div>';
+                '</form>' +
+                '<div id="mhTietHint" class="mt-3"></div>';
+            $('#mhFormCard').html(html);
+            $('#mhForm').on('submit', function (e) { e.preventDefault(); self.saveMonHoc(); });
+            $('#mhCancel').on('click', function () { self.showForm(); });
+            $('.mh-tc').on('input', function () { self.updateHint(); });
+            this.updateHint();
+            if (mh) {
+                var top = $('#mhFormCard').offset();
+                if (top) $('html, body').animate({ scrollTop: Math.max(top.top - 120, 0) }, 200);
+            }
+        },
+        showFormModal: function (id) { this.showForm(id); },
 
-            var self = this;
-            App.showInlineForm(html, '#mhFormSlot', function () { self.showFormModal(); });
-            $('#mhFormSlot .inline-form-card').toggleClass('is-editing', isEdit);
-            if (isEdit) App.focusInlineForm('#mhFormSlot');
-
-            // RULE-CREDIT-08, RULE-CREDIT-09: hiển thị từng bước quy đổi để kiểm tra trước khi lưu
-            // (số liệu lấy từ backend; backend tự tính lại khi lưu, không nhận số tiết từ giao diện)
-            var hint = function () {
-                var q = self.quyDoi;
-                var $h = $('#mhTietHint');
-                if (!q) { $h.empty(); return; }
-                var lt = $('#mhTcLT').val(), th = $('#mhTcTH').val();
-                var base = MonHocModule.quyDoiGiaiThich(q);
-                if (lt === '' && th === '') {
-                    $h.html('<p class="text-muted" style="font-size:0.82rem;">Nhập số tín chỉ lý thuyết và thực hành để xem cách tính số tiết.</p>' + base);
-                    return;
-                }
-                if (lt === '' || th === '') {
-                    $h.html('<p class="text-warning" style="font-size:0.82rem;">Cần nhập đủ cả hai loại tín chỉ (nhập 0 cho loại không có).</p>' + base);
-                    return;
-                }
-                $h.html(MonHocModule.quyDoiMon(q, parseInt(lt, 10) || 0, parseInt(th, 10) || 0) + base);
-            };
-            $('.mh-tc').on('input', hint);
-            hint();
+        // RULE-CREDIT-08, RULE-CREDIT-09: hiển thị từng bước quy đổi (số liệu từ backend; backend tự tính lại khi lưu)
+        updateHint: function () {
+            var q = this.quyDoi, $h = $('#mhTietHint');
+            if (!$h.length) return;
+            if (!q) { $h.empty(); return; }
+            var lt = $('#mhTcLT').val(), th = $('#mhTcTH').val();
+            var base = MonHocModule.quyDoiGiaiThich(q);
+            if (lt === '' && th === '') { $h.html('<p class="nd-note">Nhập số tín chỉ lý thuyết và thực hành để xem cách tính số tiết.</p>' + base); return; }
+            if (lt === '' || th === '') { $h.html('<p class="nd-note">Cần nhập đủ cả hai loại tín chỉ (nhập 0 cho loại không có).</p>' + base); return; }
+            $h.html(MonHocModule.quyDoiMon(q, parseInt(lt, 10) || 0, parseInt(th, 10) || 0) + base);
         },
 
         fmt: function (n) { return Number(n).toLocaleString('vi-VN'); },
@@ -311,7 +218,7 @@
 
             req.done(function (res) {
                 App.showToast(res.message, 'success');
-                self.showFormModal(); // đưa form về trạng thái tạo mới
+                self.showForm(); // đưa form về trạng thái tạo mới
                 self.loadData();
             }).fail(Api.toastError);
         },

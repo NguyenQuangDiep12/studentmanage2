@@ -11,176 +11,143 @@
         render: function () {
             var currentUser = App.getCurrentUser();
             if (!currentUser) return;
+            var self = this;
+            this.isSv = currentUser.vai_tro === 'sinh_vien';
+            this.role = currentUser.vai_tro;
+            this.search = { query: '', field: 'all' };
+            var html;
 
-            var role = currentUser.vai_tro;
-            var isSv = (role === 'sinh_vien');
-
-            var html =
-                '<div class="card">' +
-                '  <div class="card-header">' +
-                '    <div>' +
-                '      <h3><i class="fa-solid fa-comments"></i> Ý kiến & Kiến nghị sinh viên</h3>' +
-                '      <p style="font-size:0.82rem; color:var(--text-muted); margin:0;">Tiếp nhận ý kiến đóng góp, thắc mắc và giải đáp cho người học</p>' +
-                '    </div>' +
-                (isSv ? '    <button class="btn btn-primary" id="btnThemKienNghi"><i class="fa-solid fa-plus"></i> Gửi ý kiến mới</button>' : '') +
-                '  </div>' +
-                '  <div class="card-body">' +
-                '    <div class="toolbar">' +
-                '      <div class="toolbar-left">' +
-                '        <div class="search-box">' +
-                '          <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>' +
-                '          <input type="text" id="searchKienNghi" placeholder="Tìm theo tiêu đề, nội dung ý kiến">' +
-                '        </div>' +
-                '        <select id="filterTrangThaiKN" class="filter-select">' +
-                '          <option value="">Tất cả trạng thái</option>' +
-                '          <option value="Chờ xử lý">Chờ xử lý</option>' +
-                '          <option value="Đã phản hồi">Đã phản hồi</option>' +
-                '        </select>' +
-                '      </div>' +
-                '      <div class="toolbar-right">' +
-                '        <span class="text-gray" id="totalKNCount">Tổng: 0 ý kiến</span>' +
-                '      </div>' +
-                '    </div>' +
-
-                '    <div class="table-responsive">' +
-                '      <table class="data-table">' +
-                '        <thead>' +
-                '          <tr>' +
-                '            <th style="width:50px;">STT</th>' +
-                '            <th>Tiêu đề ý kiến</th>' +
-                (!isSv ? '            <th>Sinh viên gửi</th>' : '') +
-                '            <th>Thời gian gửi</th>' +
-                '            <th class="text-center">Số phản hồi</th>' +
-                '            <th class="text-center">Trạng thái</th>' +
-                '            <th class="text-center" style="width:140px;">Thao tác</th>' +
-                '          </tr>' +
-                '        </thead>' +
-                '        <tbody id="knTableBody"></tbody>' +
-                '      </table>' +
-                '    </div>' +
-                '  </div>' +
-                '</div>';
+            if (this.isSv) {
+                // Bố cục theo mã nguồn cũ (renderFeedbackSection - sinh viên): form gửi (trái) + lịch sử (phải)
+                html =
+                    '<section class="nd-scope nd-two">' +
+                    '  <div class="nd-card">' +
+                    OldUI.header('Gửi ý kiến tới admin', 'Gửi thắc mắc, kiến nghị hoặc góp ý trực tiếp cho quản trị viên.') +
+                    '    <form class="nd-grid-form" id="knForm" autocomplete="off">' +
+                    '      <input id="knTieuDe" class="nd-full" placeholder="Tiêu đề ý kiến">' +
+                    '      <textarea id="knNoiDung" class="nd-full" rows="6" placeholder="Nhập nội dung chi tiết..."></textarea>' +
+                    '      <div class="nd-form-actions"><button class="nd-btn nd-btn-primary" type="submit">Gửi ý kiến</button></div>' +
+                    '    </form>' +
+                    '  </div>' +
+                    '  <div class="nd-card">' +
+                    OldUI.header('Lịch sử ý kiến đã gửi', 'Theo dõi phản hồi từ admin.') +
+                    '    <div class="nd-table-wrap"><table class="nd-table">' +
+                    '      <thead><tr><th>Tiêu đề</th><th>Nội dung</th><th>Phản hồi admin</th></tr></thead>' +
+                    '      <tbody id="knTableBody"><tr><td colspan="3" class="nd-empty">Đang tải...</td></tr></tbody>' +
+                    '    </table></div>' +
+                    '  </div>' +
+                    '</section>';
+            } else {
+                // Bố cục theo mã nguồn cũ (renderFeedbackSection - admin): danh sách (trái) + khung phản hồi (phải)
+                html =
+                    '<section class="nd-scope nd-two">' +
+                    '  <div class="nd-card">' +
+                    OldUI.header('Danh sách ý kiến sinh viên', 'Admin có thể xem trực tiếp và phản hồi ngay trong hệ thống.') +
+                    OldUI.toolbar('knSearch', ['Tiêu đề', 'Nội dung', 'Sinh viên', 'Mã SV'], 'Nhập từ khóa ý kiến...') +
+                    '    <div class="nd-table-wrap"><table class="nd-table">' +
+                    '      <thead><tr><th>Sinh viên</th><th>Tiêu đề</th><th>Nội dung</th><th>Phản hồi</th><th>Thao tác</th></tr></thead>' +
+                    '      <tbody id="knTableBody"><tr><td colspan="5" class="nd-empty">Đang tải...</td></tr></tbody>' +
+                    '    </table></div>' +
+                    '  </div>' +
+                    '  <div class="nd-card" id="knReplyCard"></div>' +
+                    '</section>';
+            }
 
             $('#contentArea').html(html);
-            this.bindEvents();
+            if (!this.isSv) {
+                OldUI.bind('knSearch', function (q) { self.search = q; self.renderList(); });
+                this.renderReplyPanel(null);
+            }
+            $('#knForm').on('submit', function (e) { e.preventDefault(); self.submitKienNghi(); });
+            $('#knTableBody').on('click', '.btn-view-kn', function () { self.showDetailModal($(this).data('id')); });
+            $('#knTableBody').on('click', '.btn-reply-kn', function () { self.selectForReply($(this).data('id')); });
+            $('#knTableBody').on('click', '.btn-del-kn', function () { self.deleteKienNghi($(this).data('id')); });
             this.loadKienNghi();
         },
 
-        bindEvents: function () {
-            var self = this;
-
-            $('#searchKienNghi, #filterTrangThaiKN').on('input change', function () {
-                self.loadKienNghi();
-            });
-
-            $('#btnThemKienNghi').on('click', function () {
-                self.showSendModal();
-            });
-
-            $(document).off('click', '.btn-view-kn').on('click', '.btn-view-kn', function () {
-                var id = $(this).data('id');
-                self.showDetailModal(id);
-            });
-
-            $(document).off('click', '.btn-del-kn').on('click', '.btn-del-kn', function () {
-                var id = $(this).data('id');
-                self.deleteKienNghi(id);
-            });
-
-            $(document).off('click', '#btnSubmitKienNghi').on('click', '#btnSubmitKienNghi', function () {
-                self.submitKienNghi();
-            });
-
-            $(document).off('click', '#btnSendPhanHoi').on('click', '#btnSendPhanHoi', function () {
-                var knId = $(this).data('id');
-                self.submitPhanHoi(knId);
-            });
-        },
+        bindEvents: function () { /* sự kiện gắn trong render */ },
 
         loadKienNghi: function () {
-            var currentUser = App.getCurrentUser();
-            var role = currentUser.vai_tro;
-            var isSv = (role === 'sinh_vien');
-
             var self = this;
-            Api.get('/api/kiennghi', {
-                search: ($('#searchKienNghi').val() || '').trim(),
-                trang_thai: $('#filterTrangThaiKN').val()
-            })
+            Api.get('/api/kiennghi', { search: '', trang_thai: '' })
                 .done(function (res) {
                     self.cache = res.data || [];
-                    self.renderList(self.cache, role, isSv);
+                    self.renderList();
                 })
                 .fail(Api.toastError);
         },
 
-        renderList: function (list, role, isSv) {
-            $('#totalKNCount').text('Tổng: ' + list.length + ' ý kiến');
-
-            var tbody = $('#knTableBody');
-            tbody.empty();
-
-            var colSpan = isSv ? 6 : 7;
-
-            if (list.length === 0) {
-                tbody.html(
-                    '<tr><td colspan="' + colSpan + '" class="text-center text-gray py-4">' +
-                    '  <i class="fa-solid fa-inbox" style="font-size:1.6rem; opacity:0.3; display:block; margin-bottom:8px;"></i>' +
-                    '  Không có ý kiến hoặc kiến nghị nào' +
-                    '</td></tr>'
-                );
+        renderList: function () {
+            var esc = App.escapeHtml, self = this, q = this.search;
+            var all = this.cache || [];
+            var nl = function (t) { return esc(t || '').replace(/\n/g, '<br>'); };
+            var phanHoi = function (k, chua) {
+                var n = parseInt(k.so_phan_hoi, 10) || 0;
+                return n > 0
+                    ? '<span class="nd-pill nd-pill-success">Đã phản hồi (' + n + ')</span> <button type="button" class="nd-btn nd-btn-light nd-btn-sm btn-view-kn" data-id="' + k.id + '">Xem</button>'
+                    : chua;
+            };
+            var html;
+            if (this.isSv) {
+                html = all.map(function (k) {
+                    return '<tr><td>' + esc(k.tieu_de) + '</td><td>' + nl(k.noi_dung) + '</td><td>' + phanHoi(k, 'Chưa có phản hồi') + '</td></tr>';
+                }).join('');
+                $('#knTableBody').html(html || '<tr><td colspan="3" class="nd-empty">Bạn chưa gửi ý kiến nào.</td></tr>');
                 return;
             }
-
-            list.forEach(function (k, idx) {
-                var countReplies = k.so_phan_hoi || 0;
-                var svName = k.ten_sinh_vien ? k.ten_sinh_vien + ' (' + k.ma_sinh_vien + ')' : 'Sinh viên';
-
-                var statusBadge = (k.trang_thai === 'Đã phản hồi')
-                    ? '<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Đã phản hồi</span>'
-                    : '<span class="badge badge-warning"><i class="fa-solid fa-clock"></i> Chờ xử lý</span>';
-
-                var row =
-                    '<tr>' +
-                    '  <td class="text-center font-bold">' + (idx + 1) + '</td>' +
-                    '  <td><strong>' + App.escapeHtml(k.tieu_de) + '</strong></td>' +
-                    (!isSv ? '  <td>' + App.escapeHtml(svName) + '</td>' : '') +
-                    '  <td><small>' + App.formatDateTime(k.created_at) + '</small></td>' +
-                    '  <td class="text-center"><span class="badge badge-info">' + countReplies + '</span></td>' +
-                    '  <td class="text-center">' + statusBadge + '</td>' +
-                    '  <td class="text-center">' +
-                    '    <div class="table-actions justify-center">' +
-                    '      <button class="btn btn-sm btn-outline btn-view-kn" data-id="' + k.id + '" title="Xem chi tiết & Phản hồi"><i class="fa-solid fa-comment-dots"></i> Chi tiết</button>' +
-                    (role === 'admin' ? '      <button class="btn btn-sm btn-outline btn-del-kn text-danger" data-id="' + k.id + '" title="Xóa ý kiến">Xóa</button>' : '') +
-                    '    </div>' +
-                    '  </td>' +
+            var list = all.filter(function (k) { return OldUI.match([k.tieu_de, k.noi_dung, k.ten_sinh_vien, k.ma_sinh_vien], q); });
+            OldUI.count('knSearch', list.length, all.length, 'ý kiến');
+            $('#knTotal').text(all.length);
+            html = list.map(function (k) {
+                return '<tr>' +
+                    '<td><div>' + esc(k.ten_sinh_vien || 'Sinh viên') + '</div><small>' + esc(k.ma_sinh_vien || '') + ' · ' + App.formatDateTime(k.created_at) + '</small></td>' +
+                    '<td>' + esc(k.tieu_de) + '</td>' +
+                    '<td>' + nl(k.noi_dung) + '</td>' +
+                    '<td>' + phanHoi(k, 'Chưa phản hồi') + '</td>' +
+                    '<td><div class="nd-actions">' +
+                    '<button type="button" class="nd-btn nd-btn-warning btn-reply-kn" data-id="' + k.id + '">Phản hồi</button>' +
+                    (self.role === 'admin' ? '<button type="button" class="nd-btn nd-btn-danger btn-del-kn" data-id="' + k.id + '">Xóa</button>' : '') +
+                    '</div></td>' +
                     '</tr>';
-                tbody.append(row);
-            });
+            }).join('');
+            $('#knTableBody').html(html || '<tr><td colspan="5" class="nd-empty">Chưa có ý kiến nào từ sinh viên.</td></tr>');
         },
 
-        showSendModal: function () {
-            var html =
-                '<div class="modal-header">' +
-                '  <h3><i class="fa-solid fa-pen-nib"></i> Gửi ý kiến / kiến nghị</h3>' +
-                '  <button class="modal-close" onclick="App.closeModal()">&times;</button>' +
-                '</div>' +
-                '<div class="modal-body">' +
-                '  <div class="form-group">' +
-                '    <label>Tiêu đề ý kiến</label>' +
-                '    <input type="text" class="form-control" id="knTieuDe" placeholder="Tóm tắt nội dung thắc mắc hoặc đề xuất">' +
+        /** Khung phản hồi bên phải (theo mã cũ): chưa chọn thì hiện tổng ý kiến */
+        renderReplyPanel: function (k) {
+            var self = this, esc = App.escapeHtml;
+            var $c = $('#knReplyCard');
+            if (!k) {
+                $c.html(OldUI.header('Chọn một ý kiến để phản hồi', 'Nhấn nút Phản hồi ở bảng bên trái để xử lý.') +
+                    '<div><strong>Tổng ý kiến:</strong> <span id="knTotal">' + (this.cache || []).length + '</span></div>');
+                return;
+            }
+            var replies = (k.phan_hoi || []).map(function (r) {
+                return '<div class="nd-note" style="border-left:3px solid #2563eb; padding:6px 10px; margin-bottom:8px; background:#f8fbff; border-radius:8px;">' +
+                    '<strong>' + esc(r.ten_nguoi_phan_hoi || 'Phòng Đào tạo') + '</strong> · ' + App.formatDateTime(r.created_at) +
+                    '<div style="color:#1e293b;">' + esc(r.noi_dung).replace(/\n/g, '<br>') + '</div></div>';
+            }).join('');
+            $c.html(OldUI.header('Phản hồi ý kiến', 'Trả lời trực tiếp cho sinh viên.') +
+                '<form class="nd-grid-form" id="knReplyForm">' +
+                '  <input class="nd-full" value="' + esc(k.tieu_de) + '" disabled>' +
+                (replies ? '<div class="nd-full">' + replies + '</div>' : '') +
+                '  <textarea id="replyContent" class="nd-full" rows="8" placeholder="Nhập phản hồi của admin..."></textarea>' +
+                '  <div class="nd-form-actions">' +
+                '    <button class="nd-btn nd-btn-primary" type="submit">Lưu phản hồi</button>' +
+                '    <button class="nd-btn nd-btn-light" type="button" id="knReplyCancel">Hủy</button>' +
                 '  </div>' +
-                '  <div class="form-group">' +
-                '    <label>Nội dung chi tiết</label>' +
-                '    <textarea class="form-control" id="knNoiDung" rows="5" placeholder="Trình bày chi tiết lý do, hoàn cảnh và nguyện vọng của bạn"></textarea>' +
-                '  </div>' +
-                '</div>' +
-                '<div class="modal-footer">' +
-                '  <button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
-                '  <button class="btn btn-primary" id="btnSubmitKienNghi"><i class="fa-solid fa-paper-plane"></i> Gửi ý kiến</button>' +
-                '</div>';
+                '</form>');
+            $('#knReplyForm').on('submit', function (e) { e.preventDefault(); self.submitPhanHoi(k.id); });
+            $('#knReplyCancel').on('click', function () { self.renderReplyPanel(null); });
+            var top = $c.offset();
+            if (top && $(window).width() < 1024) $('html, body').animate({ scrollTop: Math.max(top.top - 100, 0) }, 200);
+        },
 
-            App.showModal(html, 'md');
+        selectForReply: function (id) {
+            var self = this;
+            Api.get('/api/kiennghi/chi-tiet', { id: id })
+                .done(function (res) { self.renderReplyPanel(res.data); })
+                .fail(Api.toastError);
         },
 
         submitKienNghi: function () {
@@ -189,7 +156,7 @@
             Api.post('/api/kiennghi', { tieu_de: $('#knTieuDe').val(), noi_dung: $('#knNoiDung').val() })
                 .done(function (res) {
                     App.showToast(res.message, 'success');
-                    App.closeModal();
+                    $('#knTieuDe, #knNoiDung').val('');
                     self.loadKienNghi();
                 })
                 .fail(Api.toastError);
@@ -205,7 +172,7 @@
         renderDetail: function (k) {
             var currentUser = App.getCurrentUser();
             var role = currentUser.vai_tro;
-            var canReply = (role === 'admin' || role === 'giang_vien');
+            var canReply = false; // phản hồi thực hiện ở khung "Phản hồi ý kiến" bên phải (bố cục mã cũ)
             var svName = k.ten_sinh_vien ? k.ten_sinh_vien + ' (' + k.ma_sinh_vien + ')' : 'Sinh viên';
             var replies = k.phan_hoi || [];
 
@@ -270,6 +237,7 @@
                 .done(function (res) {
                     App.showToast(res.message, 'success');
                     App.closeModal();
+                    if (!self.isSv) self.renderReplyPanel(null);
                     self.loadKienNghi();
                 })
                 .fail(Api.toastError);
