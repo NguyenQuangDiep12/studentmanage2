@@ -281,7 +281,6 @@
                 '    </div>' +
                 '    <div class="form-group">' +
                 '      <label>Môn học' +
-                (isEdit ? '' : ' <a href="javascript:void(0)" id="lnkTaoMonHoc" style="font-weight:500; font-size:0.8rem; margin-left:6px;">Chưa có môn? Tạo môn học</a>') +
                 '</label>' +
                 (mhOptions
                     ? '      <select class="form-control" id="lhpMonHoc">' + mhOptions + '</select>'
