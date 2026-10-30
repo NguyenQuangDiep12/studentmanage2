@@ -237,7 +237,7 @@
 
             // Xem chi tiết tin (thay cho nút Chuyển nháp; đổi trạng thái thực hiện trong form Sửa)
             $(document).off('click', '.btn-view-news').on('click', '.btn-view-news', function () {
-                TinTucViewerModule.showNewsDetail($(this).data('id'));
+                self.showAdminDetail($(this).data('id'));
             });
 
             $(document).off('click', '.btn-del-news').on('click', '.btn-del-news', function () {
@@ -367,6 +367,43 @@
 
         findCached: function (id) {
             return (this.cache || []).find(function (n) { return n.id === parseInt(id, 10); }) || null;
+        },
+
+        /** Chi tiết tin cho quản trị viên: mỗi trường có nhãn rõ ràng */
+        showAdminDetail: function (id) {
+            Api.get('/api/tintuc/chi-tiet', { id: id })
+                .done(function (res) {
+                    var n = res.data || {};
+                    var item = function (label, value, full) {
+                        return '<div class="detail-item"' + (full ? ' style="grid-column:1 / -1;"' : '') + '>' +
+                            '<span class="detail-label">' + label + '</span>' +
+                            '<div class="detail-value" style="white-space:pre-wrap; word-break:break-word;">' + value + '</div></div>';
+                    };
+                    var esc = function (v) { return v ? App.escapeHtml(v) : '—'; };
+                    var html =
+                        '<div class="modal-header">' +
+                        '  <h3>Chi tiết tin tức</h3>' +
+                        '  <button class="modal-close" onclick="App.closeModal()">&times;</button>' +
+                        '</div>' +
+                        '<div class="modal-body">' +
+                        '  <div class="detail-grid" style="grid-template-columns:repeat(2, minmax(0, 1fr));">' +
+                        item('Tiêu đề bài viết', esc(n.tieu_de), true) +
+                        item('Danh mục', esc(n.danh_muc)) +
+                        item('Trạng thái hiển thị', App.trangThaiTinTucBadge(n.trang_thai)) +
+                        item('Tin quan trọng', parseInt(n.quan_trong, 10) === 1 ? 'Có' : 'Không') +
+                        item('Người đăng', esc(n.ten_nguoi_dang)) +
+                        item('Ngày tạo', n.created_at ? App.formatDateTime(n.created_at) : '—') +
+                        item('Ngày cập nhật', n.updated_at ? App.formatDateTime(n.updated_at) : '—') +
+                        item('Tóm tắt ngắn', esc(n.tom_tat), true) +
+                        item('Nội dung chi tiết', esc(n.noi_dung), true) +
+                        '  </div>' +
+                        '</div>' +
+                        '<div class="modal-footer">' +
+                        '  <button class="btn btn-primary" onclick="App.closeModal()">Đóng</button>' +
+                        '</div>';
+                    App.showModal(html, 'lg');
+                })
+                .fail(Api.toastError);
         },
 
         saveNews: function () {
