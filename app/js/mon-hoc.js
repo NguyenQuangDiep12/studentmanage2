@@ -13,6 +13,8 @@
             var currentUser = App.getCurrentUser();
             // Quản trị viên: thêm / sửa / xóa. Giảng viên: được thêm môn học và tra cứu (backend kiểm tra quyền).
             this.isAdmin = currentUser && currentUser.vai_tro === 'admin';
+            // RULE-MH-04: quản trị viên và giảng viên được sửa / xóa môn học
+            this.canEdit = currentUser && (currentUser.vai_tro === 'admin' || currentUser.vai_tro === 'giang_vien');
             this.canCreate = currentUser && (currentUser.vai_tro === 'admin' || currentUser.vai_tro === 'giang_vien');
             this.search = { query: '', field: 'all' };
 
@@ -24,7 +26,7 @@
                 OldUI.header('Danh sách môn học', 'Tạo môn học trước, sau đó mở lớp học phần để sinh viên đăng ký.') +
                 OldUI.toolbar('mhSearch', ['Mã môn', 'Tên môn'], 'Nhập từ khóa môn học...') +
                 '    <div class="nd-table-wrap"><table class="nd-table">' +
-                '      <thead><tr><th>Mã môn</th><th>Tên môn</th><th>Tín chỉ</th><th>Số tiết</th>' + (this.isAdmin ? '<th>Thao tác</th>' : '') + '</tr></thead>' +
+                '      <thead><tr><th>Mã môn</th><th>Tên môn</th><th>Tín chỉ</th><th>Số tiết</th>' + (this.canEdit ? '<th>Thao tác</th>' : '') + '</tr></thead>' +
                 '      <tbody id="monHocTableBody"><tr><td colspan="5" class="nd-empty">Đang tải...</td></tr></tbody>' +
                 '    </table></div>' +
                 '  </div>' +
@@ -64,7 +66,7 @@
                     '<td>' + esc(mh.ten_mon_hoc) + (mh.mo_ta ? '<small class="d-block">' + esc(mh.mo_ta) + '</small>' : '') + '</td>' +
                     '<td>' + mh.so_tin_chi + '<small class="d-block">' + MonHocModule.loaiTinChi(mh) + '</small></td>' +
                     '<td>' + tiet + '</td>' +
-                    (self.isAdmin ? '<td><div class="nd-actions">' +
+                    (self.canEdit ? '<td><div class="nd-actions">' +
                         '<button type="button" class="nd-btn nd-btn-warning btn-edit-mh" data-id="' + mh.id + '">Sửa</button>' +
                         '<button type="button" class="nd-btn nd-btn-danger btn-del-mh" data-id="' + mh.id + '">Xóa</button>' +
                         '</div></td>' : '') +

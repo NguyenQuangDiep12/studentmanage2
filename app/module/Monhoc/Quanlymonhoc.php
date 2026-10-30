@@ -104,11 +104,11 @@ class Quanlymonhoc
         ], 201);
     }
 
-    /** PUT /api/monhoc — body có id. Mã môn học không đổi. RULE-MH-04: chỉ quản trị viên sửa. */
+    /** PUT /api/monhoc — body có id. Mã môn học không đổi. RULE-MH-04: quản trị viên và giảng viên được sửa. */
     public function update(): void
     {
         Request::requireMethod('PUT', 'POST');
-        AuthService::requireUser($this->db, ['admin']);
+        AuthService::requireUser($this->db, ['admin', 'giang_vien']); // RULE-MH-04
 
         $id = Request::int(Request::input('id'));
         $existing = $this->find($id);
@@ -184,7 +184,7 @@ class Quanlymonhoc
     public function destroy(): void
     {
         Request::requireMethod('DELETE', 'POST');
-        AuthService::requireUser($this->db, ['admin']);
+        AuthService::requireUser($this->db, ['admin', 'giang_vien']); // RULE-MH-04
 
         $id = Request::int(Request::query('id', Request::input('id')));
         $mh = $this->find($id);

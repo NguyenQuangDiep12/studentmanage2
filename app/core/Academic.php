@@ -90,6 +90,12 @@ class Academic
 
     // RULE-XL-09: quy định của trường cho phép rút ngắn buổi cuối còn đúng số tiết còn thiếu
     public const CHO_PHEP_RUT_NGAN_BUOI_CUOI = true;
+    /**
+     * RULE-NGAY-02, RULE-NGAY-03: false = sinh mọi buổi theo thứ đã chọn trong khoảng ngày học phần người dùng nhập
+     * (như mã nguồn cũ), không dừng khi đủ tiết, không rút ngắn buổi cuối, không chặn lưu khi khác số tiết của môn.
+     * true = xếp đến khi đủ tổng số tiết của môn (RULE-XL-07, RULE-XL-09, RULE-HL-01 cũ).
+     */
+    public const XEP_DU_TIET = false;
 
     /**
      * RULE-18.11: Quy tắc chọn điểm của học phần học lại khi tính GPA.
@@ -239,6 +245,9 @@ class Academic
 
         // RULE-XL-01: tổng số tiết cần xếp; buổi đã điểm danh đã tính trước
         $conLai = $tongTiet - array_sum($fixed);
+        if (!self::XEP_DU_TIET) {
+            $conLai = PHP_INT_MAX;   // RULE-NGAY-02: sinh mọi ngày trong khoảng, không giới hạn theo số tiết môn
+        }
         $buoi = [];
         $boQua = [];
         $dungVi = null;
@@ -294,7 +303,7 @@ class Academic
 
         // RULE-XL-10, RULE-THIEU-04: số tiết đã xếp, còn thiếu và nguyên nhân chính
         $nguyenNhan = [];
-        if ($conLai > 0) {
+        if (self::XEP_DU_TIET && $conLai > 0) {
             if ($dungVi !== null) {
                 $nguyenNhan[] = $dungVi;
             }
@@ -314,7 +323,7 @@ class Academic
             'bo_qua' => $boQua,
             'tong_tiet_mon' => $tongTiet,
             'da_xep' => array_sum(array_column($buoi, 'so_tiet')),
-            'con_thieu' => max(0, $conLai),
+            'con_thieu' => self::XEP_DU_TIET ? max(0, $conLai) : 0,
             'nguyen_nhan' => $nguyenNhan,
         ];
     }
