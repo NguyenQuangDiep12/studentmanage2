@@ -235,9 +235,9 @@
                 self.showFormModal(id);
             });
 
-            $(document).off('click', '.btn-toggle-news-status').on('click', '.btn-toggle-news-status', function () {
-                var id = $(this).data('id');
-                self.toggleStatus(id);
+            // Xem chi tiết tin (thay cho nút Chuyển nháp; đổi trạng thái thực hiện trong form Sửa)
+            $(document).off('click', '.btn-view-news').on('click', '.btn-view-news', function () {
+                TinTucViewerModule.showNewsDetail($(this).data('id'));
             });
 
             $(document).off('click', '.btn-del-news').on('click', '.btn-del-news', function () {
@@ -279,10 +279,6 @@
             list.forEach(function (n, idx) {
                 var authorName = n.ten_nguoi_dang || 'Admin';
 
-                var isPublic = (n.trang_thai === 'Công khai' || n.trang_thai === 'cong_khai');
-                var toggleBtnText = isPublic
-                    ? '<i class="fa-solid fa-file-pen"></i> Chuyển nháp'
-                    : '<i class="fa-solid fa-globe"></i> Đăng';
 
                 var row =
                     '<tr>' +
@@ -295,7 +291,7 @@
                     '  <td class="text-center">' + App.trangThaiTinTucBadge(n.trang_thai) + '</td>' +
                     '  <td class="text-center">' +
                     '    <div class="table-actions justify-center">' +
-                    '      <button class="btn btn-sm btn-outline btn-toggle-news-status" data-id="' + n.id + '" title="Thay đổi trạng thái">' + toggleBtnText + '</button>' +
+                    '      <button class="btn btn-sm btn-outline btn-view-news" data-id="' + n.id + '" title="Xem chi tiết tin">Xem</button>' +
                     '      <button class="btn btn-sm btn-outline btn-edit-news" data-id="' + n.id + '" title="Chỉnh sửa">Sửa</button>' +
                     '      <button class="btn btn-sm btn-outline btn-del-news text-danger" data-id="' + n.id + '" title="Xóa bài viết">Xóa</button>' +
                     '    </div>' +
