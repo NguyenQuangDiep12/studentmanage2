@@ -175,6 +175,13 @@
                 '          <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>' +
                 '          <input type="text" id="searchNewsAdmin" placeholder="Tìm theo tiêu đề bài viết...">' +
                 '        </div>' +
+                '        <select id="filterDanhMucNewsAdmin" class="filter-select">' +
+                '          <option value="">Tất cả danh mục</option>' +
+                '          <option value="Đào tạo">Đào tạo</option>' +
+                '          <option value="Sự kiện">Sự kiện</option>' +
+                '          <option value="Tuyển dụng">Tuyển dụng</option>' +
+                '          <option value="Chung">Chung</option>' +
+                '        </select>' +
                 '        <select id="filterTrangThaiNewsAdmin" class="filter-select">' +
                 '          <option value="">Tất cả trạng thái</option>' +
                 '          <option value="Công khai">Công khai</option>' +
@@ -215,7 +222,7 @@
         bindEvents: function () {
             var self = this;
 
-            $('#searchNewsAdmin, #filterTrangThaiNewsAdmin').on('input change', function () {
+            $('#searchNewsAdmin, #filterDanhMucNewsAdmin, #filterTrangThaiNewsAdmin').on('input change', function () {
                 self.loadAdminNews();
             });
 
@@ -248,6 +255,7 @@
             Api.get('/api/tintuc', {
                 quan_ly: 1,
                 search: ($('#searchNewsAdmin').val() || '').trim(),
+                danh_muc: $('#filterDanhMucNewsAdmin').val(),
                 trang_thai: $('#filterTrangThaiNewsAdmin').val()
             })
                 .done(function (res) {
