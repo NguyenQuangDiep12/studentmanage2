@@ -36,18 +36,18 @@ var GiaiThichDiem = (function () {
             ' <span class="text-muted">(tổng tiết môn = tổng số tiết của tất cả buổi học; tiết nghỉ = tổng tiết của các buổi bị đánh dấu vắng)</span>');
         var c;
         if (R <= 0) {
-            c = 'Không nghỉ tiết nào → C = <strong>' + q.cc_toi_da + '</strong>';
+            c = 'Không nghỉ tiết nào nên C = <strong>' + q.cc_toi_da + '</strong>';
         } else if (R >= q.cc_nguong_bang_0) {
-            c = 'R = ' + n(R, 2) + '% ≥ ' + q.cc_nguong_bang_0 + '% → C = <strong>0</strong>';
+            c = 'R = ' + n(R, 2) + '% ≥ ' + q.cc_nguong_bang_0 + '% nên C = <strong>0</strong>';
         } else {
             var tru = Math.floor(R / q.cc_phan_tram_moi_diem + 1e-9);
             c = 'Mỗi ' + q.cc_phan_tram_moi_diem + '% nghỉ trừ 1 điểm: số điểm trừ = ⌊R ÷ ' + q.cc_phan_tram_moi_diem + '⌋ = ⌊' + n(R, 2) + ' ÷ ' + q.cc_phan_tram_moi_diem +
-                '⌋ = ⌊' + n(R / q.cc_phan_tram_moi_diem, 2) + '⌋ = ' + tru + ' → C = ' + q.cc_toi_da + ' − ' + tru + ' = <strong>' + n(r.diem_chuyen_can, 0) + '</strong>';
+                '⌋ = ⌊' + n(R / q.cc_phan_tram_moi_diem, 2) + '⌋ = ' + tru + ', suy ra C = ' + q.cc_toi_da + ' − ' + tru + ' = <strong>' + n(r.diem_chuyen_can, 0) + '</strong>';
         }
         html += buoc('2', 'Điểm chuyên cần C (tối đa ' + q.cc_toi_da + ')', c);
         html += buoc('3', 'Điều kiện dự thi', r.cam_thi
-            ? '<span class="text-danger">R = ' + n(R, 2) + '% ≥ ' + q.nguong_cam_thi + '% → <strong>bị cấm thi</strong>, điểm tổng kết D = 0 (F, Không đạt).</span>'
-            : 'R = ' + n(R, 2) + '% &lt; ' + q.nguong_cam_thi + '% → <strong>được dự thi</strong>.');
+            ? '<span class="text-danger">R = ' + n(R, 2) + '% ≥ ' + q.nguong_cam_thi + '% nên <strong>bị cấm thi</strong>, điểm tổng kết D = 0 (F, Không đạt).</span>'
+            : 'R = ' + n(R, 2) + '% &lt; ' + q.nguong_cam_thi + '% nên <strong>được dự thi</strong>.');
         return html;
     }
 
@@ -55,11 +55,11 @@ var GiaiThichDiem = (function () {
     function tongKet(r, q) {
         var A = r.diem_cuoi_ky, B = r.diem_giua_ky, C = r.diem_chuyen_can;
         if (r.cam_thi) {
-            return buoc('4', 'Điểm tổng kết D', 'Sinh viên bị cấm thi → <strong>D = 0</strong> → điểm chữ <strong>F</strong>, hệ 4 = <strong>0.0</strong>, <strong>Không đạt</strong>.');
+            return buoc('4', 'Điểm tổng kết D', 'Sinh viên bị cấm thi nên <strong>D = 0</strong>, điểm chữ <strong>F</strong>, hệ 4 = <strong>0.0</strong>, <strong>Không đạt</strong>.');
         }
         if (A === null || A === undefined || B === null || B === undefined) {
             return buoc('4', 'Điểm tổng kết D', 'Chưa đủ điểm (' + (B == null ? 'thiếu giữa kỳ B' : '') + (B == null && A == null ? ', ' : '') +
-                (A == null ? 'thiếu cuối kỳ A' : '') + ') → hệ thống chưa tính D.');
+                (A == null ? 'thiếu cuối kỳ A' : '') + ') nên hệ thống chưa tính D.');
         }
         var a = Number(A), b = Number(B), c = Number(C);
         var D = Math.round((a * q.he_so_cuoi_ky + b * q.he_so_giua_ky + c * q.he_so_chuyen_can) * 100 + 1e-9) / 100;
@@ -70,9 +70,9 @@ var GiaiThichDiem = (function () {
                 q.he_so_cuoi_ky + ' × ' + n(a, 1) + ' + ' + q.he_so_giua_ky + ' × ' + n(b, 1) + ' + ' + q.he_so_chuyen_can + ' × ' + n(c, 0) + ' = ' +
                 n(a * q.he_so_cuoi_ky, 2) + ' + ' + n(b * q.he_so_giua_ky, 2) + ' + ' + n(c * q.he_so_chuyen_can, 2) + ' = <strong>' + n(D, 2) + '</strong>' +
                 ' <span class="text-muted">(A: cuối kỳ, B: giữa kỳ, C: chuyên cần)</span>') +
-            buoc('5', 'Làm tròn một chữ số thập phân', n(D, 2) + ' → <strong>' + n(d1, 1) + '</strong>') +
+            buoc('5', 'Làm tròn một chữ số thập phân', n(D, 2) + ' làm tròn thành <strong>' + n(d1, 1) + '</strong>') +
             buoc('6', 'Quy đổi', n(d1, 1) + ' nằm trong khoảng ' + khoang(t) +
-                ' → điểm chữ <strong>' + t.chu + '</strong>, hệ 4 = <strong>' + n(t.he_4, 1) + '</strong>, loại ' + t.xep_loai + ', <strong>' + t.ket_qua + '</strong>');
+                ', quy đổi ra điểm chữ <strong>' + t.chu + '</strong>, hệ 4 = <strong>' + n(t.he_4, 1) + '</strong>, loại ' + t.xep_loai + ', <strong>' + t.ket_qua + '</strong>');
     }
 
     /** Toàn bộ cách tính của một sinh viên trong một học phần */
@@ -104,7 +104,7 @@ var GiaiThichDiem = (function () {
             '<div class="mt-2" style="line-height:1.7;">' +
             '<p class="mb-1"><strong>1. Tỷ lệ nghỉ:</strong> R = Tổng số tiết nghỉ ÷ Tổng số tiết của môn × 100%. Tổng số tiết của môn là tổng tiết của tất cả buổi học; tiết nghỉ là tổng tiết của các buổi sinh viên bị đánh dấu vắng.</p>' +
             '<p class="mb-1"><strong>2. Điểm chuyên cần C:</strong> tối đa ' + q.cc_toi_da + ' điểm; cứ mỗi ' + q.cc_phan_tram_moi_diem + '% tỷ lệ nghỉ (đủ mức) trừ 1 điểm: C = ' +
-                q.cc_toi_da + ' − ⌊R ÷ ' + q.cc_phan_tram_moi_diem + '⌋. Khi R ≥ ' + q.cc_nguong_bang_0 + '% thì C = 0. VD nghỉ 4/45 tiết: R = 8,89% → trừ ⌊4,44⌋ = 4 → C = 6.</p>' +
+                q.cc_toi_da + ' − ⌊R ÷ ' + q.cc_phan_tram_moi_diem + '⌋. Khi R ≥ ' + q.cc_nguong_bang_0 + '% thì C = 0. VD nghỉ 4/45 tiết: R = 8,89%, trừ ⌊4,44⌋ = 4 điểm nên C = 6.</p>' +
             '<p class="mb-1"><strong>3. Cấm thi:</strong> R ≥ ' + q.nguong_cam_thi + '% thì sinh viên bị cấm thi (đồng thời C = 0), không được nhập điểm giữa kỳ / cuối kỳ và điểm tổng kết D = 0 (F).</p>' +
             '<p class="mb-1"><strong>4. Điểm tổng kết:</strong> D = ' + q.he_so_cuoi_ky + 'A + ' + q.he_so_giua_ky + 'B + ' + q.he_so_chuyen_can + 'C (A: cuối kỳ, B: giữa kỳ, C: chuyên cần). Chưa đủ A và B thì chưa tính D. VD A = 8, B = 7, C = 6: D = 4,8 + 2,1 + 0,6 = 7,5.</p>' +
             '<p class="mb-1"><strong>5. Quy đổi:</strong> D làm tròn đến một chữ số thập phân rồi chuyển sang điểm chữ, hệ 4:</p>' +

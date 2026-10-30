@@ -277,7 +277,7 @@
                     }
 
                     var hanStr = (l.thoi_gian_mo_dang_ky && l.thoi_gian_dong_dang_ky)
-                        ? '<small>' + App.formatDate(l.thoi_gian_mo_dang_ky) + ' → ' + App.formatDate(l.thoi_gian_dong_dang_ky) + '</small>'
+                        ? '<small>' + App.formatDate(l.thoi_gian_mo_dang_ky) + ' đến ' + App.formatDate(l.thoi_gian_dong_dang_ky) + '</small>'
                         : '<span class="text-muted">—</span>';
 
                     var row =

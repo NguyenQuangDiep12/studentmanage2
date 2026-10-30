@@ -107,7 +107,7 @@ Kết quả:
 - Tỷ lệ nghỉ học: 5 / 60 × 100% ≈ 8,33%.
 - Điểm chuyên cần được hệ thống tự động tính theo quy tắc trừ điểm đã quy định.
 
-Cách xử lý đã thống nhất trong hệ thống: chỉ trừ theo mỗi mức 2% hoàn chỉnh (8,33% -> trừ 4 điểm -> chuyên cần 6), chỉ backend tính (app/core/Academic.php).
+Cách xử lý đã thống nhất trong hệ thống: chỉ trừ theo mỗi mức 2% hoàn chỉnh (8,33% thì trừ 4 điểm, chuyên cần còn 6), chỉ backend tính (app/core/Academic.php).
 
 Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia hết cho 2%. Ví dụ, với tỷ lệ 8,33%, hệ thống trừ 4 điểm nếu chỉ tính mỗi mức 2% hoàn chỉnh, hoặc có thể áp dụng cách làm tròn khác nếu quy định đào tạo yêu cầu. Không nên để frontend và backend tự tính theo hai cách khác nhau.
 
@@ -119,10 +119,10 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-16.5: Hệ thống hiển thị điểm trung bình tích lũy hệ 4 và hệ 10, cùng tổng số tín chỉ tích lũy.
 - RULE-16.6: Hệ thống hiển thị phân loại điểm trung bình học kỳ.
 - RULE-16.7: Các môn học đạt chuẩn đầu ra có thể hiển thị điểm chữ Đ thay vì điểm số; môn đánh giá Đạt/Không đạt không có điểm số thì không tính vào GPA (hệ thống hiện chưa có loại môn này).
-- RULE-16.8: Quản trị viên và giảng viên tra cứu bảng điểm sinh viên theo luồng: chọn lớp sinh viên → chọn sinh viên → xem điểm theo môn và kết quả theo học kỳ.
+- RULE-16.8: Quản trị viên và giảng viên tra cứu bảng điểm sinh viên theo luồng: chọn lớp sinh viên, chọn sinh viên rồi xem điểm theo môn và kết quả theo học kỳ.
 
 ## RULE-17: Quy đổi điểm hệ 10 sang điểm chữ
-- Điểm học phần D làm tròn đến một chữ số thập phân rồi mới chuyển sang điểm chữ và hệ 4 (theo quy chế; VD 8,45 → 8,5 → A; 7,95 → 8,0 → B+).
+- Điểm học phần D làm tròn đến một chữ số thập phân rồi mới chuyển sang điểm chữ và hệ 4 (theo quy chế; VD 8,45 làm tròn thành 8,5 là A; 7,95 làm tròn thành 8,0 là B+).
 - Thang 8 mức (Academic::THANG_DIEM):
 
 | Điểm chữ | Hệ 10 | Hệ 4 | Loại | Kết quả |
@@ -201,8 +201,8 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-CREDIT-06: Tổng tín chỉ đạt trong học kỳ được phân biệt với tổng tín chỉ tích lũy.
 - RULE-CREDIT-07: Khi tính GPA dùng số tín chỉ quy định của học phần và quy tắc chọn kết quả học lại; không cộng tín chỉ nhiều lần cho cùng một học phần.
 - RULE-CREDIT-08: Quy đổi tín chỉ thành số tiết học trên lớp (không tính giờ tự học). Căn cứ: 1 TC lý thuyết = 15 giờ học trên lớp; 1 TC thực hành = 30 giờ học trên lớp; 1 giờ = 60 phút; 1 tiết = 50 phút. Các bước: tín chỉ × số giờ/tín chỉ = số giờ; số giờ × 60 = số phút; số phút ÷ 50 = số tiết:
-  - Lý thuyết: 1 TC = 15 giờ trên lớp → 15 × 60 ÷ 50 = 18 tiết.
-  - Thực hành/thảo luận: 1 TC = 30 giờ trên lớp → 30 × 60 ÷ 50 = 36 tiết.
+  - Lý thuyết: 1 TC = 15 giờ trên lớp, tương ứng 15 × 60 ÷ 50 = 18 tiết.
+  - Thực hành/thảo luận: 1 TC = 30 giờ trên lớp, tương ứng 30 × 60 ÷ 50 = 36 tiết.
   - Số tiết lý thuyết = TC lý thuyết × 18; Số tiết thực hành = TC thực hành × 36; Tổng số tiết = tổng hai loại.
 - RULE-CREDIT-09: Người dùng chỉ nhập số tín chỉ lý thuyết và thực hành; hệ thống tự tính số tiết và hiển thị để kiểm tra trước khi lưu. Backend tự tính lại khi lưu, không tin giá trị số tiết do frontend gửi lên. Cùng một công thức cho mọi màn hình và API (Academic::tinhSoTiet).
 - RULE-CREDIT-10: Khi số tín chỉ thay đổi, hệ thống tính lại số tiết và xếp lại lịch các lớp học phần của môn (RULE-XL).
@@ -222,7 +222,7 @@ Lưu ý gốc: Cần thống nhất cách xử lý tỷ lệ nghỉ không chia 
 - RULE-HK-04: Không mặc định độ dài học kỳ; luôn dùng ngày bắt đầu và kết thúc đã khai báo.
 - RULE-HK-05: Không tạo bảng phân bố số tiết theo tuần.
 - RULE-HK-06: Học kỳ đã có lớp học phần thì không đổi năm học / số học kỳ và không xóa; được đổi ngày nếu khoảng ngày mới vẫn bao trùm mọi buổi học đã xếp (RULE-HK-03).
-- RULE-HK-07: Số tuần của học kỳ = số tuần lịch (Thứ 2 → Chủ nhật) mà học kỳ đi qua: (Thứ 2 của tuần chứa ngày kết thúc − Thứ 2 của tuần chứa ngày bắt đầu) ÷ 7 + 1. Danh sách học kỳ và thời khóa biểu dùng chung công thức này.
+- RULE-HK-07: Số tuần của học kỳ = số tuần lịch (từ Thứ 2 đến Chủ nhật) mà học kỳ đi qua: (Thứ 2 của tuần chứa ngày kết thúc − Thứ 2 của tuần chứa ngày bắt đầu) ÷ 7 + 1. Danh sách học kỳ và thời khóa biểu dùng chung công thức này.
 - RULE-HK-08: Các học kỳ trong cùng năm học không được chồng thời gian nhau.
 - RULE-HK-09: Dữ liệu cũ vi phạm (chồng lấn, buổi học nằm ngoài học kỳ) được cảnh báo trên danh sách học kỳ và thời khóa biểu; thời khóa biểu mở rộng tuần để vẫn hiển thị đủ các buổi học.
 

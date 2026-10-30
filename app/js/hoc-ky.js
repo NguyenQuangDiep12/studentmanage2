@@ -17,7 +17,7 @@
                 '  </div>' +
                 '  <div class="card-body">' +
                 '    <p class="text-muted" style="font-size:0.82rem;">Mỗi học kỳ có ngày bắt đầu và ngày kết thúc; lớp học phần xếp buổi học trong khoảng này. ' +
-                '    Số tuần = số tuần lịch (Thứ 2 → Chủ nhật) mà học kỳ đi qua - cùng cách tính với Thời khóa biểu. ' +
+                '    Số tuần = số tuần lịch (từ Thứ 2 đến Chủ nhật) mà học kỳ đi qua - cùng cách tính với Thời khóa biểu. ' +
                 '    Các học kỳ trong cùng năm học không được trùng thời gian.</p>' +
                 '    <div class="table-responsive"><table class="data-table"><thead><tr>' +
                 '      <th class="text-center">STT</th><th>Năm học</th><th class="text-center">Học kỳ</th><th class="text-center">Ngày bắt đầu</th>' +
@@ -86,7 +86,7 @@
                 '<div class="form-row"><div class="form-group"><label>Ngày bắt đầu <span class="required">*</span></label><input type="date" class="form-control" id="hkBd" value="' + (h ? h.ngay_bat_dau : '') + '"></div>' +
                 '<div class="form-group"><label>Ngày kết thúc <span class="required">*</span></label><input type="date" class="form-control" id="hkKt" value="' + (h ? h.ngay_ket_thuc : '') + '"></div></div>' +
                 (h && parseInt(h.so_lop_hoc_phan, 10) > 0 ? '<p class="text-muted" style="font-size:0.8rem;">Học kỳ đã có lớp học phần: chỉ đổi được ngày, và khoảng ngày mới phải bao trùm mọi buổi học đã xếp' +
-                    (h.buoi_tu ? ' (' + App.formatDate(h.buoi_tu) + ' → ' + App.formatDate(h.buoi_den) + ')' : '') + '.</p>' : '') +
+                    (h.buoi_tu ? ' (' + App.formatDate(h.buoi_tu) + ' đến ' + App.formatDate(h.buoi_den) + ')' : '') + '.</p>' : '') +
                 '</div>' +
                 '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button><button class="btn btn-primary" id="btnLuuHocKy">Lưu học kỳ</button></div>', 'sm');
             $('#btnLuuHocKy').on('click', function () {
@@ -122,7 +122,7 @@
                         '<td>' + App.escapeHtml(l.ma_mon_hoc + ' - ' + l.ten_mon_hoc) + '</td><td>' + App.escapeHtml(l.ten_giang_vien || '—') + '</td>' +
                         '<td class="text-center">' + App.escapeHtml(l.phong_hoc || '—') + '</td><td class="text-center">' + l.si_so_hien_tai + '/' + l.si_so_toi_da + '</td>' +
                         '<td class="text-center">' + l.so_buoi + ' buổi · ' + l.tong_tiet_da_xep + '/' + l.so_tiet + ' tiết</td>' +
-                        '<td class="text-center' + (ngoai ? ' text-danger' : '') + '">' + (l.buoi_dau ? App.formatDate(l.buoi_dau) + ' → ' + App.formatDate(l.buoi_cuoi) : '—') + (ngoai ? ' ⚠' : '') + '</td>' +
+                        '<td class="text-center' + (ngoai ? ' text-danger' : '') + '">' + (l.buoi_dau ? App.formatDate(l.buoi_dau) + ' đến ' + App.formatDate(l.buoi_cuoi) : '—') + (ngoai ? ' ⚠' : '') + '</td>' +
                         '<td class="text-center">' + App.trangThaiLopBadge(l) + '</td>' +
                         '<td class="text-center"><button class="btn btn-sm btn-outline-primary btn-hk-lhp" data-id="' + l.id + '">Xem lớp</button></td></tr>';
                 }).join('');
@@ -138,7 +138,7 @@
                     ((h.canh_bao || []).length ? '<div class="alert alert-warning" style="font-size:0.84rem;">' + h.canh_bao.map(App.escapeHtml).join('<br>') + '</div>' : '') +
                     '<h4 class="mb-2" style="font-size:0.95rem; font-weight:800;">Danh sách lớp học phần thuộc học kỳ</h4>' +
                     '<div class="table-responsive"><table class="data-table"><thead><tr><th class="text-center">STT</th><th>Mã lớp HP</th><th>Môn học</th><th>Giảng viên</th>' +
-                    '<th class="text-center">Phòng</th><th class="text-center">Sĩ số</th><th class="text-center">Buổi / tiết</th><th class="text-center">Buổi đầu → cuối</th><th class="text-center">Trạng thái</th><th></th></tr></thead>' +
+                    '<th class="text-center">Phòng</th><th class="text-center">Sĩ số</th><th class="text-center">Buổi / tiết</th><th class="text-center">Buổi đầu đến buổi cuối</th><th class="text-center">Trạng thái</th><th></th></tr></thead>' +
                     '<tbody>' + (rows || '<tr><td colspan="10" class="text-center text-muted py-3">Chưa có lớp học phần</td></tr>') + '</tbody></table></div>' +
                     '</div><div class="modal-footer"><button class="btn btn-primary" onclick="App.closeModal()">Đóng</button></div>', 'xl');
                 $('.btn-hk-lhp').on('click', function () {

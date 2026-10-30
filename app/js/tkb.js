@@ -236,8 +236,8 @@
             if (term && parseInt(term.da_khai_bao, 10) !== 1) {
                 warn = 'Học kỳ này chưa được khai báo ngày bắt đầu / kết thúc; tuần học đang tính theo các buổi học thực tế.';
             } else if (term && parseInt(term.so_buoi_ngoai_hoc_ky, 10) > 0) {
-                warn = 'Có ' + term.so_buoi_ngoai_hoc_ky + ' buổi học nằm ngoài học kỳ đã khai báo (' + App.formatDate(term.bat_dau) + ' → ' + App.formatDate(term.ket_thuc) +
-                    '; buổi thực tế ' + App.formatDate(term.buoi_tu) + ' → ' + App.formatDate(term.buoi_den) + '). Tuần học được mở rộng để hiển thị đủ; quản trị viên cần sửa ngày học kỳ.';
+                warn = 'Có ' + term.so_buoi_ngoai_hoc_ky + ' buổi học nằm ngoài học kỳ đã khai báo (' + App.formatDate(term.bat_dau) + ' đến ' + App.formatDate(term.ket_thuc) +
+                    '; buổi thực tế ' + App.formatDate(term.buoi_tu) + ' đến ' + App.formatDate(term.buoi_den) + '). Tuần học được mở rộng để hiển thị đủ; quản trị viên cần sửa ngày học kỳ.';
             }
             $('#tkbCanhBao').html(warn ? '<div class="alert alert-warning mb-3" style="font-size:0.84rem;">' + warn + '</div>' : '');
 

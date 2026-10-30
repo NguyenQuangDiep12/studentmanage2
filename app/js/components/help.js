@@ -79,7 +79,7 @@ var HelpComponent = (function ($) {
             ],
             rules: ['RULE-01', 'RULE-02', 'RULE-03', 'RULE-04', 'RULE-05', 'RULE-06', 'RULE-07', 'RULE-HK'],
             notes: [
-                'Thứ tự nhóm tự chọn được xác định theo mã nhóm (A → B → C): muốn đăng ký nhóm sau phải đạt đủ tín chỉ tối thiểu của các nhóm trước.',
+                'Thứ tự nhóm tự chọn được xác định theo mã nhóm (lần lượt A, B, C): muốn đăng ký nhóm sau phải đạt đủ tín chỉ tối thiểu của các nhóm trước.',
                 'Một môn không thể vừa là môn bắt buộc vừa thuộc nhóm tự chọn trong cùng chương trình.'
             ]
         },
@@ -115,7 +115,7 @@ var HelpComponent = (function ($) {
                 'Cảnh báo đỏ (⚠) chỉ hiện dưới năm học khi học kỳ chồng thời gian hoặc có buổi học nằm ngoài học kỳ - cần sửa lại ngày.'
             ],
             rules: ['RULE-HK'],
-            notes: ['Số tuần = số tuần lịch Thứ 2 → Chủ nhật mà học kỳ đi qua, cùng cách tính với Thời khóa biểu.']
+            notes: ['Số tuần = số tuần lịch từ Thứ 2 đến Chủ nhật mà học kỳ đi qua, cùng cách tính với Thời khóa biểu.']
         },
         'ds-dang-ky': {
             steps: [

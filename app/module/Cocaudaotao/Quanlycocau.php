@@ -707,8 +707,8 @@ class Quanlycocau
         ');
         $ov->execute([':nh' => $namHoc, ':id' => $id, ':bd' => $bd, ':kt' => $kt]);
         if ($o = $ov->fetch()) {
-            $this->fail('Khoảng ngày ' . $this->ngay($bd) . ' → ' . $this->ngay($kt) . ' bị chồng với học kỳ ' . $o['hoc_ky'] . ' năm học ' . $namHoc
-                . ' (' . $this->ngay($o['ngay_bat_dau']) . ' → ' . $this->ngay($o['ngay_ket_thuc']) . '). Các học kỳ trong cùng năm học không được trùng thời gian. Hãy sửa (hoặc xóa nếu chưa có lớp) học kỳ bị chồng trước.', 409);
+            $this->fail('Khoảng ngày ' . $this->ngay($bd) . ' đến ' . $this->ngay($kt) . ' bị chồng với học kỳ ' . $o['hoc_ky'] . ' năm học ' . $namHoc
+                . ' (' . $this->ngay($o['ngay_bat_dau']) . ' đến ' . $this->ngay($o['ngay_ket_thuc']) . '). Các học kỳ trong cùng năm học không được trùng thời gian. Hãy sửa (hoặc xóa nếu chưa có lớp) học kỳ bị chồng trước.', 409);
         }
 
         $params = [':nh' => $namHoc, ':hk' => $hk, ':bd' => $bd, ':kt' => $kt];
@@ -724,7 +724,7 @@ class Quanlycocau
         // RULE-HK-03: mọi buổi học của các lớp thuộc học kỳ phải nằm trong khoảng ngày khai báo
         $r = $this->buoiCuaHocKy($hk, $namHoc, $bd, $kt);
         if ((int) $r['ngoai'] > 0) {
-            $this->fail('Có ' . $r['ngoai'] . ' buổi học của lớp học phần thuộc học kỳ này nằm ngoài khoảng ' . $this->ngay($bd) . ' → ' . $this->ngay($kt)
+            $this->fail('Có ' . $r['ngoai'] . ' buổi học của lớp học phần thuộc học kỳ này nằm ngoài khoảng ' . $this->ngay($bd) . ' đến ' . $this->ngay($kt)
                 . ' (các buổi đang diễn ra từ ' . $this->ngay($r['tu']) . ' đến ' . $this->ngay($r['den']) . '). Hãy chọn khoảng ngày bao trùm các buổi này.', 409);
         }
 
@@ -808,12 +808,12 @@ class Quanlycocau
             $h['so_buoi_ngoai_hoc_ky'] = (int) $b['ngoai'];
             $h['canh_bao'] = [];
             if ($h['so_buoi_ngoai_hoc_ky'] > 0) {
-                $h['canh_bao'][] = $h['so_buoi_ngoai_hoc_ky'] . ' buổi học nằm ngoài học kỳ (buổi thực tế ' . $this->ngay($b['tu']) . ' → ' . $this->ngay($b['den']) . ')';
+                $h['canh_bao'][] = $h['so_buoi_ngoai_hoc_ky'] . ' buổi học nằm ngoài học kỳ (buổi thực tế ' . $this->ngay($b['tu']) . ' đến ' . $this->ngay($b['den']) . ')';
             }
             foreach ($rows as $o) {
                 if ($o['id'] !== $h['id'] && $o['nam_hoc'] === $h['nam_hoc']
                     && $o['ngay_bat_dau'] <= $h['ngay_ket_thuc'] && $h['ngay_bat_dau'] <= $o['ngay_ket_thuc']) {
-                    $h['canh_bao'][] = 'Chồng thời gian với học kỳ ' . $o['hoc_ky'] . ' (' . $this->ngay($o['ngay_bat_dau']) . ' → ' . $this->ngay($o['ngay_ket_thuc']) . ')';
+                    $h['canh_bao'][] = 'Chồng thời gian với học kỳ ' . $o['hoc_ky'] . ' (' . $this->ngay($o['ngay_bat_dau']) . ' đến ' . $this->ngay($o['ngay_ket_thuc']) . ')';
                 }
             }
         }

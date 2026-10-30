@@ -40,7 +40,7 @@ var SidebarComponent = (function ($) {
             item('tkb', 'Thời khóa biểu', 'Xem lịch học theo tuần');
             item('diem-danh', 'Điểm danh', 'Chọn buổi học và điểm danh sinh viên');
             item('quan-ly-diem', 'Nhập & quản lý điểm', 'Nhập, sửa, xóa điểm theo lớp học phần');
-            item('tra-cuu-diem', 'Tra cứu bảng điểm', 'Chọn lớp sinh viên → sinh viên → kết quả');
+            item('tra-cuu-diem', 'Tra cứu bảng điểm', 'Chọn lớp sinh viên, sinh viên rồi xem kết quả');
             item('tin-tuc-admin', 'Quản lý tin tức', 'Đăng, sửa, xóa tin tức');
             item('kien-nghi', 'Quản lý kiến nghị', 'Theo dõi và phản hồi kiến nghị');
             item('users-sv', 'Tài khoản sinh viên', 'Danh sách, thêm, sửa, khóa tài khoản');
@@ -53,7 +53,7 @@ var SidebarComponent = (function ($) {
             item('tkb', 'Thời khóa biểu', 'Lịch giảng dạy theo tuần');
             item('diem-danh', 'Điểm danh', 'Chọn buổi học và điểm danh sinh viên');
             item('quan-ly-diem', 'Nhập & quản lý điểm', 'Nhập, sửa, xóa điểm theo lớp học phần');
-            item('tra-cuu-diem', 'Tra cứu bảng điểm', 'Chọn lớp sinh viên → sinh viên → kết quả');
+            item('tra-cuu-diem', 'Tra cứu bảng điểm', 'Chọn lớp sinh viên, sinh viên rồi xem kết quả');
             item('tin-tuc', 'Danh sách tin tức', 'Xem thông báo chính thức');
             item('kien-nghi', 'Kiến nghị', 'Xem và phản hồi kiến nghị');
         } else if (role === 'sinh_vien') {

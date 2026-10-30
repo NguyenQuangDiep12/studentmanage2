@@ -174,7 +174,6 @@
                 '    </div>' +
                 '  </div>' +
                 ((mh && mh.so_tin_chi_ly_thuyet == null) ? '  <div class="alert alert-warning" style="font-size:0.82rem;">Môn học cũ chưa phân loại tín chỉ lý thuyết / thực hành (hiện có ' + mh.so_tin_chi + ' TC, ' + mh.so_tiet + ' tiết). Nhập số tín chỉ từng loại để áp dụng quy đổi; để trống cả hai thì giữ nguyên dữ liệu cũ.</div>' : '') +
-                '  <div class="mb-3" id="mhTietHint"></div>' +
                 '  <div class="form-group">' +
                 '    <label>Mô tả môn học</label>' +
                 '    <textarea class="form-control" id="mhMoTa" rows="3" placeholder="Nhập mô tả chi tiết...">' + (mh ? App.escapeHtml(mh.mo_ta || '') : '') + '</textarea>' +
@@ -183,7 +182,9 @@
                 '<div class="modal-footer">' +
                 '  <button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
                 '  <button class="btn btn-primary" id="btnSaveMonHoc"><i class="fa-solid fa-floppy-disk"></i> Lưu môn học</button>' +
-                '</div>';
+                '</div>' +
+                // Cách tính số tiết đặt ở cuối form, dưới các nút
+                '<div id="mhTietHint" style="padding:0 26px 22px;"></div>';
 
             var self = this;
             App.showInlineForm(html, '#mhFormSlot', function () { self.showFormModal(); });
@@ -227,13 +228,13 @@
                 ' · <strong>Tổng số tín chỉ</strong> = ' + a + ' (LT) + ' + b + ' (TH) = <strong>' + (a + b) + ' tín chỉ</strong></div>' +
                 '<table class="data-table"><thead><tr><th>Bước</th><th>Phép tính</th><th class="text-right">Kết quả</th></tr></thead><tbody>' +
                 '<tr><td colspan="3"><strong>Lý thuyết (' + a + ' tín chỉ)</strong></td></tr>' +
-                row('1. Tín chỉ → giờ trên lớp', a + ' tín chỉ × ' + q.gio_moi_tc_ly_thuyet + ' giờ/tín chỉ', f(gioLt) + ' giờ') +
-                row('2. Giờ → phút', f(gioLt) + ' giờ × ' + q.phut_moi_gio + ' phút/giờ', f(phutLt) + ' phút') +
-                row('3. Phút → tiết', f(phutLt) + ' phút ÷ ' + q.phut_moi_tiet + ' phút/tiết', f(tietLt) + ' tiết') +
+                row('1. Đổi tín chỉ sang giờ trên lớp', a + ' tín chỉ × ' + q.gio_moi_tc_ly_thuyet + ' giờ/tín chỉ', f(gioLt) + ' giờ') +
+                row('2. Đổi giờ sang phút', f(gioLt) + ' giờ × ' + q.phut_moi_gio + ' phút/giờ', f(phutLt) + ' phút') +
+                row('3. Đổi phút sang tiết', f(phutLt) + ' phút ÷ ' + q.phut_moi_tiet + ' phút/tiết', f(tietLt) + ' tiết') +
                 '<tr><td colspan="3"><strong>Thực hành (' + b + ' tín chỉ)</strong></td></tr>' +
-                row('1. Tín chỉ → giờ trên lớp', b + ' tín chỉ × ' + q.gio_moi_tc_thuc_hanh + ' giờ/tín chỉ', f(gioTh) + ' giờ') +
-                row('2. Giờ → phút', f(gioTh) + ' giờ × ' + q.phut_moi_gio + ' phút/giờ', f(phutTh) + ' phút') +
-                row('3. Phút → tiết', f(phutTh) + ' phút ÷ ' + q.phut_moi_tiet + ' phút/tiết', f(tietTh) + ' tiết') +
+                row('1. Đổi tín chỉ sang giờ trên lớp', b + ' tín chỉ × ' + q.gio_moi_tc_thuc_hanh + ' giờ/tín chỉ', f(gioTh) + ' giờ') +
+                row('2. Đổi giờ sang phút', f(gioTh) + ' giờ × ' + q.phut_moi_gio + ' phút/giờ', f(phutTh) + ' phút') +
+                row('3. Đổi phút sang tiết', f(phutTh) + ' phút ÷ ' + q.phut_moi_tiet + ' phút/tiết', f(tietTh) + ' tiết') +
                 '<tr><td colspan="3"><strong>Tổng</strong></td></tr>' +
                 row('Tổng số tiết xếp thời khóa biểu', f(tietLt) + ' tiết LT + ' + f(tietTh) + ' tiết TH', f(tietLt + tietTh) + ' tiết') +
                 '</tbody></table>' +
@@ -254,7 +255,7 @@
             };
             var tLt = q.tiet_moi_tc_ly_thuyet, tTh = q.tiet_moi_tc_thuc_hanh;
             return '<details class="mb-2" style="font-size:0.84rem; border:1px solid var(--border-color); border-radius:8px; padding:8px 12px;">' +
-                '<summary style="cursor:pointer;"><strong>Căn cứ và cách quy đổi tín chỉ → số tiết</strong> (bấm để xem)</summary>' +
+                '<summary style="cursor:pointer;"><strong>Căn cứ và cách quy đổi tín chỉ sang số tiết</strong> (bấm để xem)</summary>' +
                 '<ul class="mt-2">' +
                 '<li>1 tín chỉ lý thuyết = ' + q.gio_moi_tc_ly_thuyet + ' giờ học trên lớp = ' + tLt + ' tiết học ' + q.phut_moi_tiet + ' phút.</li>' +
                 '<li>1 tín chỉ thực hành = ' + q.gio_moi_tc_thuc_hanh + ' giờ học trên lớp = ' + tTh + ' tiết học ' + q.phut_moi_tiet + ' phút.</li>' +

@@ -51,7 +51,7 @@
                 var l = res.data;
                 var sv = l.sinh_vien || [];
                 $('#dsdkInfo').html('<small class="text-muted">Môn ' + App.escapeHtml(l.ma_mon_hoc + ' - ' + l.ten_mon_hoc) + ' · Giảng viên: ' + App.escapeHtml(l.ten_giang_vien || '—') +
-                    ' · Sĩ số ' + (l.si_so_hien_tai || 0) + '/' + l.si_so_toi_da + ' · Thời gian đăng ký ' + App.formatDate(String(l.thoi_gian_mo_dang_ky || '').slice(0, 10)) + ' → ' + App.formatDate(String(l.thoi_gian_dong_dang_ky || '').slice(0, 10)) + '</small>');
+                    ' · Sĩ số ' + (l.si_so_hien_tai || 0) + '/' + l.si_so_toi_da + ' · Thời gian đăng ký ' + App.formatDate(String(l.thoi_gian_mo_dang_ky || '').slice(0, 10)) + ' đến ' + App.formatDate(String(l.thoi_gian_dong_dang_ky || '').slice(0, 10)) + '</small>');
                 if (!sv.length) { tbody.html('<tr><td colspan="6" class="text-center text-muted py-3">Chưa có sinh viên đăng ký lớp này</td></tr>'); return; }
                 sv.forEach(function (s, i) {
                     tbody.append('<tr><td class="text-center">' + (i + 1) + '</td><td><strong>' + App.escapeHtml(s.ma_dinh_danh) + '</strong></td><td>' + App.escapeHtml(s.ho_ten) + '</td>' +

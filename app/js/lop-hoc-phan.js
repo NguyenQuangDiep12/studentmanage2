@@ -185,7 +185,7 @@
 
                 // RULE-08: cột Thời gian ĐK chỉ hiển thị khoảng ngày; trạng thái (2 loại) nằm ở cột Trạng thái
                 var hanDK = (l.thoi_gian_mo_dang_ky && l.thoi_gian_dong_dang_ky)
-                    ? '<small>' + App.formatDate(l.thoi_gian_mo_dang_ky) + ' → ' + App.formatDate(l.thoi_gian_dong_dang_ky) + '</small>'
+                    ? '<small>' + App.formatDate(l.thoi_gian_mo_dang_ky) + ' đến ' + App.formatDate(l.thoi_gian_dong_dang_ky) + '</small>'
                     : '<span class="text-muted">Chưa nhập</span>';
 
                 // Chỉ admin hoặc chính giảng viên phụ trách mới sửa được lớp của mình
@@ -365,7 +365,7 @@
                     return parseInt(x.hoc_ky, 10) === hk && x.nam_hoc === nh && parseInt(x.da_khai_bao, 10) === 1;
                 });
                 $('#lhpTermInfo').html(term
-                    ? '<span class="text-muted"><i class="fa-solid fa-calendar-check"></i> Học kỳ ' + hk + ' (' + nh + '): ' + App.formatDate(term.bat_dau) + ' → ' + App.formatDate(term.ket_thuc) + '. Mọi buổi học được xếp trong khoảng này.</span>'
+                    ? '<span class="text-muted"><i class="fa-solid fa-calendar-check"></i> Học kỳ ' + hk + ' (' + nh + '): ' + App.formatDate(term.bat_dau) + ' đến ' + App.formatDate(term.ket_thuc) + '. Mọi buổi học được xếp trong khoảng này.</span>'
                     : '<span class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Học kỳ ' + hk + ' năm học ' + nh + ' chưa được khai báo ngày bắt đầu / kết thúc (Cơ cấu đào tạo > Học kỳ).</span>');
             };
             $('#lhpHocKy, #lhpNamHoc').on('change', showTerm);
@@ -373,7 +373,7 @@
             // RULE-08: xem trước trạng thái đăng ký theo ngày đã chọn (chỉ 2 trạng thái, hết hạn tự đóng)
             function showDK() {
                 var mo = $('#lhpNgayMoDK').val(), dong = $('#lhpNgayDongDK').val(), box = $('#lhpDKPreview');
-                if (!mo || !dong) { box.html('<span class="text-muted">Chưa nhập đủ ngày mở và ngày đóng → lớp ở trạng thái <strong>Đóng đăng ký</strong>.</span>'); return; }
+                if (!mo || !dong) { box.html('<span class="text-muted">Chưa nhập đủ ngày mở và ngày đóng thì lớp ở trạng thái <strong>Đóng đăng ký</strong>.</span>'); return; }
                 var dmy = function (d) { var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; };
                 var homNay = new Date(), y = homNay.getFullYear(), m = ('0' + (homNay.getMonth() + 1)).slice(-2), d = ('0' + homNay.getDate()).slice(-2);
                 var today = y + '-' + m + '-' + d;
@@ -473,7 +473,7 @@
             var li = [];
             li.push('Số tiết môn cần: <strong>' + can + ' tiết</strong> (' + App.escapeHtml(mon.ma_mon_hoc) + ', ' + mon.so_tin_chi +
                 ' TC; 1 TC lý thuyết = 18 tiết, 1 TC thực hành = 36 tiết).');
-            li.push('Khoảng ngày còn xếp được: <strong>' + dmy(tu) + ' → ' + dmy(ketThuc) + '</strong>' +
+            li.push('Khoảng ngày còn xếp được: <strong>' + dmy(tu) + ' đến ' + dmy(ketThuc) + '</strong>' +
                 (tu > batDau ? ' (học kỳ bắt đầu ' + dmy(batDau) + ', nhưng các ngày trước hôm nay đã qua nên không xếp buổi mới).' : '.'));
             if (daHoc) li.push('Buổi đã diễn ra (giữ nguyên): <strong>' + daHoc + ' tiết</strong>.');
             rows.forEach(function (r) {
@@ -513,12 +513,12 @@
                     var n = ngayCuaThu(t).length;
                     if (toiDa + r0.tiet * n >= can) {
                         goiY.push('Thêm ' + App.thuLabel(t) + ', tiết ' + r0.a + '–' + r0.b + ': ' + r0.tiet + ' tiết/buổi × ' + n +
-                            ' buổi = ' + (r0.tiet * n) + ' tiết → tổng ' + (toiDa + r0.tiet * n) + ' tiết.');
+                            ' buổi = ' + (r0.tiet * n) + ' tiết, tổng cộng ' + (toiDa + r0.tiet * n) + ' tiết.');
                         break;
                     }
                 }
                 goiY.push('Hoặc chọn học kỳ khác còn đủ thời gian.');
-                ketLuan = '<strong class="text-danger">✗ Thiếu ' + thieu + ' tiết (' + can + ' − ' + toiDa + ') → chưa lưu được.</strong> Gợi ý:' +
+                ketLuan = '<strong class="text-danger">✗ Thiếu ' + thieu + ' tiết (' + can + ' − ' + toiDa + '), chưa lưu được.</strong> Gợi ý:' +
                     '<ul class="mb-0 mt-1" style="padding-left:18px;">' + goiY.map(function (g) { return '<li>' + g + '</li>'; }).join('') + '</ul>';
             }
 
@@ -704,7 +704,7 @@
                 return '<tr>' +
                     '  <td><strong>' + App.thuLabel(lh.thu) + '</strong></td>' +
                     '  <td class="text-center">Tiết ' + lh.tiet_bat_dau + ' - ' + lh.tiet_ket_thuc + ' (' + soTiet + ' tiết)</td>' +
-                    '  <td>' + App.formatDate(lh.ngay_bat_dau) + ' → ' + App.formatDate(lh.ngay_ket_thuc) + '</td>' +
+                    '  <td>' + App.formatDate(lh.ngay_bat_dau) + ' đến ' + App.formatDate(lh.ngay_ket_thuc) + '</td>' +
                     '  <td class="text-center">' + buoiCount + ' buổi</td>' +
                     '</tr>';
             }).join('');
