@@ -409,6 +409,20 @@ var App = (function ($) {
             });
             $slot.empty().append($card);
         },
+        /** Gom các dòng chú thích (.form-note) vào nút "Xem thêm" ở cuối khung chứa */
+        collectNotes: function (root) {
+            $(root || document.body).find('.form-note').each(function () {
+                if ($(this).closest('.notes-box').length) return;
+                var host = $(this).closest('.inline-form-card, #modalContent, .card');
+                if (!host.length) return;
+                var more = host.children('.notes-more');
+                if (!more.length) {
+                    more = $('<div class="notes-more"><button type="button" class="btn btn-sm btn-outline btn-notes-toggle">Xem thêm</button><div class="notes-box"></div></div>');
+                    host.append(more);
+                }
+                more.children('.notes-box').append(this);
+            });
+        },
         /** Cuộn tới form khi bấm Sửa ở một dòng trong bảng */
         focusInlineForm: function (slot) {
             var $slot = $(slot);
@@ -425,3 +439,18 @@ var App = (function ($) {
         diemChuBadge: diemChuBadge
     };
 })(jQuery);
+
+// Chú thích ẩn sau nút "Xem thêm"
+(function () {
+    if (typeof MutationObserver === 'undefined') return;
+    var busy = false;
+    new MutationObserver(function () {
+        if (busy) return; busy = true;
+        try { App.collectNotes(); } finally { busy = false; }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+    $(document).on('click', '.btn-notes-toggle', function () {
+        var box = $(this).siblings('.notes-box'), open = !box.hasClass('open');
+        box.toggleClass('open', open);
+        $(this).text(open ? 'Ẩn bớt' : 'Xem thêm');
+    });
+})();

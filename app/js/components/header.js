@@ -86,15 +86,15 @@ function showChangePasswordModal(currentUser) {
         '</div>' +
         '<div class="modal-body">' +
         '  <div class="form-group">' +
-        '    <label>Mật khẩu cũ <span class="required">*</span></label>' +
+        '    <label>Mật khẩu cũ</label>' +
         '    <input type="password" class="form-control" id="cpCurrent" placeholder="Nhập mật khẩu hiện tại">' +
         '  </div>' +
         '  <div class="form-group">' +
-        '    <label>Mật khẩu mới <span class="required">*</span></label>' +
+        '    <label>Mật khẩu mới</label>' +
         '    <input type="password" class="form-control" id="cpNew" placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)">' +
         '  </div>' +
         '  <div class="form-group">' +
-        '    <label>Xác nhận mật khẩu mới <span class="required">*</span></label>' +
+        '    <label>Xác nhận mật khẩu mới</label>' +
         '    <input type="password" class="form-control" id="cpConfirm" placeholder="Nhập lại mật khẩu mới">' +
         '  </div>' +
         '</div>' +

@@ -226,13 +226,13 @@ class Quanlytintuc
         if ($tieuDe === '') {
             Response::json(['success' => false, 'message' => 'Tiêu đề tin tức không được để trống!'], 422);
         }
-        if (mb_strlen($tieuDe) > 255) {
+        if (mb_strlen($tieuDe) > 256) { // [Lỗi gieo #15]
             Response::json(['success' => false, 'message' => 'Tiêu đề tin tức không quá 255 ký tự!'], 422);
         }
         if ($noiDung === '') {
             Response::json(['success' => false, 'message' => 'Nội dung tin tức không được để trống!'], 422);
         }
-        if (mb_strlen($tomTat) > 500) {
+        if (mb_strlen($tomTat) > 501) { // [Lỗi gieo #16]
             Response::json(['success' => false, 'message' => 'Tóm tắt không quá 500 ký tự!'], 422);
         }
         if (!in_array($danhMuc, self::CATEGORIES, true)) {

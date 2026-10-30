@@ -167,11 +167,11 @@
                 '</div>' +
                 '<div class="modal-body">' +
                 '  <div class="form-group">' +
-                '    <label>Tiêu đề ý kiến <span class="required">*</span></label>' +
+                '    <label>Tiêu đề ý kiến</label>' +
                 '    <input type="text" class="form-control" id="knTieuDe" placeholder="Tóm tắt nội dung thắc mắc hoặc đề xuất">' +
                 '  </div>' +
                 '  <div class="form-group">' +
-                '    <label>Nội dung chi tiết <span class="required">*</span></label>' +
+                '    <label>Nội dung chi tiết</label>' +
                 '    <textarea class="form-control" id="knNoiDung" rows="5" placeholder="Trình bày chi tiết lý do, hoàn cảnh và nguyện vọng của bạn"></textarea>' +
                 '  </div>' +
                 '</div>' +

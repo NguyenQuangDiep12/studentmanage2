@@ -276,11 +276,11 @@
                 '  <input type="hidden" id="lhpId" value="' + (lhp ? lhp.id : '') + '">' +
                 '  <div class="form-row">' +
                 '    <div class="form-group">' +
-                '      <label>Mã lớp học phần <span class="required">*</span></label>' +
+                '      <label>Mã lớp học phần</label>' +
                 '      <input type="text" class="form-control" id="lhpMa" value="' + (lhp ? App.escapeHtml(lhp.ma_lop_hoc_phan) : '') + '" placeholder="VD: CS101-HK1-2026" ' + (isEdit ? 'readonly' : '') + '>' +
                 '    </div>' +
                 '    <div class="form-group">' +
-                '      <label>Môn học <span class="required">*</span>' +
+                '      <label>Môn học' +
                 (isEdit ? '' : ' <a href="javascript:void(0)" id="lnkTaoMonHoc" style="font-weight:500; font-size:0.8rem; margin-left:6px;">Chưa có môn? Tạo môn học</a>') +
                 '</label>' +
                 (mhOptions
@@ -294,13 +294,13 @@
                 '      <select class="form-control" id="lhpGiangVien"' + (isGV ? ' disabled' : '') + '>' + gvOptions + '</select>' +
                 '    </div>' +
                 '    <div class="form-group">' +
-                '      <label>Phòng học <span class="required">*</span></label>' +
+                '      <label>Phòng học</label>' +
                 '      <input type="text" class="form-control" id="lhpPhong" value="' + (lhp ? App.escapeHtml(lhp.phong_hoc || '') : '') + '" placeholder="VD: A101">' +
                 '    </div>' +
                 '  </div>' +
                 '  <div class="form-row">' +
                 '    <div class="form-group">' +
-                '      <label>Học kỳ <span class="required">*</span></label>' +
+                '      <label>Học kỳ</label>' +
                 '      <select class="form-control" id="lhpHocKy">' +
                 '        <option value="1" ' + ((lhp ? lhp.hoc_ky : parseInt(this.defaultTerm.hoc_ky, 10)) === 1 ? 'selected' : '') + '>Học kỳ 1</option>' +
                 '        <option value="2" ' + ((lhp ? lhp.hoc_ky : parseInt(this.defaultTerm.hoc_ky, 10)) === 2 ? 'selected' : '') + '>Học kỳ 2</option>' +
@@ -308,32 +308,32 @@
                 '      </select>' +
                 '    </div>' +
                 '    <div class="form-group">' +
-                '      <label>Năm học <span class="required">*</span></label>' +
+                '      <label>Năm học</label>' +
                 '      <select class="form-control" id="lhpNamHoc">' +
                 namHocOptions +
                 '      </select>' +
                 '    </div>' +
                 '    <div class="form-group">' +
-                '      <label>Sĩ số tối đa <span class="required">*</span></label>' +
+                '      <label>Sĩ số tối đa</label>' +
                 '      <input type="number" min="5" max="150" class="form-control" id="lhpSiSo" value="' + (lhp ? lhp.si_so_toi_da : '40') + '">' +
                 '    </div>' +
                 '  </div>' +
 
                 // RULE-HK-01, RULE-HK-03: ngày học lấy từ học kỳ đã khai báo
-                '  <div id="lhpTermInfo" class="mb-3" style="font-size:0.82rem;"></div>' +
+                '  <div id="lhpTermInfo" class="form-note"></div>' +
                 '  <!-- Thời hạn mở/đóng đăng ký -->' +
                 '  <div class="form-row">' +
                 '    <div class="form-group">' +
-                '      <label>Ngày bắt đầu mở đăng ký <span class="required">*</span></label>' +
+                '      <label>Ngày bắt đầu mở đăng ký</label>' +
                 '      <input type="date" class="form-control" id="lhpNgayMoDK" value="' + moDK + '">' +
                 '    </div>' +
                 '    <div class="form-group">' +
-                '      <label>Ngày kết thúc đăng ký <span class="required">*</span></label>' +
+                '      <label>Ngày kết thúc đăng ký</label>' +
                 '      <input type="date" class="form-control" id="lhpNgayDongDK" value="' + dongDK + '">' +
                 '    </div>' +
                 '  </div>' +
                 // Ô chọn ngày hiển thị theo định dạng của trình duyệt (có máy là tháng/ngày/năm) -> ghi rõ lại theo dd/mm/yyyy
-                '  <div id="lhpDKPreview" class="mb-2" style="font-size:0.85rem;"></div>' +
+                '  <div id="lhpDKPreview" class="form-note"></div>' +
 
                 '  <hr style="border:0; border-top:1px dashed var(--border-color); margin:18px 0;">' +
 
@@ -341,7 +341,7 @@
                 '    <h4 style="font-size:0.95rem; font-weight:800;"><i class="fa-solid fa-calendar-days" style="color:var(--primary);"></i> Lịch học trong tuần</h4>' +
                 '    <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddScheduleRow"><i class="fa-solid fa-plus"></i> Thêm buổi học trong tuần</button>' +
                 '  </div>' +
-                '  <p class="text-muted mb-2" style="font-size:0.8rem;">Chọn thứ học và khung tiết. Hệ thống lấy tổng số tiết của môn, xếp lần lượt vào các ngày của thứ đã chọn trong học kỳ, bỏ qua ngày trùng lịch giảng viên / phòng học và dừng khi đủ tiết; buổi cuối chỉ lấy đúng số tiết còn thiếu. Chỉ lưu được khi xếp đủ tiết. Bấm "Xem trước lịch" để kiểm tra trước khi lưu.</p>' +
+                '  <p class="form-note">Chọn thứ học và khung tiết. Hệ thống lấy tổng số tiết của môn, xếp lần lượt vào các ngày của thứ đã chọn trong học kỳ, bỏ qua ngày trùng lịch giảng viên / phòng học và dừng khi đủ tiết; buổi cuối chỉ lấy đúng số tiết còn thiếu. Chỉ lưu được khi xếp đủ tiết. Bấm "Xem trước lịch" để kiểm tra trước khi lưu.</p>' +
                 '  <div id="scheduleContainer">' +
                 '  </div>' +
                 '  <div id="lhpCalc" class="mt-2" style="font-size:0.82rem;"></div>' +

@@ -73,3 +73,12 @@ i.fa, i.fas, i.far, i.fab, i[class^="fa-"], i[class*=" fa-"] { display: none !im
 #btnNotifications i { display: inline-block !important; }
 .search-box .search-icon { display: none !important; }
 .search-box input { padding-left: 14px !important; }
+
+/* Chú thích gom vào nút Xem thêm */
+.notes-more { padding: 0 26px 22px; grid-column: 1 / -1; }
+.card-body .notes-more, #modalContent > .notes-more { padding: 12px 0 0; }
+#modalContent > .notes-more { padding: 0 24px 20px; }
+.notes-box { display: none; margin-top: 10px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.55; }
+.notes-box.open { display: block; }
+.notes-box .form-note { margin: 0 0 6px; padding: 0 !important; }
+.notes-box .form-note:empty { display: none; }

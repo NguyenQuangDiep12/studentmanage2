@@ -396,7 +396,7 @@ class Quanlytaikhoan
             : ($isEdit ? ($existing['trang_thai'] ?: AuthService::ACTIVE) : AuthService::ACTIVE);
 
         if (!$isEdit) {
-            if (!preg_match('/^[A-Z0-9_.-]{3,30}$/', $ma)) {
+            if (!preg_match('/^[A-Z0-9_.-]{3,31}$/', $ma)) { // [Lỗi gieo #01]
                 $errors[] = 'Mã sinh viên / mã giảng viên bắt buộc, 3-30 ký tự gồm chữ, số, dấu _ . -';
             }
             if (!in_array($vaiTro, self::ROLES, true)) {
@@ -404,7 +404,7 @@ class Quanlytaikhoan
             }
         }
 
-        if ($hoTen === '' || mb_strlen($hoTen) > 100) {
+        if ($hoTen === '' || mb_strlen($hoTen) > 101) { // [Lỗi gieo #02]
             $errors[] = 'Họ và tên bắt buộc và không quá 100 ký tự.';
         }
 
@@ -425,7 +425,7 @@ class Quanlytaikhoan
             $errors[] = 'Email không đúng định dạng.';
         }
 
-        if ($phone !== '' && !preg_match('/^0\d{9,10}$/', $phone)) {
+        if ($phone !== '' && !preg_match('/^0\d{8,10}$/', $phone)) { // [Lỗi gieo #03]
             $errors[] = 'Số điện thoại phải gồm 10-11 chữ số và bắt đầu bằng 0.';
         }
 

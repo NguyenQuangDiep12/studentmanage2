@@ -295,24 +295,25 @@
                 '  <input type="hidden" id="modalUserId" value="' + (u ? u.id : '') + '">' +
                 '  <div class="form-row">' +
                 '    <div class="form-group">' +
-                '      <label>' + (currentRole === 'giang_vien' ? 'Mã giảng viên' : (currentRole === 'admin' ? 'Mã quản trị viên' : 'Mã sinh viên')) + ' <span class="required">*</span> <small class="text-muted">(dùng để đăng nhập)</small></label>' +
+                '      <label>' + (currentRole === 'giang_vien' ? 'Mã giảng viên' : (currentRole === 'admin' ? 'Mã quản trị viên' : 'Mã sinh viên')) + '</label>' +
                 '      <input type="text" class="form-control" id="modalMaDinhDanh" value="' + (u ? App.escapeHtml(u.ma_dinh_danh) : '') + '" placeholder="VD: ' + (currentRole === 'giang_vien' ? 'GV001' : 'SV001') + '" ' + (isEdit ? 'readonly' : '') + '>' +
+                '      <div class="form-note">Mã định danh dùng để đăng nhập.</div>' +
                 '    </div>' +
                 (!isEdit ?
                 '    <div class="form-group">' +
-                '      <label>Mật khẩu khởi tạo <span class="required">*</span></label>' +
+                '      <label>Mật khẩu khởi tạo</label>' +
                 '      <input type="password" class="form-control" id="modalPassword" value="123456">' +
-                '      <small class="text-gray">Mật khẩu mặc định hệ thống là 123456</small>' +
+                '      <div class="form-note">Mật khẩu mặc định hệ thống là 123456.</div>' +
                 '    </div>' : '') +
                 '  </div>' +
 
                 '  <div class="form-row">' +
                 '    <div class="form-group" style="flex:2;">' +
-                '      <label>Họ và tên đầy đủ <span class="required">*</span></label>' +
+                '      <label>Họ và tên đầy đủ</label>' +
                 '      <input type="text" class="form-control" id="modalHoTen" value="' + (u ? App.escapeHtml(u.ho_ten) : '') + '" placeholder="Nhập họ và tên...">' +
                 '    </div>' +
                 '    <div class="form-group" style="flex:1;">' +
-                '      <label>Vai trò hệ thống <span class="required">*</span></label>' +
+                '      <label>Vai trò hệ thống</label>' +
                 '      <select class="form-control" id="modalVaiTro" ' + (isEdit ? 'disabled' : '') + '>' +
                 '        <option value="sinh_vien" ' + (currentRole === 'sinh_vien' ? 'selected' : '') + '>Sinh viên</option>' +
                 '        <option value="giang_vien" ' + (currentRole === 'giang_vien' ? 'selected' : '') + '>Giảng viên</option>' +
@@ -323,7 +324,7 @@
 
                 '  <!-- Trường bắt buộc cho Sinh viên -->' +
                 '  <div class="form-group" id="groupLopSV" style="' + (currentRole === 'sinh_vien' ? '' : 'display:none;') + '">' +
-                '    <label>Lớp sinh viên sinh hoạt <span class="required">*</span></label>' +
+                '    <label>Lớp sinh viên sinh hoạt</label>' +
                 '    <select class="form-control" id="modalLopSV">' +
                 '      <option value="">-- Chọn lớp sinh hoạt bắt buộc --</option>' + lopOptions +
                 '    </select>' +
@@ -331,7 +332,7 @@
 
                 '  <!-- Trường bắt buộc cho Giảng viên -->' +
                 '  <div class="form-group" id="groupKhoaGV" style="' + (currentRole === 'giang_vien' ? '' : 'display:none;') + '">' +
-                '    <label>Khoa trực thuộc <span class="required">*</span></label>' +
+                '    <label>Khoa trực thuộc</label>' +
                 '    <select class="form-control" id="modalKhoaGV">' +
                 '      <option value="">-- Chọn khoa công tác bắt buộc --</option>' + khoaOptions +
                 '    </select>' +

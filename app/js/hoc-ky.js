@@ -16,7 +16,7 @@
                 '    <button class="btn btn-primary" id="btnThemHocKy"><i class="fa-solid fa-plus"></i> Thêm học kỳ</button>' +
                 '  </div>' +
                 '  <div class="card-body">' +
-                '    <p class="text-muted" style="font-size:0.82rem;">Mỗi học kỳ có ngày bắt đầu và ngày kết thúc; lớp học phần xếp buổi học trong khoảng này. ' +
+                '    <p class="form-note">Mỗi học kỳ có ngày bắt đầu và ngày kết thúc; lớp học phần xếp buổi học trong khoảng này. ' +
                 '    Số tuần = số tuần lịch (từ Thứ 2 đến Chủ nhật) mà học kỳ đi qua - cùng cách tính với Thời khóa biểu. ' +
                 '    Các học kỳ trong cùng năm học không được trùng thời gian.</p>' +
                 '    <div class="table-responsive"><table class="data-table"><thead><tr>' +
@@ -79,13 +79,13 @@
             App.showModal(
                 '<div class="modal-header"><h3>' + (h ? 'Sửa học kỳ' : 'Thêm học kỳ') + '</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
                 '<div class="modal-body">' +
-                '<div class="form-row"><div class="form-group"><label>Năm học <span class="required">*</span></label><select class="form-control" id="hkNam">' +
+                '<div class="form-row"><div class="form-group"><label>Năm học</label><select class="form-control" id="hkNam">' +
                 years.map(function (x) { return '<option value="' + x + '"' + (x === cur ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>' +
-                '<div class="form-group"><label>Học kỳ <span class="required">*</span></label><select class="form-control" id="hkSo">' +
+                '<div class="form-group"><label>Học kỳ</label><select class="form-control" id="hkSo">' +
                 [1, 2, 3].map(function (x) { return '<option value="' + x + '"' + (h && parseInt(h.hoc_ky, 10) === x ? ' selected' : '') + '>' + self.tenHk(x) + '</option>'; }).join('') + '</select></div></div>' +
-                '<div class="form-row"><div class="form-group"><label>Ngày bắt đầu <span class="required">*</span></label><input type="date" class="form-control" id="hkBd" value="' + (h ? h.ngay_bat_dau : '') + '"></div>' +
-                '<div class="form-group"><label>Ngày kết thúc <span class="required">*</span></label><input type="date" class="form-control" id="hkKt" value="' + (h ? h.ngay_ket_thuc : '') + '"></div></div>' +
-                (h && parseInt(h.so_lop_hoc_phan, 10) > 0 ? '<p class="text-muted" style="font-size:0.8rem;">Học kỳ đã có lớp học phần: chỉ đổi được ngày, và khoảng ngày mới phải bao trùm mọi buổi học đã xếp' +
+                '<div class="form-row"><div class="form-group"><label>Ngày bắt đầu</label><input type="date" class="form-control" id="hkBd" value="' + (h ? h.ngay_bat_dau : '') + '"></div>' +
+                '<div class="form-group"><label>Ngày kết thúc</label><input type="date" class="form-control" id="hkKt" value="' + (h ? h.ngay_ket_thuc : '') + '"></div></div>' +
+                (h && parseInt(h.so_lop_hoc_phan, 10) > 0 ? '<p class="form-note">Học kỳ đã có lớp học phần: chỉ đổi được ngày, và khoảng ngày mới phải bao trùm mọi buổi học đã xếp' +
                     (h.buoi_tu ? ' (' + App.formatDate(h.buoi_tu) + ' đến ' + App.formatDate(h.buoi_den) + ')' : '') + '.</p>' : '') +
                 '</div>' +
                 '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button><button class="btn btn-primary" id="btnLuuHocKy">Lưu học kỳ</button></div>', 'sm');

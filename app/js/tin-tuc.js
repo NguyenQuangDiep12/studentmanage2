@@ -318,7 +318,7 @@
                 '<div class="modal-body">' +
                 '  <input type="hidden" id="newsId" value="' + (n ? n.id : '') + '">' +
                 '  <div class="form-group">' +
-                '    <label>Tiêu đề bài viết <span class="required">*</span></label>' +
+                '    <label>Tiêu đề bài viết</label>' +
                 '    <input type="text" class="form-control" id="newsTieuDe" value="' + (n ? App.escapeHtml(n.tieu_de) : '') + '" placeholder="Nhập tiêu đề thông báo...">' +
                 '  </div>' +
                 '  <div class="form-row">' +
@@ -344,7 +344,7 @@
                 '    <textarea class="form-control" id="newsTomTat" rows="2" placeholder="Tóm tắt ngắn gọn nội dung thông báo...">' + (n ? App.escapeHtml(n.tom_tat || '') : '') + '</textarea>' +
                 '  </div>' +
                 '  <div class="form-group">' +
-                '    <label>Nội dung chi tiết <span class="required">*</span></label>' +
+                '    <label>Nội dung chi tiết</label>' +
                 '    <textarea class="form-control" id="newsNoiDung" rows="7" placeholder="Nhập toàn văn nội dung thông báo...">' + (n ? App.escapeHtml(n.noi_dung || '') : '') + '</textarea>' +
                 '  </div>' +
                 '  <div class="form-group">' +

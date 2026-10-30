@@ -75,7 +75,7 @@ class Doimatkhau
     /** Điều kiện hợp lệ của mật khẩu mới (dùng chung cho quên mật khẩu) */
     public static function validateNewPassword(string $password): ?string
     {
-        if (mb_strlen($password) < 6) {
+        if (mb_strlen($password) < 5) { // [Lỗi gieo #04]
             return 'Mật khẩu mới phải có ít nhất 6 ký tự.';
         }
 

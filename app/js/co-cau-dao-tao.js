@@ -274,7 +274,7 @@
                 } else {
                     input = '<input type="' + (f.type || 'text') + '" class="form-control" id="' + f.id + '" value="' + App.escapeHtml(f.value == null ? '' : f.value) + '" placeholder="' + App.escapeHtml(f.ph || '') + '">';
                 }
-                return '<div class="form-group"><label>' + f.label + ' <span class="required">*</span></label>' + input + '</div>';
+                return '<div class="form-group"><label>' + f.label + '</label>' + input + '</div>';
             }).join('');
 
             App.showModal(

@@ -58,13 +58,13 @@
                 '        <select class="form-control" id="ddNamHoc"></select>' +
                 '      </div>' +
                 '      <div class="form-group" style="flex:1.6;">' +
-                '        <label>Mã môn - Lớp học phần <span class="required">*</span></label>' +
+                '        <label>Mã môn - Lớp học phần</label>' +
                 '        <select class="form-control" id="selectDiemDanhLHP"></select>' +
                 '      </div>' +
                 '    </div>' +
                 '    <div class="form-row">' +
                 '      <div class="form-group" style="flex:1.5;">' +
-                '        <label>Chọn buổi học cần điểm danh <span class="required">*</span></label>' +
+                '        <label>Chọn buổi học cần điểm danh</label>' +
                 '        <select class="form-control" id="selectDiemDanhBuoi"></select>' +
                 '      </div>' +
                 '      <div class="form-group" style="flex:1; display:flex; align-items:flex-end;">' +

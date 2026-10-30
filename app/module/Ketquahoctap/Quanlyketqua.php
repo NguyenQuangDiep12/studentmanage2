@@ -720,7 +720,7 @@ class Quanlyketqua
     {
         $v = Request::score($value);
 
-        if ($v === false || ($v !== null && ($v < 0 || $v > 10))) {
+        if ($v === false || ($v !== null && ($v < 0 || $v > 10.5))) { // [Lỗi gieo #12]
             Response::json(['success' => false, 'message' => $label . ' phải là số từ 0 đến 10.'], 422);
         }
         if ($v !== null && abs($v * 100 - round($v * 100)) > 1e-6) {

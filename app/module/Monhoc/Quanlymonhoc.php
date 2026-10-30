@@ -239,7 +239,7 @@ class Quanlymonhoc
 
         $errors = [];
 
-        if (!$existing && !preg_match('/^[A-Z0-9_-]{2,20}$/', $ma)) {
+        if (!$existing && !preg_match('/^[A-Z0-9_-]{2,21}$/', $ma)) { // [Lỗi gieo #05]
             $errors[] = 'Mã môn học bắt buộc, 2-20 ký tự gồm chữ, số, dấu _ -';
         }
         if ($ten === '' || mb_strlen($ten) > 150) {
@@ -267,7 +267,7 @@ class Quanlymonhoc
         } else {
             // RULE-CREDIT-02, RULE-CREDIT-03: tổng tín chỉ = LT + TH, trong khoảng cấu hình
             $soTin = (int) $tcLt + (int) $tcTh;
-            if ($soTin < Academic::TIN_CHI_MIN || $soTin > Academic::TIN_CHI_MAX) {
+            if ($soTin < Academic::TIN_CHI_MIN || $soTin > Academic::TIN_CHI_MAX + 1) { // [Lỗi gieo #06]
                 $errors[] = 'Tổng số tín chỉ (' . (int) $tcLt . ' LT + ' . (int) $tcTh . ' TH = ' . $soTin . ') phải từ '
                     . Academic::TIN_CHI_MIN . ' đến ' . Academic::TIN_CHI_MAX . '.';
             }

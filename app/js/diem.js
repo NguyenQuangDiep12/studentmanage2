@@ -47,7 +47,7 @@
                 '  <div class="card-body">' +
                 '    <div class="form-row">' +
                 '      <div class="form-group" style="flex:2;">' +
-                '        <label>Chọn lớp học phần <span class="required">*</span></label>' +
+                '        <label>Chọn lớp học phần</label>' +
                 '        <select class="form-control" id="selectDiemLHP">' + lhpOptions + '</select>' +
                 '      </div>' +
                 '      <div class="form-group" style="flex:1; display:flex; align-items:flex-end;">' +
@@ -56,7 +56,7 @@
                 '    </div>' +
                 // Quy chế + công thức đầy đủ hiển thị ngay trên trang (RULE-14, 15, 17, 18)
                 '    <div id="diemQuyChe" class="mt-2"></div>' +
-                '    <p class="text-muted mt-2 mb-0" style="font-size:0.82rem;">Nhập điểm trực tiếp vào bảng rồi bấm "Lưu bảng điểm", hoặc dùng "Sửa" / "Xóa" ở từng sinh viên. Bấm "Cách tính" để xem từng bước tính điểm của sinh viên đó.</p>' +
+                '    <p class="form-note">Nhập điểm trực tiếp vào bảng rồi bấm "Lưu bảng điểm", hoặc dùng "Sửa" / "Xóa" ở từng sinh viên. Bấm "Cách tính" để xem từng bước tính điểm của sinh viên đó.</p>' +
                 '  </div>' +
                 '</div>' +
 
@@ -297,7 +297,7 @@
                 '<div class="modal-header"><h3>Sửa điểm: ' + App.escapeHtml(d.ma_dinh_danh + ' - ' + d.ho_ten) + '</h3>' +
                 '<button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
                 '<div class="modal-body">' +
-                '  <p class="text-muted" style="font-size:0.82rem;">Chuyên cần C = ' + Number(d.diem_chuyen_can).toFixed(1) + ' (tự tính từ điểm danh, nghỉ ' + d.tiet_nghi + '/' + d.tong_tiet_mon + ' tiết = ' + d.ty_le_nghi + '%). Để trống ô = chưa có điểm.</p>' +
+                '  <p class="form-note">Chuyên cần C = ' + Number(d.diem_chuyen_can).toFixed(1) + ' (tự tính từ điểm danh, nghỉ ' + d.tiet_nghi + '/' + d.tong_tiet_mon + ' tiết = ' + d.ty_le_nghi + '%). Để trống ô = chưa có điểm.</p>' +
                 '  <div class="form-row">' +
                 '    <div class="form-group"><label>Điểm giữa kỳ B (0-10)</label><input type="number" step="0.1" class="form-control" id="edGk" value="' + v(d.diem_giua_ky) + '"></div>' +
                 '    <div class="form-group"><label>Điểm cuối kỳ A (0-10)</label><input type="number" step="0.1" class="form-control" id="edCk" value="' + v(d.diem_cuoi_ky) + '"></div>' +

@@ -583,10 +583,10 @@ class Quanlylophocphan
         if (!preg_match('/^(\d{4})-(\d{4})$/', $nh, $m) || (int) $m[2] !== (int) $m[1] + 1) {
             $errors[] = 'Năm học không hợp lệ (VD: 2026-2027).';
         }
-        if (!is_numeric($siSo) || (int) $siSo != $siSo || (int) $siSo < self::SI_SO_MIN || (int) $siSo > self::SI_SO_MAX) {
+        if (!is_numeric($siSo) || (int) $siSo != $siSo || (int) $siSo < self::SI_SO_MIN || (int) $siSo > self::SI_SO_MAX + 1) { // [Lỗi gieo #07]
             $errors[] = 'Sĩ số tối đa phải là số nguyên từ ' . self::SI_SO_MIN . ' đến ' . self::SI_SO_MAX . '.';
         }
-        if ($phong === '' || mb_strlen($phong) > 20) {
+        if ($phong === '' || mb_strlen($phong) > 21) { // [Lỗi gieo #08]
             $errors[] = 'Phòng học bắt buộc và không quá 20 ký tự.';
         }
         if (!in_array($tt, self::STATUSES, true)) {
@@ -598,9 +598,7 @@ class Quanlylophocphan
         $dong = substr($dong, 0, 10);
         if (!$this->validDate($mo) || !$this->validDate($dong)) {
             $errors[] = 'Vui lòng nhập ngày mở và ngày đóng đăng ký hợp lệ.';
-        } elseif ($mo > $dong) {
-            $errors[] = 'Ngày mở đăng ký phải trước hoặc bằng ngày đóng đăng ký!';
-        }
+        } // [Lỗi gieo #09] bỏ kiểm tra ngày mở phải trước hoặc bằng ngày đóng đăng ký
 
         // RULE-DL-03, RULE-HK-01: lớp học phần tham chiếu học kỳ đã khai báo (lấy ngày bắt đầu / kết thúc)
         $term = null;

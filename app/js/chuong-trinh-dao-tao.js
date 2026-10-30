@@ -228,7 +228,7 @@ var ChuongTrinhDaoTaoModule = (function ($) {
                 '<div class="modal-header"><h3>Tiết thành phần: ' + App.escapeHtml(m.ma_mon_hoc + ' - ' + m.ten_mon_hoc) + '</h3>' +
                 '<button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
                 '<div class="modal-body">' + body +
-                '<p class="text-muted mt-2" style="font-size:0.8rem;">Số tín chỉ: ' + m.so_tin_chi + ' TC. Số tiết được hệ thống quy đổi từ số tín chỉ lý thuyết / thực hành (RULE-CREDIT-08), không tính giờ tự học.</p></div>' +
+                '<p class="form-note">Số tín chỉ: ' + m.so_tin_chi + ' TC. Số tiết được hệ thống quy đổi từ số tín chỉ lý thuyết / thực hành (RULE-CREDIT-08), không tính giờ tự học.</p></div>' +
                 '<div class="modal-footer"><button class="btn btn-primary" onclick="App.closeModal()">Đóng</button></div>', 'sm');
         },
 
@@ -260,14 +260,14 @@ var ChuongTrinhDaoTaoModule = (function ($) {
                 '<div class="modal-header"><h3>' + (m ? 'Đổi học kỳ: ' + App.escapeHtml(m.ma_mon_hoc) : 'Thêm môn vào khung chương trình') + '</h3>' +
                 '<button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
                 '<div class="modal-body">' +
-                (m ? '' : '<div class="form-group"><label>Môn học <span class="required">*</span></label><select class="form-control" id="ctdtMonId">' + this.monOptions() + '</select></div>') +
+                (m ? '' : '<div class="form-group"><label>Môn học</label><select class="form-control" id="ctdtMonId">' + this.monOptions() + '</select></div>') +
                 '<div class="form-row">' +
-                '  <div class="form-group"><label>Học kỳ <span class="required">*</span></label><select class="form-control" id="ctdtHocKy">' +
+                '  <div class="form-group"><label>Học kỳ</label><select class="form-control" id="ctdtHocKy">' +
                 [1, 2, 3].map(function (h) { return '<option value="' + h + '"' + (m && m.hoc_ky === h ? ' selected' : '') + '>' + (h === 3 ? 'Học kỳ hè' : 'Học kỳ ' + h) + '</option>'; }).join('') +
                 '  </select></div>' +
-                '  <div class="form-group"><label>Năm học <span class="required">*</span></label><select class="form-control" id="ctdtNam">' + namOpts + '</select></div>' +
+                '  <div class="form-group"><label>Năm học</label><select class="form-control" id="ctdtNam">' + namOpts + '</select></div>' +
                 '</div>' +
-                '<small class="text-muted">Môn trong khung là môn bắt buộc (RULE-01). Một môn không thể vừa bắt buộc vừa thuộc nhóm tự chọn của cùng chương trình.</small>' +
+                '<div class="form-note">Môn trong khung là môn bắt buộc (RULE-01). Một môn không thể vừa bắt buộc vừa thuộc nhóm tự chọn của cùng chương trình.</div>' +
                 '</div>' +
                 '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
                 '<button class="btn btn-primary" id="btnCtdtLuuMon">Lưu</button></div>';
@@ -288,7 +288,7 @@ var ChuongTrinhDaoTaoModule = (function ($) {
             var html =
                 '<div class="modal-header"><h3>Thêm môn vào nhóm ' + App.escapeHtml(maNhom) + '</h3>' +
                 '<button class="modal-close" onclick="App.closeModal()">&times;</button></div>' +
-                '<div class="modal-body"><div class="form-group"><label>Môn học <span class="required">*</span></label>' +
+                '<div class="modal-body"><div class="form-group"><label>Môn học</label>' +
                 '<select class="form-control" id="ctdtNhomMonId">' + this.monOptions() + '</select></div></div>' +
                 '<div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal()">Hủy</button>' +
                 '<button class="btn btn-primary" id="btnCtdtLuuMonNhom">Thêm vào nhóm</button></div>';

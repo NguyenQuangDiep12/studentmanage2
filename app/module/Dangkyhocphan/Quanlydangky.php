@@ -151,7 +151,7 @@ class Quanlydangky
                 ");
                 $ssStmt->execute([':lhp_id' => $lhpId]);
                 $c['si_so_hien_tai'] = (int)$ssStmt->fetchColumn();
-                $c['is_full'] = $c['si_so_hien_tai'] >= (int)$c['si_so_toi_da'];
+                $c['is_full'] = $c['si_so_hien_tai'] > (int)$c['si_so_toi_da']; // [Lỗi gieo #10]
 
                 // Trạng thái đã đăng ký
                 $c['is_registered'] = in_array($lhpId, $registeredLhpIds, true);
@@ -398,7 +398,7 @@ class Quanlydangky
             $ssStmt->execute([':lhp_id' => $lhpId]);
             $currentSiSo = (int)$ssStmt->fetchColumn();
 
-            if ($currentSiSo >= (int)$targetLHP['si_so_toi_da']) {
+            if ($currentSiSo > (int)$targetLHP['si_so_toi_da']) { // [Lỗi gieo #10]
                 Response::json([
                     'success' => false,
                     'message' => 'Đăng ký không thành công! Lớp học phần đã đủ sĩ số tối đa (' . $targetLHP['si_so_toi_da'] . ').'
@@ -773,9 +773,7 @@ class Quanlydangky
      */
     private function lyDoKhongTheHuy(int $dkId, array $lhp): ?string
     {
-        if (!Academic::dangMoDangKy($lhp['thoi_gian_mo_dang_ky'] ?? null, $lhp['thoi_gian_dong_dang_ky'] ?? null)) {
-            return 'lớp học phần đang đóng đăng ký.';
-        }
+        // [Lỗi gieo #11] bỏ kiểm tra lớp còn mở đăng ký khi hủy
         return null;
     }
 }

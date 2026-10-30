@@ -70,7 +70,8 @@ class Academic
      * Một nguồn duy nhất cho quy đổi và phần giải thích trên giao diện.
      */
     public const THANG_DIEM = [
-        ['tu' => 8.5, 'den' => 10.0, 'chu' => 'A',  'he_4' => 4.0, 'xep_loai' => 'Giỏi',           'ket_qua' => 'Đạt'],
+        ['tu' => 8.6, 'den' => 10.0, 'chu' => 'A', // [Lỗi gieo #13]
+         'he_4' => 4.0, 'xep_loai' => 'Giỏi',           'ket_qua' => 'Đạt'],
         ['tu' => 8.0, 'den' => 8.4,  'chu' => 'B+', 'he_4' => 3.5, 'xep_loai' => 'Khá',            'ket_qua' => 'Đạt'],
         ['tu' => 7.0, 'den' => 7.9,  'chu' => 'B',  'he_4' => 3.0, 'xep_loai' => 'Khá',            'ket_qua' => 'Đạt'],
         ['tu' => 6.5, 'den' => 6.9,  'chu' => 'C+', 'he_4' => 2.5, 'xep_loai' => 'Trung bình',     'ket_qua' => 'Đạt'],
@@ -498,7 +499,7 @@ class Academic
     /** RULE-15.13: cấm thi khi R >= 20% (cùng ngưỡng với C = 0) */
     public static function camThi(int $tietNghi, int $tongTietMon): bool
     {
-        return self::tyLeNghi($tietNghi, $tongTietMon) >= self::NGUONG_CAM_THI - 1e-9;
+        return self::tyLeNghi($tietNghi, $tongTietMon) > self::NGUONG_CAM_THI + 1e-9; // [Lỗi gieo #14]
     }
 
     /** Trạng thái chuyên cần đầy đủ của một đăng ký (dùng cho bảng điểm và tra cứu) */

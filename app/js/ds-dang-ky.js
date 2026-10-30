@@ -18,7 +18,7 @@
                 '      <select id="dsdkNamHoc" class="filter-select"></select>' +
                 '      <select id="dsdkLop" class="filter-select" style="min-width:320px;"></select>' +
                 '    </div></div>' +
-                '    <p class="text-muted" style="font-size:0.82rem;">Sinh viên tự đăng ký và hủy đăng ký trong thời gian đăng ký của lớp (RULE-08); danh sách dưới đây là kết quả đăng ký của lớp học phần đã chọn.</p>' +
+                '    <p class="form-note">Sinh viên tự đăng ký và hủy đăng ký trong thời gian đăng ký của lớp (RULE-08); danh sách dưới đây là kết quả đăng ký của lớp học phần đã chọn.</p>' +
                 '    <div id="dsdkInfo" class="mb-2"></div>' +
                 '    <div class="table-responsive"><table class="data-table"><thead><tr><th class="text-center">STT</th><th>MSSV</th><th>Họ và tên</th><th>Lớp sinh viên</th><th>Ngày đăng ký</th><th class="text-center">Trạng thái</th></tr></thead>' +
                 '    <tbody id="dsdkBody"></tbody></table></div>' +

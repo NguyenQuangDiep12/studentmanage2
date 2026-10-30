@@ -154,22 +154,22 @@
                 '  <input type="hidden" id="mhId" value="' + (mh ? mh.id : '') + '">' +
                 '  <div class="form-row">' +
                 '    <div class="form-group">' +
-                '      <label>Mã môn học <span class="required">*</span></label>' +
+                '      <label>Mã môn học</label>' +
                 '      <input type="text" class="form-control" id="mhMa" value="' + (mh ? App.escapeHtml(mh.ma_mon_hoc) : '') + '" placeholder="VD: CS101" ' + (isEdit ? 'readonly' : '') + '>' +
                 '    </div>' +
                 '    <div class="form-group">' +
-                '      <label>Tên môn học <span class="required">*</span></label>' +
+                '      <label>Tên môn học</label>' +
                 '      <input type="text" class="form-control" id="mhTen" value="' + (mh ? App.escapeHtml(mh.ten_mon_hoc) : '') + '" placeholder="VD: Lập trình Cơ bản">' +
                 '    </div>' +
                 '  </div>' +
                 // RULE-MH-01: chỉ nhập số tín chỉ lý thuyết / thực hành; số tiết do hệ thống tính (RULE-CREDIT-08)
                 '  <div class="form-row">' +
                 '    <div class="form-group">' +
-                '      <label>Số tín chỉ lý thuyết <span class="required">*</span></label>' +
+                '      <label>Số tín chỉ lý thuyết</label>' +
                 '      <input type="number" min="0" class="form-control mh-tc" id="mhTcLT" value="' + (mh && mh.so_tin_chi_ly_thuyet != null ? mh.so_tin_chi_ly_thuyet : '') + '" placeholder="VD: 3 (nhập 0 nếu không có)">' +
                 '    </div>' +
                 '    <div class="form-group">' +
-                '      <label>Số tín chỉ thực hành <span class="required">*</span></label>' +
+                '      <label>Số tín chỉ thực hành</label>' +
                 '      <input type="number" min="0" class="form-control mh-tc" id="mhTcTH" value="' + (mh && mh.so_tin_chi_thuc_hanh != null ? mh.so_tin_chi_thuc_hanh : '') + '" placeholder="VD: 0 (nhập 0 nếu không có)">' +
                 '    </div>' +
                 '  </div>' +
@@ -184,7 +184,7 @@
                 '  <button class="btn btn-primary" id="btnSaveMonHoc"><i class="fa-solid fa-floppy-disk"></i> Lưu môn học</button>' +
                 '</div>' +
                 // Cách tính số tiết đặt ở cuối form, dưới các nút
-                '<div id="mhTietHint" style="padding:0 26px 22px;"></div>';
+                '<div id="mhTietHint" class="form-note"></div>';
 
             var self = this;
             App.showInlineForm(html, '#mhFormSlot', function () { self.showFormModal(); });
