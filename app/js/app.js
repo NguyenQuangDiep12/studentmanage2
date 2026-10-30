@@ -92,8 +92,8 @@ var App = (function ($) {
         },
         'quan-ly-diem': {
             category: 'KẾT QUẢ HỌC TẬP',
-            title: 'Nhập & quản lý điểm',
-            desc: 'Quản lý bảng điểm theo môn học và tự động tính điểm tổng kết',
+            title: 'Nhập điểm',
+            desc: 'Nhập và chỉnh sửa điểm số',
             roles: ['giang_vien', 'admin']
         },
         'dang-ky': {
@@ -454,3 +454,58 @@ var App = (function ($) {
         $(this).text(open ? 'Ẩn bớt' : 'Xem thêm');
     });
 })();
+
+/* ================================================================
+   OLD UI - Thanh tìm kiếm theo giao diện mã nguồn cũ (StudentManagement / SearchToolbar)
+   Chọn tiêu chí (chip) + từ khóa + nút Lọc / Xóa lọc + bộ đếm "x/y nhãn"
+   ================================================================ */
+var OldUI = (function ($) {
+    'use strict';
+    function normalize(v) {
+        return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+    }
+    function toolbar(id, fields, placeholder) {
+        var chips = '<button type="button" class="nd-chip active" data-field="all">Tất cả</button>' +
+            fields.map(function (f, i) { return '<button type="button" class="nd-chip" data-field="' + i + '">' + f + '</button>'; }).join('');
+        return '<form class="nd-search" id="' + id + '">' +
+            '<span class="nd-search-help">Chọn tiêu chí, nhập từ khóa rồi bấm <strong>Lọc</strong>.</span>' +
+            '<div class="nd-chips">' + chips + '</div>' +
+            '<div class="nd-search-actions">' +
+            '  <label class="nd-search-input"><span class="nd-search-icon">⌕</span><input type="search" class="nd-keyword" placeholder="' + placeholder + '"></label>' +
+            '  <button type="submit" class="nd-btn nd-btn-primary">Lọc</button>' +
+            '  <button type="button" class="nd-btn nd-btn-light nd-clear" style="display:none;">Xóa lọc</button>' +
+            '</div>' +
+            '<span class="nd-count"><strong>0</strong>/0</span>' +
+            '</form>';
+    }
+    function bind(id, onChange) {
+        var $f = $('#' + id);
+        $f.on('click', '.nd-chip', function () { $f.find('.nd-chip').removeClass('active'); $(this).addClass('active'); });
+        $f.on('submit', function (e) {
+            e.preventDefault();
+            var q = { query: $.trim($f.find('.nd-keyword').val()), field: String($f.find('.nd-chip.active').data('field')) };
+            $f.find('.nd-clear').toggle(!!q.query);
+            onChange(q);
+        });
+        $f.on('click', '.nd-clear', function () {
+            $f.find('.nd-keyword').val('');
+            $f.find('.nd-chip').removeClass('active').filter('[data-field="all"]').addClass('active');
+            $(this).hide();
+            onChange({ query: '', field: 'all' });
+        });
+    }
+    function match(values, q) {
+        var keys = normalize(q && q.query).split(/\s+/).filter(Boolean);
+        if (!keys.length) return true;
+        var hay = normalize((q.field === 'all' ? values : [values[Number(q.field)]]).join(' '));
+        return keys.every(function (k) { return hay.indexOf(k) !== -1; });
+    }
+    function count(id, n, total, label) {
+        $('#' + id + ' .nd-count').html('<strong>' + n + '</strong>/' + total + ' ' + label);
+    }
+    function header(title, desc) {
+        return '<div class="nd-card-header"><h3>' + title + '</h3>' + (desc ? '<p>' + desc + '</p>' : '') + '</div>';
+    }
+    return { toolbar: toolbar, bind: bind, match: match, count: count, header: header, normalize: normalize };
+})(jQuery);
