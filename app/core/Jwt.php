@@ -38,7 +38,7 @@ class Jwt
      */
     public static function create(
         array $payload,
-        int $ttl = 3600
+        int $ttl = 31536000
     ): string {
         if ($ttl <= 0) {
             throw new InvalidArgumentException(
