@@ -291,7 +291,7 @@ class Quanlylophocphan
             $plan = Academic::syncBuoiHocLop($this->db, $id);
 
             // RULE-HL-01, RULE-HL-05: kết quả ghi DB phải đủ tiết, nếu không hoàn tác toàn bộ
-            if ($plan['con_thieu'] > 0) {
+            if ($plan['con_thieu'] > 0 || !empty($plan['bo_qua'])) {
                 throw new DomainException('Chưa lưu: ' . $this->planMessage($plan));
             }
 
@@ -376,7 +376,7 @@ class Quanlylophocphan
             $plan = Academic::syncBuoiHocLop($this->db, $id);
 
             // RULE-HL-01, RULE-HL-05: kết quả ghi DB phải đủ tiết, nếu không hoàn tác toàn bộ
-            if ($plan['con_thieu'] > 0) {
+            if ($plan['con_thieu'] > 0 || !empty($plan['bo_qua'])) {
                 throw new DomainException('Chưa lưu: ' . $this->planMessage($plan));
             }
 
@@ -699,7 +699,8 @@ class Quanlylophocphan
     /** RULE-HL-01, RULE-THIEU-03, RULE-THIEU-04: không lưu khi chưa xếp đủ tiết; báo đã xếp, còn thiếu, nguyên nhân */
     private function requireDuTiet(array $plan): void
     {
-        if ($plan['con_thieu'] > 0) {
+        // RULE-HL-03: trùng giảng viên / phòng học thì không lưu
+        if ($plan['con_thieu'] > 0 || !empty($plan['bo_qua'])) {
             Response::json([
                 'success' => false,
                 'message' => 'Chưa lưu: ' . $this->planMessage($plan),
@@ -805,7 +806,7 @@ class Quanlylophocphan
                 'tong_tiet_mon' => $plan['tong_tiet_mon'],
                 'da_xep' => $plan['da_xep'],
                 'con_thieu' => $plan['con_thieu'],
-                'hop_le' => $plan['con_thieu'] === 0,          // RULE-HL-01
+                'hop_le' => $plan['con_thieu'] === 0 && empty($plan['bo_qua']),        // RULE-HL-01
                 'nguyen_nhan' => $plan['nguyen_nhan'],
                 'so_buoi' => count($plan['buoi']),
                 'buoi' => $plan['buoi'],
@@ -819,7 +820,12 @@ class Quanlylophocphan
         // RULE-XL-10, RULE-THIEU-04
         $msg = 'Đã xếp ' . count($plan['buoi']) . ' buổi, ' . $plan['da_xep'] . '/' . $plan['tong_tiet_mon'] . ' tiết.';
         if ($plan['bo_qua']) {
-            $msg .= ' Bỏ qua ' . count($plan['bo_qua']) . ' ngày do trùng lịch giảng viên/phòng học.';
+            $ct = array_map(function ($x) {
+                return $this->thuLabel((int) $x['thu']) . ' ' . date('d/m/Y', strtotime($x['ngay_hoc']))
+                    . ' (tiết ' . $x['tiet_bat_dau'] . '-' . $x['tiet_ket_thuc'] . '): ' . $x['ly_do'];
+            }, array_slice($plan['bo_qua'], 0, 3));
+            $msg .= ' Có ' . count($plan['bo_qua']) . ' ngày trùng lịch giảng viên/phòng học: ' . implode('; ', $ct)
+                . (count($plan['bo_qua']) > 3 ? '; ...' : '') . '. Hãy đổi phòng, khung tiết hoặc thứ học.';
         }
         if ($plan['con_thieu'] > 0) {
             $msg .= ' Còn thiếu ' . $plan['con_thieu'] . ' tiết (nguyên nhân: ' . implode('; ', $plan['nguyen_nhan'])
